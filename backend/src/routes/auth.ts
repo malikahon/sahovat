@@ -1,14 +1,24 @@
 /**
  * Authentication routes
- * POST /api/auth/request-otp - Request OTP for phone number
- * POST /api/auth/verify-otp  - Verify OTP and get tokens
- * POST /api/auth/refresh      - Refresh access token
- * POST /api/auth/logout       - Logout and invalidate tokens
+ * POST /api/auth/request-otp      - Request OTP for phone number
+ * POST /api/auth/verify-otp       - Verify OTP and get tokens
+ * POST /api/auth/refresh          - Refresh access token
+ * POST /api/auth/logout           - Logout and invalidate tokens
+ * POST /api/auth/verify-user-mock - Submit user verification request
+ * GET  /api/auth/verify-status    - Check verification status
  */
 
 import { Router } from 'express';
-import { requestOTP, verifyOTPHandler, refreshToken, logout } from '../controllers/auth';
+import { 
+  requestOTP, 
+  verifyOTPHandler, 
+  refreshToken, 
+  logout,
+  submitVerification,
+  getVerificationStatus,
+} from '../controllers/auth';
 import { requireAuth } from '../middlewares/auth';
+import { uploadVerificationDocument } from '../middlewares/upload';
 import rateLimit from 'express-rate-limit';
 
 const router = Router();
@@ -48,5 +58,16 @@ router.post('/refresh', refreshToken);
 
 // Logout (requires authentication)
 router.post('/logout', requireAuth, logout);
+
+// Submit verification request (requires authentication)
+router.post(
+  '/verify-user-mock',
+  requireAuth,
+  uploadVerificationDocument.single('document'),
+  submitVerification,
+);
+
+// Get verification status (requires authentication)
+router.get('/verify-status', requireAuth, getVerificationStatus);
 
 export default router;
