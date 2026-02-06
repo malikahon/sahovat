@@ -1,5 +1,17 @@
 # Uzbek Crowdfunding Platform - Quick Implementation Roadmap
 
+## Key Platform Decisions
+
+| Feature | Decision |
+|---------|----------|
+| **User Verification** | Via OneID (Uzbekistan's national identity service) |
+| **Fundraiser Verification** | Manual admin approval (only OneID-verified users can create) |
+| **Donations** | Login required (can choose to appear anonymous - fully private) |
+| **Payment Provider** | PayMe only |
+| **Withdrawals** | To PayMe accounts |
+
+---
+
 ## Week-by-Week Development Plan (12 Weeks MVP)
 
 ---
@@ -7,83 +19,85 @@
 ## Week 1: Foundation Setup
 
 ### Day 1-2: Project Initialization
-- [ ] Create Git repository
-- [ ] Set up project structure (backend + frontend folders)
-- [ ] Install Node.js, PostgreSQL, Redis
-- [ ] Create `.env.example` files with all required environment variables
-- [ ] Initialize backend (Express.js + TypeScript setup)
-- [ ] Initialize frontend (Next.js setup with Tailwind CSS)
+- [x] Create Git repository
+- [x] Set up project structure (backend + frontend folders)
+- [x] Install Node.js, PostgreSQL, Redis
+- [x] Create `.env.example` files with all required environment variables
+- [x] Initialize backend (Express.js + TypeScript setup)
+- [x] Initialize frontend (Next.js setup with Tailwind CSS)
 
 ### Day 3-5: Database Setup
-- [ ] Design and implement database schema in PostgreSQL
-- [ ] Create migration files for all tables:
+- [x] Design and implement database schema in PostgreSQL
+- [x] Create migration files for all tables:
   - users
-  - withdrawal_accountsi_
+  - withdrawal_accounts
   - fundraisers
   - fundraiser_documents
   - donations
   - withdrawals
   - platform_fees
   - admin_actions
-- [ ] Create database indexes
-- [ ] Write seed script for initial admin account
-- [ ] Test database connections
+- [x] Create database indexes
+- [x] Write seed script for initial admin account
+- [x] Test database connections
 
 ### Day 6-7: Authentication Foundation
-- [ ] Set up Redis for OTP storage
-- [ ] Implement phone number validation (Uzbek format +998)
-- [ ] Create OTP generation function
-- [ ] Mock SMS service (console.log for testing)
-- [ ] JWT token generation and verification
-- [ ] Auth middleware (requireAuth, requireVerified, requireAdmin)
+- [x] Set up Redis for OTP storage
+- [x] Implement phone number validation (Uzbek format +998)
+- [x] Create OTP generation function
+- [x] Mock SMS service (console.log for testing)
+- [x] JWT token generation and verification
+- [x] Auth middleware (requireAuth, requireVerified, requireAdmin)
 
-**Deliverable:** Working backend with database and basic auth structure
+**Deliverable:** Working backend with database and basic auth structure ✅
 
 ---
 
 ## Week 2: Authentication & User Management
 
 ### Day 1-3: Auth Endpoints
-- [ ] POST /api/auth/request-otp
-- [ ] POST /api/auth/verify-otp
-- [ ] POST /api/auth/refresh
-- [ ] POST /api/auth/logout
-- [ ] Implement rate limiting for OTP requests
-- [ ] Test auth flow with Postman
+- [x] POST /api/auth/request-otp
+- [x] POST /api/auth/verify-otp
+- [x] POST /api/auth/refresh
+- [x] POST /api/auth/logout
+- [x] Implement rate limiting for OTP requests
+- [x] Test auth flow with Postman
 
-### Day 4-5: User Verification (Mock)
-- [ ] POST /api/auth/verify-user-mock - Submit verification request
-- [ ] GET /api/auth/verify-status - Check verification status
-- [ ] File upload for ID document
-- [ ] Store verification requests in database
+### Day 4-5: User Verification via OneID
+- [x] POST /api/auth/verify-user-mock - Submit verification request (mock for testing)
+- [x] GET /api/auth/verify-status - Check verification status
+- [ ] Integrate OneID OAuth flow for identity verification
+- [ ] Store OneID verification response in database
+- [ ] Auto-verify users upon successful OneID authentication
 
 ### Day 6-7: Frontend Auth Pages
-- [ ] Create auth layout
-- [ ] Phone number input page with country code (+998)
-- [ ] OTP input page (6-digit code)
-- [ ] Session management with JWT
-- [ ] Protected route wrapper component
+- [x] Create auth layout
+- [x] Phone number input page with country code (+998)
+- [x] OTP input page (6-digit code)
+- [x] Session management with JWT
+- [x] Protected route wrapper component
 
-**Deliverable:** Complete authentication system (backend + frontend)
+**Deliverable:** Complete authentication system (backend + frontend) ✅
 
 ---
 
 ## Week 3: Withdrawal Accounts & User Profile
 
-### Day 1-3: Withdrawal Account System
-- [ ] POST /api/users/withdrawal-accounts - Add account
-- [ ] GET /api/users/withdrawal-accounts - List accounts
-- [ ] PUT /api/users/withdrawal-accounts/:id - Update
-- [ ] DELETE /api/users/withdrawal-accounts/:id - Delete
-- [ ] POST /api/users/withdrawal-accounts/:id/set-primary
-- [ ] Mock account verification (check name match)
-- [ ] Encrypt account numbers in database
+### Day 1-3: Withdrawal Account System (PayMe only)
+- [x] POST /api/users/withdrawal-accounts - Add PayMe account
+- [x] GET /api/users/withdrawal-accounts - List accounts
+- [x] PUT /api/users/withdrawal-accounts/:id - Update
+- [x] DELETE /api/users/withdrawal-accounts/:id - Delete
+- [x] POST /api/users/withdrawal-accounts/:id/set-primary
+- [x] Mock account verification (check name match)
+- [x] Encrypt account numbers in database
 
 ### Day 4-7: User Dashboard Frontend
 - [ ] User profile page
-- [ ] Withdrawal accounts management UI
-- [ ] Add withdrawal account form (select provider, enter account)
-- [ ] Verification request submission form
+- [ ] Withdrawal accounts management UI (PayMe accounts)
+- [ ] Add PayMe account form
+- [ ] OneID verification status display
+- [ ] OneID verification button (redirects to OneID)
 - [ ] Language preference selector
 - [ ] "My Fundraisers" list (empty for now)
 - [ ] "My Donations" list (empty for now)
@@ -100,7 +114,8 @@
 - [ ] GET /api/fundraisers/:id - Get single fundraiser
 - [ ] PUT /api/fundraisers/:id - Update fundraiser
 - [ ] DELETE /api/fundraisers/:id - Delete fundraiser
-- [ ] Validation: only verified users, must have withdrawal account
+- [ ] Validation: only OneID-verified users can create fundraisers
+- [ ] Validation: must have PayMe withdrawal account
 
 ### Day 3-5: Document Upload System
 - [ ] POST /api/fundraisers/:id/documents - Upload document
@@ -126,6 +141,7 @@
 
 ### Day 1-2: Multi-step Form Structure
 - [ ] Create fundraiser creation wizard component
+- [ ] Check OneID verification status before allowing creation
 - [ ] Step 1: Basic info (title, category, goal, end date)
 - [ ] Form validation with Zod
 - [ ] Save draft functionality
@@ -146,9 +162,10 @@
 - [ ] Upload progress indicators
 - [ ] File preview/thumbnails
 - [ ] Max 15 documents validation
-- [ ] Step 5: Withdrawal account selection
+- [ ] Step 5: PayMe withdrawal account selection
 - [ ] Step 6: Preview page
 - [ ] Submit button with confirmation
+- [ ] Note: Requires OneID verification to submit
 
 **Deliverable:** Complete fundraiser creation flow
 
@@ -156,31 +173,33 @@
 
 ## Week 6: Donation System Backend
 
-### Day 1-3: Donation Endpoints
-- [ ] POST /api/donations/check-requirements (check if ≥3M UZS)
-- [ ] POST /api/donations/initiate - Create donation record
-- [ ] POST /api/donations/:id/confirm - Webhook handler (mock for now)
-- [ ] GET /api/donations/:id - Get donation details
-- [ ] GET /api/fundraisers/:id/donations - List donations (public, paginated)
-- [ ] PATCH /api/donations/:id/note - Edit note (24hr limit)
+### Day 1-3: Donation Endpoints (Login Required)
+- [ ] POST /api/donations/initiate - Create donation record (auth required)
+- [ ] POST /api/donations/:id/confirm - PayMe webhook handler
+- [ ] GET /api/donations/:id - Get donation details (respects anonymity)
+- [ ] GET /api/fundraisers/:id/donations - List donations (public, respects anonymity)
+- [ ] PATCH /api/donations/:id/note - Edit comment (24hr limit)
 - [ ] GET /api/donations/my-donations - User's donation history
 - [ ] Platform fee calculation (1%)
+- [ ] Login required, anonymous option hides identity from EVERYONE (admins, creators, public)
+- [ ] Real donor_id stored in DB only for legal/compliance (money laundering, fraud investigations)
 
-### Day 4-5: Payment Gateway Mock
-- [ ] Create mock payment service
-- [ ] Simulate payment flow for all 4 providers (Payme, Click, Uzcard, Humo)
-- [ ] Return mock payment URLs
-- [ ] Mock webhook confirmation
-- [ ] Transaction ID generation
+### Day 4-5: PayMe Integration
+- [ ] Create PayMe payment service
+- [ ] Integrate PayMe API for payment initiation
+- [ ] Handle PayMe webhook callbacks
+- [ ] Return PayMe checkout URL
+- [ ] Transaction ID storage and verification
+- [ ] Mock mode for local testing
 
-### Day 6-7: KYC Logic
-- [ ] Implement 3M UZS threshold check
-- [ ] Block unverified users from large donations
-- [ ] Set requires_verification flag
-- [ ] Anonymous vs logged-in donation logic
-- [ ] Donor display name handling
+### Day 6-7: Donation Logic
+- [ ] Validate user is authenticated before donation
+- [ ] Anonymous donation toggle (fully private - hidden from everyone including admins/creators)
+- [ ] Donor display name handling (use profile name, custom, or "Anonymous")
+- [ ] Donation note/comment with character limit (optional)
+- [ ] Store donor_id in database for legal compliance (accessible only via direct DB for investigations)
 
-**Deliverable:** Complete donation backend with mock payments
+**Deliverable:** Complete donation backend with PayMe integration
 
 ---
 
@@ -188,29 +207,29 @@
 
 ### Day 1-2: Donation Widget
 - [ ] Create donation button on fundraiser page
-- [ ] Donation modal/page
+- [ ] Donation modal/page (requires login)
+- [ ] Login redirect if not authenticated
 - [ ] Amount selection (suggested + custom)
 - [ ] Platform fee display
 - [ ] Real-time total calculation
 
 ### Day 3-4: Donor Options
-- [ ] KYC check UI for ≥3M donations
-- [ ] Login prompt if needed
-- [ ] Verification requirement message
-- [ ] Anonymous donation toggle (for logged-in users)
-- [ ] Custom display name input
-- [ ] Donation note textarea with character counter
+- [ ] Display logged-in user info
+- [ ] Anonymous donation toggle (fully private - hidden from everyone)
+- [ ] Explain privacy: "Your identity will be hidden from the public, fundraiser creator, and admins"
+- [ ] Custom display name input (if not anonymous)
+- [ ] Donation comment/note textarea with character counter (optional)
 
-### Day 5-7: Payment Flow
-- [ ] Payment provider selection (4 cards with logos)
+### Day 5-7: PayMe Payment Flow
+- [ ] PayMe payment button with logo
 - [ ] Confirmation screen (summary of donation)
-- [ ] Redirect to mock payment page
-- [ ] Return URL handling
+- [ ] Redirect to PayMe checkout
+- [ ] Return URL handling (success/cancel)
 - [ ] Success page with donation details
 - [ ] Failure page with retry option
 - [ ] Download receipt button (optional)
 
-**Deliverable:** Complete donation flow frontend
+**Deliverable:** Complete donation flow frontend with PayMe
 
 ---
 
@@ -218,26 +237,33 @@
 
 ### Day 1-2: Admin Endpoints - Users
 - [ ] GET /api/admin/users - List all users
-- [ ] GET /api/admin/users/pending-verification
-- [ ] POST /api/admin/users/:id/verify - Approve user
-- [ ] POST /api/admin/users/:id/reject-verification - Reject with reason
+- [ ] GET /api/admin/users/:id - Get user details
+- [ ] GET /api/admin/users/verified - List OneID verified users
 - [ ] POST /api/admin/users/:id/make-admin
 - [ ] POST /api/admin/users/:id/revoke-admin
+- [ ] POST /api/admin/users/:id/ban - Ban user from platform
+- [ ] Note: User verification is handled by OneID (no manual approval)
 
-### Day 3-4: Admin Endpoints - Fundraisers
+### Day 3-4: Admin Endpoints - Fundraisers (Admin Verification)
 - [ ] GET /api/admin/fundraisers/pending-verification
 - [ ] GET /api/admin/fundraisers/:id/review - Get with documents
-- [ ] POST /api/admin/fundraisers/:id/verify - Add blue checkmark
-- [ ] POST /api/admin/fundraisers/:id/reject-verification
-- [ ] POST /api/admin/fundraisers/:id/unverify
-- [ ] POST /api/admin/fundraisers/:id/pause
-- [ ] POST /api/admin/fundraisers/:id/resume
+- [ ] POST /api/admin/fundraisers/:id/verify - Add blue checkmark (admin only)
+- [ ] POST /api/admin/fundraisers/:id/reject-verification - Reject with reason
+- [ ] POST /api/admin/fundraisers/:id/unverify - Remove verification
+- [ ] POST /api/admin/fundraisers/:id/pause - Pause fundraiser
+- [ ] POST /api/admin/fundraisers/:id/resume - Resume fundraiser
+- [ ] Note: Only OneID-verified users can create fundraisers
 
 ### Day 5-6: Admin Endpoints - Withdrawals
 - [ ] GET /api/admin/withdrawals/pending
 - [ ] POST /api/admin/withdrawals/:id/approve
 - [ ] POST /api/admin/withdrawals/:id/reject
 - [ ] POST /api/admin/withdrawals/:id/mark-completed
+
+### Privacy Note - Anonymous Donations
+- Anonymous donor identities are NOT visible via API (not to admins, not to fundraiser creators)
+- Real donor_id is stored in database for legal compliance only
+- Access to real identity requires direct database query (for fraud/money laundering investigations, court orders)
 
 ### Day 7: Admin Statistics & Actions
 - [ ] GET /api/admin/dashboard - Overview stats
@@ -255,31 +281,32 @@
 ### Day 1-2: Admin Dashboard
 - [ ] Create admin layout with sidebar navigation
 - [ ] Dashboard overview page with key metrics cards
-- [ ] Charts (donations over time, categories, payment methods)
+- [ ] Charts (donations over time, categories)
 - [ ] Top fundraisers table
+- [ ] PayMe transaction summary
 
-### Day 3-4: Verification Queues
-- [ ] User verification queue page
-- [ ] User detail modal with ID document viewer
-- [ ] Approve/reject buttons with reason modal
+### Day 3-4: Fundraiser Verification Queue
 - [ ] Fundraiser verification queue page
 - [ ] Fundraiser review page with document grid
 - [ ] Document viewer/download
-- [ ] Verify/reject fundraiser actions
+- [ ] Verify/reject fundraiser actions with reason modal
+- [ ] Filter by status (pending, verified, rejected)
+- [ ] Note: Users are auto-verified via OneID
 
 ### Day 5-6: Withdrawal Management
 - [ ] Withdrawal queue page
 - [ ] Withdrawal detail modal
-- [ ] Account verification check display
+- [ ] PayMe account verification check display
 - [ ] Approve/reject/complete actions
 - [ ] Transaction log display
 
 ### Day 7: User & Stats Management
-- [ ] Users list page with filters
-- [ ] User detail page
+- [ ] Users list page with filters (verified via OneID, admin status)
+- [ ] User detail page (show OneID verification status)
 - [ ] Make/revoke admin actions
+- [ ] Ban/unban user actions
 - [ ] Statistics dashboard with detailed charts
-- [ ] Platform fees report
+- [ ] Platform fees report (PayMe)
 - [ ] Admin action log viewer
 
 **Deliverable:** Complete admin panel
@@ -340,10 +367,11 @@
 - [ ] Write unit tests for critical backend functions
 - [ ] Test all API endpoints with Postman
 - [ ] E2E testing with Playwright:
-  - User signup → verification → create fundraiser
-  - Guest donation
-  - Large donation KYC flow
-  - Admin verification workflow
+  - User signup → OneID verification → create fundraiser
+  - Login → donate via PayMe flow (with/without anonymous option)
+  - Admin fundraiser verification workflow
+  - Withdrawal request and approval flow
+- [ ] Test PayMe integration (sandbox mode)
 - [ ] Cross-browser testing (Chrome, Firefox, Safari)
 - [ ] Mobile responsive testing
 - [ ] Fix discovered bugs
@@ -407,21 +435,22 @@ Use this checklist every day to stay on track:
 ## Key Milestones & Demo Points
 
 **Milestone 1 (End of Week 4):** 
-- Demo: User signup, verification, create fundraiser with documents
+- Demo: User signup, OneID verification, create fundraiser with documents
 
 **Milestone 2 (End of Week 7):**
-- Demo: Complete donation flow (guest, logged-in, KYC check)
+- Demo: Complete donation flow (login → donate via PayMe, with anonymous option)
 
 **Milestone 3 (End of Week 9):**
-- Demo: Admin panel (verify users, verify fundraisers, approve withdrawals)
+- Demo: Admin panel (verify fundraisers, approve withdrawals, user management)
 
 **Milestone 4 (End of Week 10):**
 - Demo: Complete public platform with homepage, search, fundraiser pages
 
 **Final Demo (End of Week 12):**
 - Full platform demo in 3 languages
-- Show all user journeys
-- Admin capabilities demonstration
+- Show all user journeys (signup → OneID → create fundraiser → receive donations)
+- Admin capabilities demonstration (fundraiser verification, withdrawals)
+- PayMe payment flow demonstration
 
 ---
 
@@ -429,8 +458,14 @@ Use this checklist every day to stay on track:
 
 **Common Risks & Solutions:**
 
-**Risk:** Payment provider integration too complex
-**Solution:** Use mock service for MVP, clearly document integration points
+**Risk:** PayMe integration too complex
+**Solution:** Use PayMe sandbox for testing, mock service for local development
+
+**Risk:** OneID integration issues
+**Solution:** Implement mock OneID flow for testing, document OAuth flow clearly
+
+**Risk:** Anonymous donation privacy concerns
+**Solution:** Anonymous donations hide identity from ALL users including admins/creators. Real donor_id stored in DB only for legal compliance (court orders, fraud investigations). API never exposes anonymous donor identity.
 
 **Risk:** File upload handling issues
 **Solution:** Start with local filesystem, implement proper validation early
@@ -454,7 +489,7 @@ Use this checklist every day to stay on track:
 If time permits or for startup version:
 
 - [ ] Email notifications
-- [ ] Push notifications
+- [ ] Push notifications (Telegram bot integration)
 - [ ] Real-time updates (Socket.io)
 - [ ] Social sharing optimization
 - [ ] PDF donation receipts
@@ -466,6 +501,7 @@ If time permits or for startup version:
 - [ ] Recurring donations
 - [ ] Team fundraising
 - [ ] Mobile app (React Native)
+- [ ] Additional payment providers (Click, Uzum)
 
 ---
 

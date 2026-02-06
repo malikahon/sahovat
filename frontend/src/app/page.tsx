@@ -1,19 +1,9 @@
+import { Header } from '@/components/Header';
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      <header className="container mx-auto px-4 py-6">
-        <nav className="flex items-center justify-between">
-          <div className="text-2xl font-bold text-green-600">Sahovat</div>
-          <div className="flex gap-4">
-            <button className="px-4 py-2 text-gray-600 hover:text-gray-900">
-              Kirish
-            </button>
-            <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-              Ro&apos;yxatdan o&apos;tish
-            </button>
-          </div>
-        </nav>
-      </header>
+      <Header />
 
       <main className="container mx-auto px-4 py-16">
         <div className="text-center max-w-3xl mx-auto">
