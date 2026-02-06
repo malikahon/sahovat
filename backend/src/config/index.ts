@@ -58,6 +58,11 @@ export const config = {
     kycThreshold: parseInt(process.env.KYC_THRESHOLD || '3000000', 10), // 3,000,000 UZS
   },
 
+  // Encryption
+  encryption: {
+    key: process.env.ENCRYPTION_KEY || 'sahovat-encryption-key-change-in-production-32c',
+  },
+
   // CORS
   cors: {
     origin: process.env.CORS_ORIGIN || 'http://localhost:3000',

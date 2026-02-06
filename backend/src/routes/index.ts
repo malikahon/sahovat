@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import authRouter from './auth';
+import usersRouter from './users';
 
 const router = Router();
 
@@ -14,9 +15,9 @@ router.get('/health', (_req, res) => {
 
 // API routes
 router.use('/auth', authRouter);
+router.use('/users', usersRouter);
 
 // Placeholder routes for future implementation
-// router.use('/users', usersRouter);
 // router.use('/fundraisers', fundraisersRouter);
 // router.use('/donations', donationsRouter);
 // router.use('/withdrawals', withdrawalsRouter);
