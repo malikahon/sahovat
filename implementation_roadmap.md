@@ -66,9 +66,9 @@
 ### Day 4-5: User Verification via OneID
 - [x] POST /api/auth/verify-user-mock - Submit verification request (mock for testing)
 - [x] GET /api/auth/verify-status - Check verification status
-- [ ] Integrate OneID OAuth flow for identity verification
-- [ ] Store OneID verification response in database
-- [ ] Auto-verify users upon successful OneID authentication
+- [x] Integrate OneID OAuth flow for identity verification
+- [x] Store OneID verification response in database
+- [x] Auto-verify users upon successful OneID authentication
 
 ### Day 6-7: Frontend Auth Pages
 - [x] Create auth layout
@@ -93,16 +93,16 @@
 - [x] Encrypt account numbers in database
 
 ### Day 4-7: User Dashboard Frontend
-- [ ] User profile page
-- [ ] Withdrawal accounts management UI (PayMe accounts)
-- [ ] Add PayMe account form
-- [ ] OneID verification status display
-- [ ] OneID verification button (redirects to OneID)
-- [ ] Language preference selector
-- [ ] "My Fundraisers" list (empty for now)
-- [ ] "My Donations" list (empty for now)
+- [x] User profile page
+- [x] Withdrawal accounts management UI (PayMe accounts)
+- [x] Add PayMe account form
+- [x] OneID verification status display
+- [x] OneID verification button (redirects to OneID)
+- [x] Language preference selector
+- [x] "My Fundraisers" list (empty for now)
+- [x] "My Donations" list (empty for now)
 
-**Deliverable:** User profile and withdrawal account management
+**Deliverable:** User profile and withdrawal account management ✅
 
 ---
 
