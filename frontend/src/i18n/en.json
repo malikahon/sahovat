@@ -1,0 +1,56 @@
+{
+  "common": {
+    "appName": "Sahovat",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "close": "Close"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "phoneNumber": "Phone Number",
+    "enterPhone": "Enter your +998 number",
+    "sendOtp": "Send Code",
+    "verifyOtp": "Verify Code",
+    "enterOtp": "Enter SMS code"
+  },
+  "campaigns": {
+    "title": "Campaigns",
+    "create": "Create Campaign",
+    "donate": "Donate",
+    "goal": "Goal",
+    "raised": "Raised",
+    "donors": "Donors",
+    "daysLeft": "days left",
+    "categories": {
+      "medical": "Medical",
+      "education": "Education",
+      "emergency": "Emergency",
+      "community": "Community",
+      "creative": "Creative",
+      "business": "Business",
+      "other": "Other"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "browse": "Browse",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "myDonations": "My Donations",
+    "myCampaigns": "My Campaigns"
+  },
+  "landing": {
+    "hero": "Sahovat — Uzbekistan's Crowdfunding Platform",
+    "subtitle": "Help those in need, make a difference"
+  }
+}

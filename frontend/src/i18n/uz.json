@@ -1,0 +1,56 @@
+{
+  "common": {
+    "appName": "Sahovat",
+    "loading": "Yuklanmoqda...",
+    "error": "Xatolik yuz berdi",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "delete": "O'chirish",
+    "edit": "Tahrirlash",
+    "search": "Qidirish",
+    "back": "Orqaga",
+    "next": "Keyingisi",
+    "submit": "Yuborish",
+    "close": "Yopish"
+  },
+  "auth": {
+    "login": "Kirish",
+    "logout": "Chiqish",
+    "register": "Ro'yxatdan o'tish",
+    "phoneNumber": "Telefon raqam",
+    "enterPhone": "+998 raqamingizni kiriting",
+    "sendOtp": "Kod yuborish",
+    "verifyOtp": "Kodni tasdiqlash",
+    "enterOtp": "SMS kodini kiriting"
+  },
+  "campaigns": {
+    "title": "Kampaniyalar",
+    "create": "Kampaniya yaratish",
+    "donate": "Xayriya qilish",
+    "goal": "Maqsad",
+    "raised": "Yig'ildi",
+    "donors": "Xayriyachilar",
+    "daysLeft": "kun qoldi",
+    "categories": {
+      "medical": "Tibbiy",
+      "education": "Ta'lim",
+      "emergency": "Favqulodda",
+      "community": "Jamiyat",
+      "creative": "Ijodiy",
+      "business": "Biznes",
+      "other": "Boshqa"
+    }
+  },
+  "nav": {
+    "home": "Bosh sahifa",
+    "browse": "Ko'rish",
+    "dashboard": "Boshqaruv paneli",
+    "profile": "Profil",
+    "myDonations": "Mening xayriyalarim",
+    "myCampaigns": "Mening kampaniyalarim"
+  },
+  "landing": {
+    "hero": "Sahovat — O'zbekiston xayriya platformasi",
+    "subtitle": "Ehtiyojmandlarga yordam bering, o'zgarish yasang"
+  }
+}

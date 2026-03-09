@@ -1,0 +1,15 @@
+import type { Request } from 'express';
+import type { VerificationStatus } from './entities.js';
+
+export interface AuthenticatedUser {
+  id: string;
+  phone_number: string;
+  display_name: string | null;
+  is_verified: boolean;
+  is_admin: boolean;
+  verification_status: VerificationStatus;
+}
+
+export interface AuthenticatedRequest extends Request {
+  user: AuthenticatedUser;
+}
