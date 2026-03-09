@@ -1,2 +1,3 @@
-# sahovat
-gofundme.uz
+# Sahovat
+
+Crowdfunding platform for Uzbekistan.

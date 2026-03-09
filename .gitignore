@@ -28,6 +28,24 @@ Thumbs.db
 # Test coverage
 coverage/
 
-# Uploads
-backend/uploads/*
-!backend/uploads/.gitkeep
+# Storage (uploaded files)
+backend/storage/public/*
+backend/storage/private/*
+!backend/storage/public/.gitkeep
+!backend/storage/private/.gitkeep
+
+# Python (ML service)
+ml/__pycache__/
+ml/.venv/
+ml/venv/
+ml/*.egg-info/
+ml/models/*.pkl
+ml/models/*.joblib
+
+# Docker
+docker-compose.override.yml
+
+# Misc
+*.tsbuildinfo
+.turbo/
+roadmap.md
