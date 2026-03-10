@@ -3,6 +3,11 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import { QueryProvider } from '@/components/shared/QueryProvider';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: 'Sahovat — Crowdfunding Platform',
@@ -18,10 +23,12 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
+    <html lang={locale} className={cn("font-sans", geist.variable)}>
       <body>
         <NextIntlClientProvider messages={messages}>
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </QueryProvider>
         </NextIntlClientProvider>
       </body>
     </html>

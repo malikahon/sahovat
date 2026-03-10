@@ -5,6 +5,9 @@ import { env } from './config/env.js';
 import { storagePaths } from './config/storage.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { authRouter } from './modules/auth/auth.routes.js';
+import { usersRouter } from './modules/users/users.routes.js';
+import { withdrawalAccountsRouter } from './modules/withdrawals/withdrawal-accounts.routes.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -37,6 +40,11 @@ export function createApp(): express.Express {
       timestamp: new Date().toISOString(),
     });
   });
+
+  // API routes
+  app.use('/api/auth', authRouter);
+  app.use('/api/users', usersRouter);
+  app.use('/api/withdrawal-accounts', withdrawalAccountsRouter);
 
   // Global error handler (must be last)
   app.use(errorHandler);

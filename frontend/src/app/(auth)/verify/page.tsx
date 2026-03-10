@@ -1,12 +1,19 @@
+import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
+import { VerifyForm } from './verify-form';
+
+function VerifyFallback() {
+  return (
+    <div className="flex items-center justify-center w-full max-w-md p-8">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
+
 export default function VerifyPage() {
   return (
-    <div className="w-full max-w-md p-8">
-      <h1 className="text-2xl font-bold text-foreground text-center">
-        Verify OTP
-      </h1>
-      <p className="mt-4 text-muted-foreground text-center">
-        OTP verification form coming soon.
-      </p>
-    </div>
+    <Suspense fallback={<VerifyFallback />}>
+      <VerifyForm />
+    </Suspense>
   );
 }

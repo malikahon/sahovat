@@ -309,8 +309,6 @@ export interface VerifyOtpDto {
 }
 
 export interface RegisterDto {
-  phone_number: string;
-  otp: string;
   display_name: string;
   date_of_birth?: string;
   gender?: 'male' | 'female';
@@ -526,6 +524,18 @@ export interface UpdateRecurringDonationDto {
 // ============================================================
 // FRONTEND-ONLY TYPES
 // ============================================================
+
+export interface SafeWithdrawalAccount {
+  id: string;
+  user_id: string;
+  provider: WithdrawalProvider;
+  account_number_masked: string;
+  account_holder_name: string;
+  is_primary: boolean;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface AuthContextType {
   user: User | null;

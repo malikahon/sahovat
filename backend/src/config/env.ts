@@ -50,6 +50,11 @@ const envSchema = z.object({
   OTP_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
   OTP_LOCKOUT_SECONDS: z.coerce.number().int().positive().default(900),
+
+  ONEID_CLIENT_ID: z.string().default('mock_client_id'),
+  ONEID_CLIENT_SECRET: z.string().default('mock_client_secret'),
+  ONEID_REDIRECT_URI: z.string().default('http://localhost:3001/api/users/oneid/callback'),
+  ONEID_ENABLED: z.coerce.boolean().default(false),
 });
 
 export type Env = z.infer<typeof envSchema>;

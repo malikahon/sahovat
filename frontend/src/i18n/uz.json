@@ -11,17 +11,51 @@
     "back": "Orqaga",
     "next": "Keyingisi",
     "submit": "Yuborish",
-    "close": "Yopish"
+    "close": "Yopish",
+    "required": "Majburiy",
+    "optional": "Ixtiyoriy",
+    "confirm": "Tasdiqlash",
+    "yes": "Ha",
+    "no": "Yo'q"
   },
   "auth": {
     "login": "Kirish",
     "logout": "Chiqish",
     "register": "Ro'yxatdan o'tish",
     "phoneNumber": "Telefon raqam",
-    "enterPhone": "+998 raqamingizni kiriting",
+    "enterPhone": "Telefon raqamingizni kiriting",
     "sendOtp": "Kod yuborish",
     "verifyOtp": "Kodni tasdiqlash",
-    "enterOtp": "SMS kodini kiriting"
+    "enterOtp": "Quyidagi raqamga yuborilgan 6 xonali kodni kiriting:",
+    "otpSent": "Kod muvaffaqiyatli yuborildi",
+    "otpInvalid": "Noto'g'ri yoki muddati o'tgan kod",
+    "otpResend": "Kodni qayta yuborish",
+    "otpResendIn": "{seconds} soniyadan so'ng qayta yuborish",
+    "phonePrefix": "+998",
+    "phonePlaceholder": "XX XXX XX XX",
+    "phoneInvalid": "Iltimos, to'g'ri 9 xonali telefon raqamini kiriting",
+    "welcomeBack": "Xush kelibsiz",
+    "welcomeTitle": "Sahovatga kirish",
+    "welcomeSubtitle": "Boshlash uchun telefon raqamingizni kiriting",
+    "verifyTitle": "Telefoningizni tasdiqlang",
+    "verifySubtitle": "Biz 6 xonali kodni quyidagi raqamga yubordik:",
+    "backToLogin": "Kirishga qaytish",
+    "registerTitle": "Profilingizni to'ldiring",
+    "registerSubtitle": "O'zingiz haqingizda bir oz ma'lumot bering",
+    "displayName": "Ism",
+    "displayNamePlaceholder": "Ismingizni kiriting",
+    "dateOfBirth": "Tug'ilgan sana",
+    "gender": "Jinsi",
+    "genderMale": "Erkak",
+    "genderFemale": "Ayol",
+    "preferredCategories": "Qiziqishlar",
+    "preferredCategoriesHint": "Sizni qiziqtirgan kategoriyalarni tanlang (maks 7)",
+    "completeRegistration": "Ro'yxatdan o'tishni yakunlash",
+    "continueToApp": "Davom etish",
+    "notAuthorized": "Sizga bu sahifaga kirishga ruxsat yo'q",
+    "loginRequired": "Davom etish uchun tizimga kiring",
+    "adminRequired": "Admin huquqi talab qilinadi",
+    "verificationRequired": "Hisobni tasdiqlash talab qilinadi"
   },
   "campaigns": {
     "title": "Kampaniyalar",
@@ -47,10 +81,67 @@
     "dashboard": "Boshqaruv paneli",
     "profile": "Profil",
     "myDonations": "Mening xayriyalarim",
-    "myCampaigns": "Mening kampaniyalarim"
+    "myCampaigns": "Mening kampaniyalarim",
+    "withdrawalAccounts": "Hisob raqamlar"
   },
   "landing": {
     "hero": "Sahovat — O'zbekiston xayriya platformasi",
     "subtitle": "Ehtiyojmandlarga yordam bering, o'zgarish yasang"
+  },
+  "dashboard": {
+    "sidebar": {
+      "title": "Boshqaruv paneli"
+    }
+  },
+  "profile": {
+    "title": "Profil",
+    "editProfile": "Profilni tahrirlash",
+    "displayName": "Ko'rsatiladigan ism",
+    "dateOfBirth": "Tug'ilgan sana",
+    "gender": "Jinsi",
+    "genderMale": "Erkak",
+    "genderFemale": "Ayol",
+    "language": "Til",
+    "languageUz": "O'zbek",
+    "languageRu": "Rus",
+    "languageEn": "Ingliz",
+    "categories": "Tanlangan kategoriyalar",
+    "categoriesHint": "Sizni qiziqtirgan kategoriyalarni tanlang (maks 7)",
+    "save": "O'zgarishlarni saqlash",
+    "saveSuccess": "Profil muvaffaqiyatli yangilandi",
+    "saveError": "Profilni yangilashda xatolik"
+  },
+  "verification": {
+    "title": "Shaxsni tasdiqlash",
+    "notVerified": "Tasdiqlanmagan",
+    "pending": "Tasdiqlash kutilmoqda",
+    "approved": "Tasdiqlangan",
+    "rejected": "Tasdiqlash rad etildi",
+    "verifyWithOneId": "OneID orqali tasdiqlash",
+    "verifiedAt": "{date} da tasdiqlangan",
+    "success": "Shaxsingiz muvaffaqiyatli tasdiqlandi!",
+    "description": "Platformaning barcha imkoniyatlaridan foydalanish uchun OneID orqali shaxsingizni tasdiqlang.",
+    "pendingDescription": "Sizning tasdiqlovingiz ko'rib chiqilmoqda. Odatda bu 1-2 ish kuni davom etadi.",
+    "rejectedDescription": "Sizning tasdiqlovingiz rad etildi. Qaytadan urinib ko'rishingiz mumkin."
+  },
+  "withdrawalAccounts": {
+    "title": "Hisob raqamlar",
+    "addAccount": "Hisob qo'shish",
+    "provider": "Provayder",
+    "cardNumber": "Karta raqami",
+    "holderName": "Hisob egasining ismi",
+    "primary": "Asosiy",
+    "setPrimary": "Asosiy qilish",
+    "delete": "O'chirish",
+    "deleteConfirm": "Bu hisobni o'chirishni xohlaysizmi?",
+    "empty": "Hali hisob raqamlar yo'q. Kampaniyalardan mablag' olish uchun bitta qo'shing.",
+    "edit": "Tahrirlash",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "addSuccess": "Hisob muvaffaqiyatli qo'shildi",
+    "updateSuccess": "Hisob muvaffaqiyatli yangilandi",
+    "deleteSuccess": "Hisob muvaffaqiyatli o'chirildi",
+    "primarySuccess": "Asosiy hisob yangilandi",
+    "error": "Xatolik yuz berdi"
   }
 }

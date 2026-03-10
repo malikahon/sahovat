@@ -56,8 +56,6 @@ export interface VerifyOtpDto {
 }
 
 export interface RegisterDto {
-  phone_number: string;
-  otp: string;
   display_name: string;
   date_of_birth?: string;
   gender?: 'male' | 'female';

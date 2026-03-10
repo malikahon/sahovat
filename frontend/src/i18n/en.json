@@ -11,17 +11,51 @@
     "back": "Back",
     "next": "Next",
     "submit": "Submit",
-    "close": "Close"
+    "close": "Close",
+    "required": "Required",
+    "optional": "Optional",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
   },
   "auth": {
     "login": "Login",
     "logout": "Logout",
     "register": "Register",
     "phoneNumber": "Phone Number",
-    "enterPhone": "Enter your +998 number",
+    "enterPhone": "Enter your phone number",
     "sendOtp": "Send Code",
     "verifyOtp": "Verify Code",
-    "enterOtp": "Enter SMS code"
+    "enterOtp": "Enter the 6-digit code sent to",
+    "otpSent": "Code sent successfully",
+    "otpInvalid": "Invalid or expired code",
+    "otpResend": "Resend Code",
+    "otpResendIn": "Resend in {seconds}s",
+    "phonePrefix": "+998",
+    "phonePlaceholder": "XX XXX XX XX",
+    "phoneInvalid": "Please enter a valid 9-digit phone number",
+    "welcomeBack": "Welcome back",
+    "welcomeTitle": "Sign in to Sahovat",
+    "welcomeSubtitle": "Enter your phone number to get started",
+    "verifyTitle": "Verify your phone",
+    "verifySubtitle": "We sent a 6-digit code to",
+    "backToLogin": "Back to login",
+    "registerTitle": "Complete your profile",
+    "registerSubtitle": "Tell us a bit about yourself",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "Enter your name",
+    "dateOfBirth": "Date of Birth",
+    "gender": "Gender",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "preferredCategories": "Interests",
+    "preferredCategoriesHint": "Select categories you're interested in (max 7)",
+    "completeRegistration": "Complete Registration",
+    "continueToApp": "Continue",
+    "notAuthorized": "You are not authorized to access this page",
+    "loginRequired": "Please log in to continue",
+    "adminRequired": "Admin access required",
+    "verificationRequired": "Account verification required"
   },
   "campaigns": {
     "title": "Campaigns",
@@ -47,10 +81,67 @@
     "dashboard": "Dashboard",
     "profile": "Profile",
     "myDonations": "My Donations",
-    "myCampaigns": "My Campaigns"
+    "myCampaigns": "My Campaigns",
+    "withdrawalAccounts": "Withdrawal Accounts"
   },
   "landing": {
     "hero": "Sahovat — Uzbekistan's Crowdfunding Platform",
     "subtitle": "Help those in need, make a difference"
+  },
+  "dashboard": {
+    "sidebar": {
+      "title": "Dashboard"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "editProfile": "Edit Profile",
+    "displayName": "Display Name",
+    "dateOfBirth": "Date of Birth",
+    "gender": "Gender",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "language": "Language Preference",
+    "languageUz": "Uzbek",
+    "languageRu": "Russian",
+    "languageEn": "English",
+    "categories": "Preferred Categories",
+    "categoriesHint": "Select categories you're interested in (max 7)",
+    "save": "Save Changes",
+    "saveSuccess": "Profile updated successfully",
+    "saveError": "Failed to update profile"
+  },
+  "verification": {
+    "title": "Identity Verification",
+    "notVerified": "Not Verified",
+    "pending": "Verification Pending",
+    "approved": "Verified",
+    "rejected": "Verification Rejected",
+    "verifyWithOneId": "Verify with OneID",
+    "verifiedAt": "Verified on {date}",
+    "success": "Identity verified successfully!",
+    "description": "Verify your identity with OneID to unlock all platform features.",
+    "pendingDescription": "Your verification is being reviewed. This usually takes 1-2 business days.",
+    "rejectedDescription": "Your verification was rejected. You can try again."
+  },
+  "withdrawalAccounts": {
+    "title": "Withdrawal Accounts",
+    "addAccount": "Add Account",
+    "provider": "Provider",
+    "cardNumber": "Card Number",
+    "holderName": "Account Holder Name",
+    "primary": "Primary",
+    "setPrimary": "Set as Primary",
+    "delete": "Delete",
+    "deleteConfirm": "Are you sure you want to delete this account?",
+    "empty": "No withdrawal accounts yet. Add one to receive funds from your campaigns.",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "addSuccess": "Account added successfully",
+    "updateSuccess": "Account updated successfully",
+    "deleteSuccess": "Account deleted successfully",
+    "primarySuccess": "Primary account updated",
+    "error": "An error occurred"
   }
 }

@@ -11,17 +11,51 @@
     "back": "Назад",
     "next": "Далее",
     "submit": "Отправить",
-    "close": "Закрыть"
+    "close": "Закрыть",
+    "required": "Обязательно",
+    "optional": "Необязательно",
+    "confirm": "Подтвердить",
+    "yes": "Да",
+    "no": "Нет"
   },
   "auth": {
     "login": "Войти",
     "logout": "Выйти",
     "register": "Регистрация",
     "phoneNumber": "Номер телефона",
-    "enterPhone": "Введите номер +998",
+    "enterPhone": "Введите ваш номер телефона",
     "sendOtp": "Отправить код",
     "verifyOtp": "Подтвердить код",
-    "enterOtp": "Введите SMS код"
+    "enterOtp": "Введите 6-значный код, отправленный на номер",
+    "otpSent": "Код успешно отправлен",
+    "otpInvalid": "Неверный или просроченный код",
+    "otpResend": "Отправить код повторно",
+    "otpResendIn": "Повторная отправка через {seconds} сек",
+    "phonePrefix": "+998",
+    "phonePlaceholder": "XX XXX XX XX",
+    "phoneInvalid": "Пожалуйста, введите правильный 9-значный номер телефона",
+    "welcomeBack": "С возвращением",
+    "welcomeTitle": "Вход в Sahovat",
+    "welcomeSubtitle": "Введите номер телефона для начала",
+    "verifyTitle": "Подтвердите номер",
+    "verifySubtitle": "Мы отправили 6-значный код на номер",
+    "backToLogin": "Вернуться к входу",
+    "registerTitle": "Заполните профиль",
+    "registerSubtitle": "Расскажите немного о себе",
+    "displayName": "Имя",
+    "displayNamePlaceholder": "Введите ваше имя",
+    "dateOfBirth": "Дата рождения",
+    "gender": "Пол",
+    "genderMale": "Мужской",
+    "genderFemale": "Женский",
+    "preferredCategories": "Интересы",
+    "preferredCategoriesHint": "Выберите интересующие вас категории (макс 7)",
+    "completeRegistration": "Завершить регистрацию",
+    "continueToApp": "Продолжить",
+    "notAuthorized": "У вас нет доступа к этой странице",
+    "loginRequired": "Пожалуйста, войдите для продолжения",
+    "adminRequired": "Требуется доступ администратора",
+    "verificationRequired": "Требуется верификация аккаунта"
   },
   "campaigns": {
     "title": "Кампании",
@@ -47,10 +81,67 @@
     "dashboard": "Панель управления",
     "profile": "Профиль",
     "myDonations": "Мои пожертвования",
-    "myCampaigns": "Мои кампании"
+    "myCampaigns": "Мои кампании",
+    "withdrawalAccounts": "Счета для вывода"
   },
   "landing": {
     "hero": "Sahovat — Платформа благотворительности Узбекистана",
     "subtitle": "Помогайте нуждающимся, меняйте жизни"
+  },
+  "dashboard": {
+    "sidebar": {
+      "title": "Панель управления"
+    }
+  },
+  "profile": {
+    "title": "Профиль",
+    "editProfile": "Редактировать профиль",
+    "displayName": "Отображаемое имя",
+    "dateOfBirth": "Дата рождения",
+    "gender": "Пол",
+    "genderMale": "Мужской",
+    "genderFemale": "Женский",
+    "language": "Язык",
+    "languageUz": "Узбекский",
+    "languageRu": "Русский",
+    "languageEn": "Английский",
+    "categories": "Предпочитаемые категории",
+    "categoriesHint": "Выберите интересующие вас категории (макс 7)",
+    "save": "Сохранить изменения",
+    "saveSuccess": "Профиль успешно обновлён",
+    "saveError": "Не удалось обновить профиль"
+  },
+  "verification": {
+    "title": "Верификация личности",
+    "notVerified": "Не верифицирован",
+    "pending": "Ожидание верификации",
+    "approved": "Верифицирован",
+    "rejected": "Верификация отклонена",
+    "verifyWithOneId": "Верифицировать через OneID",
+    "verifiedAt": "Верифицирован {date}",
+    "success": "Личность успешно подтверждена!",
+    "description": "Подтвердите свою личность через OneID, чтобы разблокировать все функции платформы.",
+    "pendingDescription": "Ваша верификация находится на рассмотрении. Обычно это занимает 1-2 рабочих дня.",
+    "rejectedDescription": "Ваша верификация была отклонена. Вы можете попробовать снова."
+  },
+  "withdrawalAccounts": {
+    "title": "Счета для вывода",
+    "addAccount": "Добавить счёт",
+    "provider": "Провайдер",
+    "cardNumber": "Номер карты",
+    "holderName": "Имя владельца счёта",
+    "primary": "Основной",
+    "setPrimary": "Сделать основным",
+    "delete": "Удалить",
+    "deleteConfirm": "Вы уверены, что хотите удалить этот счёт?",
+    "empty": "У вас пока нет счетов для вывода. Добавьте один, чтобы получать средства от кампаний.",
+    "edit": "Редактировать",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "addSuccess": "Счёт успешно добавлен",
+    "updateSuccess": "Счёт успешно обновлён",
+    "deleteSuccess": "Счёт успешно удалён",
+    "primarySuccess": "Основной счёт обновлён",
+    "error": "Произошла ошибка"
   }
 }
