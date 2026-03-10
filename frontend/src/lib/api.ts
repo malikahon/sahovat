@@ -210,6 +210,158 @@ export const withdrawalAccountsApi = {
 };
 
 // ============================================================
+// CAMPAIGNS API (via BFF proxy routes)
+// ============================================================
+
+export const campaignsApi = {
+  async list(
+    query?: import('./types').CampaignListQuery,
+  ): Promise<import('./types').PaginatedResponse<import('./types').CampaignWithStats>> {
+    const params = new URLSearchParams();
+    if (query) {
+      for (const [key, value] of Object.entries(query)) {
+        if (value !== undefined && value !== null && value !== '') {
+          params.set(key, String(value));
+        }
+      }
+    }
+    const qs = params.toString();
+    const res = await fetch(`/api/campaigns${qs ? `?${qs}` : ''}`);
+    return res.json();
+  },
+
+  async get(id: string): Promise<{
+    success: boolean;
+    data?: { campaign: import('./types').CampaignWithStats };
+    error?: string;
+  }> {
+    const res = await fetch(`/api/campaigns/${id}`);
+    return res.json();
+  },
+
+  async create(
+    data: import('./types').CreateCampaignDto,
+  ): Promise<{
+    success: boolean;
+    data?: { campaign: import('./types').Campaign };
+    error?: string;
+  }> {
+    const res = await fetch('/api/campaigns', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  async update(
+    id: string,
+    data: import('./types').UpdateCampaignDto,
+  ): Promise<{
+    success: boolean;
+    data?: { campaign: import('./types').Campaign };
+    error?: string;
+  }> {
+    const res = await fetch(`/api/campaigns/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  async delete(id: string): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/campaigns/${id}`, {
+      method: 'DELETE',
+    });
+    return res.json();
+  },
+
+  async submit(id: string): Promise<{
+    success: boolean;
+    data?: { campaign: import('./types').Campaign };
+    error?: string;
+  }> {
+    const res = await fetch(`/api/campaigns/${id}/submit`, {
+      method: 'PUT',
+    });
+    return res.json();
+  },
+
+  async uploadCoverImage(
+    id: string,
+    file: File,
+  ): Promise<{
+    success: boolean;
+    data?: { campaign: import('./types').Campaign };
+    error?: string;
+  }> {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await fetch(`/api/campaigns/${id}/cover-image`, {
+      method: 'POST',
+      body: formData,
+    });
+    return res.json();
+  },
+
+  async listDocuments(id: string): Promise<{
+    success: boolean;
+    data?: { documents: import('./types').CampaignDocument[] };
+    error?: string;
+  }> {
+    const res = await fetch(`/api/campaigns/${id}/documents`);
+    return res.json();
+  },
+
+  async uploadDocument(
+    campaignId: string,
+    file: File,
+    documentType: import('./types').DocumentType,
+    notes?: string,
+  ): Promise<{
+    success: boolean;
+    data?: { document: import('./types').CampaignDocument };
+    error?: string;
+  }> {
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('document_type', documentType);
+    if (notes) formData.append('notes', notes);
+    const res = await fetch(`/api/campaigns/${campaignId}/documents`, {
+      method: 'POST',
+      body: formData,
+    });
+    return res.json();
+  },
+
+  async deleteDocument(
+    campaignId: string,
+    docId: string,
+  ): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/campaigns/${campaignId}/documents/${docId}`, {
+      method: 'DELETE',
+    });
+    return res.json();
+  },
+
+  async getStats(id: string): Promise<{
+    success: boolean;
+    data?: { stats: { total_donated: number; donor_count: number; net_donated: number } };
+    error?: string;
+  }> {
+    const res = await fetch(`/api/campaigns/${id}/stats`);
+    return res.json();
+  },
+};
+
+// ============================================================
 // GENERAL API CLIENT (for non-auth endpoints, to be used in later weeks)
 // ============================================================
 

@@ -8,6 +8,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
 import { withdrawalAccountsRouter } from './modules/withdrawals/withdrawal-accounts.routes.js';
+import { campaignsRouter } from './modules/campaigns/campaigns.routes.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -45,6 +46,7 @@ export function createApp(): express.Express {
   app.use('/api/auth', authRouter);
   app.use('/api/users', usersRouter);
   app.use('/api/withdrawal-accounts', withdrawalAccountsRouter);
+  app.use('/api/campaigns', campaignsRouter);
 
   // Global error handler (must be last)
   app.use(errorHandler);

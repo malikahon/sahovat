@@ -376,7 +376,7 @@ export interface CampaignListQuery extends PaginatedQuery {
   status?: CampaignStatus;
   region?: UzbekRegion;
   search?: string;
-  sort_by?: 'created_at' | 'goal_amount' | 'current_amount' | 'end_date';
+  sort_by?: 'created_at' | 'goal_amount' | 'current_amount' | 'end_date' | 'urgency';
   sort_order?: 'asc' | 'desc';
   creator_id?: string;
 }
