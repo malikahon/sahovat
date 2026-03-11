@@ -362,6 +362,134 @@ export const campaignsApi = {
 };
 
 // ============================================================
+// DONATIONS API (via BFF proxy routes)
+// ============================================================
+
+export const donationsApi = {
+  /**
+   * Request OTP for a donation > 100,000 UZS.
+   */
+  async requestOtp(
+    campaign_id: string,
+    amount: number,
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    const res = await fetch('/api/donations/request-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ campaign_id, amount }),
+    });
+    return res.json();
+  },
+
+  /**
+   * Verify OTP code for a high-value donation.
+   */
+  async verifyOtp(otp: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    const res = await fetch('/api/donations/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ otp }),
+    });
+    return res.json();
+  },
+
+  /**
+   * Initiate a donation. Returns pending donation record + PayMe checkout URL.
+   */
+  async initiate(data: import('./types').InitiateDonationDto): Promise<{
+    success: boolean;
+    data?: { donation: import('./types').Donation; checkout_url: string };
+    error?: string;
+  }> {
+    const res = await fetch('/api/donations/initiate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  /**
+   * Dev-only: Simulate PayMe payment completion by calling the webhook endpoint.
+   * Triggers the backend to mark the donation as completed.
+   */
+  async simulatePayment(
+    donationId: string,
+    amount: number,
+  ): Promise<{ success: boolean; error?: string }> {
+    const res = await fetch('/api/donations/webhook/payme', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        donation_id: donationId,
+        status: 'completed',
+        amount,
+        transaction_id: `mock_txn_${Date.now()}`,
+      }),
+    });
+    return res.json();
+  },
+
+  /**
+   * Get a single donation by ID.
+   */
+  async getById(id: string): Promise<{
+    success: boolean;
+    data?: import('./types').Donation;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/donations/${id}`);
+    return res.json();
+  },
+
+  /**
+   * List the current user's donations.
+   */
+  async listMy(query?: { page?: number; limit?: number }): Promise<{
+    success: boolean;
+    data?: import('./types').DonationWithCampaign[];
+    pagination?: { page: number; limit: number; total: number; total_pages: number };
+    error?: string;
+  }> {
+    const params = new URLSearchParams();
+    if (query?.page) params.set('page', String(query.page));
+    if (query?.limit) params.set('limit', String(query.limit));
+    const qs = params.toString();
+    const res = await fetch(`/api/donations/my${qs ? `?${qs}` : ''}`);
+    return res.json();
+  },
+
+  /**
+   * List donations for a specific campaign.
+   */
+  async listByCampaign(
+    campaignId: string,
+    query?: { page?: number; limit?: number },
+  ): Promise<{
+    success: boolean;
+    data?: import('./types').Donation[];
+    pagination?: { page: number; limit: number; total: number; total_pages: number };
+    error?: string;
+  }> {
+    const params = new URLSearchParams();
+    if (query?.page) params.set('page', String(query.page));
+    if (query?.limit) params.set('limit', String(query.limit));
+    const qs = params.toString();
+    const res = await fetch(`/api/donations/campaign/${campaignId}${qs ? `?${qs}` : ''}`);
+    return res.json();
+  },
+
+  /**
+   * Download a donation receipt PDF. Returns a Blob for browser download.
+   */
+  async downloadReceipt(id: string): Promise<Blob | null> {
+    const res = await fetch(`/api/donations/${id}/receipt`);
+    if (!res.ok) return null;
+    return res.blob();
+  },
+};
+
+// ============================================================
 // GENERAL API CLIENT (for non-auth endpoints, to be used in later weeks)
 // ============================================================
 
