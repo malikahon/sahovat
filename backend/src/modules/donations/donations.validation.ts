@@ -65,7 +65,9 @@ export const donationOtpRequestSchema = {
 
 export const donationOtpVerifySchema = {
   body: z.object({
-    donation_id: z.string().uuid('Invalid donation ID'),
+    // donation_id is optional — OTP is verified by user identity (userId + phone in Redis),
+    // not tied to a specific donation ID at verify time.
+    donation_id: z.string().uuid('Invalid donation ID').optional(),
     otp: z.string().regex(/^\d{6}$/, 'OTP must be 6 digits'),
   }),
 };
