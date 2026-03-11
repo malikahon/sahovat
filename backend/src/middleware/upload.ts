@@ -89,3 +89,6 @@ export const uploadAvatar = avatarUpload.single('avatar');
 
 /** Single KYC document — max 10 MB, image + PDF. */
 export const uploadKycDocument = kycDocumentUpload.single('document');
+
+/** Single campaign document — max 10 MB, image + PDF. */
+export const uploadCampaignDocument = campaignDocumentsUpload.single('document');

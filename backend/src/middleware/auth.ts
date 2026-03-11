@@ -61,6 +61,43 @@ export async function requireAuth(
 }
 
 /**
+ * Optionally extracts and verifies the access token. If valid, attaches
+ * the user to `req.user`. If missing or invalid, proceeds without error.
+ * Use this for public endpoints that behave differently for logged-in users.
+ */
+export async function optionalAuth(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const token = extractBearerToken(req);
+
+  if (token) {
+    try {
+      const payload = verifyAccessToken(token);
+      const user = await getUserById(payload.userId);
+
+      if (user) {
+        const authenticatedUser: AuthenticatedUser = {
+          id: user.id,
+          phone_number: user.phone_number,
+          display_name: user.display_name,
+          is_verified: user.is_verified,
+          is_admin: user.is_admin,
+          verification_status: user.verification_status,
+        };
+
+        (req as AuthenticatedRequest).user = authenticatedUser;
+      }
+    } catch {
+      // Invalid token — proceed as unauthenticated
+    }
+  }
+
+  next();
+}
+
+/**
  * Requires the authenticated user to have verification_status = 'approved'.
  * Must be used AFTER requireAuth.
  *
