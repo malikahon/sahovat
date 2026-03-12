@@ -160,9 +160,6 @@ class DonationReceiptPdfService implements PdfService {
       // --------------------------------------------------------
       doc.font('Helvetica-Bold').fontSize(12).text('Financial Summary');
       doc.moveDown(0.3);
-      doc
-        .font('Helvetica')
-        .fontSize(10)
       const feePercent = donation.amount > 0
         ? ((donation.platform_fee / donation.amount) * 100).toFixed(1).replace(/\.0$/, '')
         : '0';

@@ -522,6 +522,208 @@ export interface UpdateRecurringDonationDto {
 }
 
 // ============================================================
+// ADMIN RESPONSE TYPES
+// ============================================================
+
+export interface AdminUserListItem {
+  id: string;
+  phone_number: string;
+  display_name: string | null;
+  is_verified: boolean;
+  is_admin: boolean;
+  is_banned: boolean;
+  verification_status: VerificationStatus;
+  language_preference: 'uz' | 'ru' | 'en';
+  created_at: string;
+  campaign_count: number;
+  total_donated: number;
+}
+
+export interface AdminUserDetail extends AdminUserListItem {
+  date_of_birth: string | null;
+  gender: 'male' | 'female' | null;
+  preferred_categories: CampaignCategory[];
+  oneid_id: string | null;
+  oneid_verified_at: string | null;
+  updated_at: string;
+}
+
+export interface AdminCampaignListItem {
+  id: string;
+  title: string;
+  category: CampaignCategory;
+  status: CampaignStatus;
+  goal_amount: number;
+  current_amount: number;
+  is_verified: boolean;
+  region: UzbekRegion | null;
+  end_date: string | null;
+  cover_image_url: string | null;
+  created_at: string;
+  updated_at: string;
+  creator_id: string;
+  creator_display_name: string | null;
+  creator_phone: string;
+  donor_count: number;
+  document_count: number;
+}
+
+export interface AdminCampaignDetail extends AdminCampaignListItem {
+  description: string;
+  documents: CampaignDocument[];
+  creator_verification_status: VerificationStatus;
+  admin_notes: string | null;
+}
+
+export interface AdminAuditLogEntry {
+  id: string;
+  admin_id: string;
+  admin_display_name: string | null;
+  admin_phone: string;
+  action_type: string;
+  target_type: string;
+  target_id: string;
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AdminSettingsResponse {
+  id: string;
+  master_card_number_masked: string | null;
+  master_card_holder_name: string | null;
+  platform_fee_percentage: number;
+  updated_at: string | null;
+  updated_by: string | null;
+  updated_by_name: string | null;
+}
+
+export interface AdminDashboardStatsResponse {
+  total_users: number;
+  total_campaigns: number;
+  active_campaigns: number;
+  total_donations_amount: number;
+  total_donations_count: number;
+  total_withdrawals_amount: number;
+  pending_withdrawals_count: number;
+  pending_campaigns_count: number;
+  total_platform_fees: number;
+}
+
+export interface DonationOverTimeEntry {
+  date: string;
+  count: number;
+  amount: number;
+}
+
+export interface DonationByCategoryEntry {
+  category: CampaignCategory;
+  count: number;
+  amount: number;
+}
+
+export interface CampaignEscrowBalance {
+  campaign_id: string;
+  campaign_title: string;
+  total_donated: number;
+  total_fees: number;
+  total_withdrawn: number;
+  available_balance: number;
+}
+
+export interface EscrowSummary {
+  total_escrow_balance: number;
+  total_platform_revenue: number;
+  total_withdrawn: number;
+  campaign_balances: CampaignEscrowBalance[];
+}
+
+// ============================================================
+// WITHDRAWAL RESPONSE TYPES (Week 10)
+// ============================================================
+
+export interface WithdrawalRequest {
+  id: string;
+  campaign_id: string;
+  organizer_id: string;
+  withdrawal_account_id: string;
+  amount: number;
+  platform_fee: number;
+  net_amount: number;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  card_number_masked: string;
+  cardholder_name: string;
+  admin_notes: string | null;
+  transaction_reference: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  completed_at: string | null;
+  campaign_title: string;
+  fee_percentage?: number;
+}
+
+export interface CampaignWithBalance {
+  id: string;
+  title: string;
+  status: string;
+  category: string;
+  goal_amount: number;
+  current_amount: number;
+  cover_image_url: string | null;
+  created_at: string;
+  end_date: string | null;
+  donor_count: number;
+  balance: {
+    campaign_id: string;
+    total_donated: number;
+    total_withdrawn: number;
+    total_fees: number;
+    available_balance: number;
+    pending_withdrawals: number;
+  };
+}
+
+export interface OrganizerDashboard {
+  campaigns: CampaignWithBalance[];
+  totals: {
+    total_raised: number;
+    total_withdrawn: number;
+    total_available: number;
+    total_pending_withdrawals: number;
+  };
+}
+
+export interface AdminWithdrawalListItem {
+  id: string;
+  campaign_id: string;
+  organizer_id: string;
+  withdrawal_account_id: string;
+  amount: number;
+  platform_fee: number;
+  net_amount: number;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  card_number_masked: string;
+  cardholder_name: string;
+  admin_notes: string | null;
+  transaction_reference: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  completed_at: string | null;
+  campaign_title: string;
+  organizer_display_name: string | null;
+  organizer_phone: string;
+}
+
+export interface AdminWithdrawalDetail extends AdminWithdrawalListItem {
+  goal_amount: number;
+  current_amount: number;
+  organizer_verification_status: string;
+  organizer_oneid_id: string | null;
+  organizer_oneid_verified_at: string | null;
+  organizer_legal_name: string | null;
+  name_match_note: string;
+}
+
+// ============================================================
 // FRONTEND-ONLY TYPES
 // ============================================================
 

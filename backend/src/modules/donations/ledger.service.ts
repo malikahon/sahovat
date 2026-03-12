@@ -28,22 +28,22 @@ export async function getCampaignBalance(
        COALESCE((
          SELECT SUM(net_amount)
          FROM donations
-         WHERE campaign_id = $1 AND status = 'completed'
+         WHERE campaign_id = $1::uuid AND status = 'completed'
        ), 0)                                                AS total_donated,
        COALESCE((
          SELECT SUM(net_amount)
          FROM withdrawals
-         WHERE campaign_id = $1 AND status = 'completed'
+         WHERE campaign_id = $1::uuid AND status = 'completed'
        ), 0)                                                AS total_withdrawn,
        COALESCE((
          SELECT SUM(platform_fee)
          FROM donations
-         WHERE campaign_id = $1 AND status = 'completed'
+         WHERE campaign_id = $1::uuid AND status = 'completed'
        ), 0)                                                AS total_fees,
        COALESCE((
          SELECT SUM(amount)
          FROM withdrawals
-         WHERE campaign_id = $1 AND status IN ('pending', 'approved')
+         WHERE campaign_id = $1::uuid AND status IN ('pending', 'approved')
        ), 0)                                                AS pending_withdrawals`,
     [campaignId],
   );

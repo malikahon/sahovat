@@ -230,6 +230,7 @@ export interface AdminDashboardStats {
   pending_withdrawals_count: number;
   pending_campaigns_count: number;
   total_platform_fees: number;
+  total_escrow_balance: number;
 }
 
 export interface AdminUpdateSettingsDto {

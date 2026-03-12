@@ -12,7 +12,7 @@ import type { UserRow, SafeUser } from './users.types.js';
 
 const USER_COLUMNS = `id, phone_number, display_name, password_hash,
   date_of_birth, gender, preferred_categories,
-  is_verified, is_admin, verification_status,
+  is_verified, is_admin, is_banned, verification_status,
   oneid_id, oneid_verified_at, language_preference,
   created_at, updated_at`;
 

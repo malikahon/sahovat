@@ -125,7 +125,7 @@ export async function verifyOtpAndLogin(
   const result = await query(
     `SELECT id, phone_number, display_name, password_hash,
             date_of_birth, gender, preferred_categories,
-            is_verified, is_admin, verification_status,
+            is_verified, is_admin, is_banned, verification_status,
             oneid_id, oneid_verified_at, language_preference,
             created_at, updated_at
      FROM users WHERE phone_number = $1`,
@@ -249,7 +249,7 @@ export async function adminLogin(
   const result = await query(
     `SELECT id, phone_number, display_name, password_hash,
             date_of_birth, gender, preferred_categories,
-            is_verified, is_admin, verification_status,
+            is_verified, is_admin, is_banned, verification_status,
             oneid_id, oneid_verified_at, language_preference,
             created_at, updated_at
      FROM users WHERE phone_number = $1`,
@@ -337,7 +337,7 @@ export async function getUserById(userId: string): Promise<SafeUser | null> {
   const result = await query(
     `SELECT id, phone_number, display_name, password_hash,
             date_of_birth, gender, preferred_categories,
-            is_verified, is_admin, verification_status,
+            is_verified, is_admin, is_banned, verification_status,
             oneid_id, oneid_verified_at, language_preference,
             created_at, updated_at
      FROM users WHERE id = $1`,

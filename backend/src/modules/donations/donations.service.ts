@@ -72,6 +72,10 @@ export async function requestDonationOtp(
 
   const campaign = campaignResult.rows[0] as { id: string; status: string };
 
+  if (campaign.status === CampaignStatus.FROZEN) {
+    throw new ValidationError('This campaign has been frozen by an administrator');
+  }
+
   if (campaign.status !== CampaignStatus.ACTIVE) {
     throw new ValidationError('Campaign is not active');
   }
@@ -141,6 +145,10 @@ export async function initiateDonation(
   }
 
   const campaign = campaignResult.rows[0] as { id: string; status: string };
+
+  if (campaign.status === CampaignStatus.FROZEN) {
+    throw new ValidationError('This campaign has been frozen by an administrator');
+  }
 
   if (campaign.status !== CampaignStatus.ACTIVE) {
     throw new ValidationError('Campaign is not active');
@@ -328,7 +336,7 @@ export async function confirmDonation(
 
         console.log(`[Sahovat] Receipt generated for donation ${donationId}`);
       } catch (receiptErr) {
-        console.log(
+        console.error(
           `[Sahovat] Failed to generate receipt for donation ${donationId}:`,
           receiptErr,
         );
