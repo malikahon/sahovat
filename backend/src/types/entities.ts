@@ -114,6 +114,7 @@ export interface User {
   preferred_categories: CampaignCategory[];
   is_verified: boolean;
   is_admin: boolean;
+  is_banned: boolean;
   verification_status: VerificationStatus;
   oneid_id: string | null;
   oneid_verified_at: string | null;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -29,6 +29,7 @@ import { CampaignProgressBar } from '@/components/campaign/CampaignProgressBar';
 import { CampaignStatusBadge } from '@/components/campaign/CampaignStatusBadge';
 import { DonationBottomSheet } from '@/components/donation/DonationBottomSheet';
 import { useAuth } from '@/hooks/useAuth';
+import { useEvents } from '@/hooks/useEvents';
 
 // ============================================================
 // Helpers
@@ -211,9 +212,17 @@ export default function CampaignDetailPage() {
   const t = useTranslations('campaigns');
   const tDonations = useTranslations('donations');
   const { user } = useAuth();
+  const { trackView, trackShare, trackDonationInitiated } = useEvents();
 
   const [shareCopied, setShareCopied] = useState(false);
   const [donationSheetOpen, setDonationSheetOpen] = useState(false);
+
+  // Track campaign view with time-on-page (Week 11.5)
+  useEffect(() => {
+    if (!id) return;
+    const cleanup = trackView(id);
+    return cleanup;
+  }, [id, trackView]);
 
   const {
     data: campaignData,
@@ -255,6 +264,7 @@ export default function CampaignDetailPage() {
     try {
       await navigator.clipboard.writeText(window.location.href);
       setShareCopied(true);
+      trackShare(id);
       setTimeout(() => setShareCopied(false), 2000);
     } catch {
       // Fallback: do nothing
@@ -430,6 +440,7 @@ export default function CampaignDetailPage() {
                         window.location.href = '/login';
                         return;
                       }
+                      trackDonationInitiated(id);
                       setDonationSheetOpen(true);
                     }}
                   >

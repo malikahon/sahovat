@@ -145,14 +145,17 @@ CREATE TABLE withdrawals (
   cardholder_name VARCHAR(100) NOT NULL,
   admin_notes TEXT,
   transaction_reference VARCHAR(255),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  reviewed_at TIMESTAMPTZ,
-  completed_at TIMESTAMPTZ
-);
-
-CREATE INDEX idx_withdrawals_campaign ON withdrawals(campaign_id);
-CREATE INDEX idx_withdrawals_organizer ON withdrawals(organizer_id);
-CREATE INDEX idx_withdrawals_status ON withdrawals(status);
+   created_at TIMESTAMPTZ DEFAULT NOW(),
+   reviewed_at TIMESTAMPTZ,
+   completed_at TIMESTAMPTZ,
+   updated_at TIMESTAMPTZ DEFAULT NOW()
+ );
+ 
+ CREATE INDEX idx_withdrawals_campaign ON withdrawals(campaign_id);
+ CREATE INDEX idx_withdrawals_organizer ON withdrawals(organizer_id);
+ CREATE INDEX idx_withdrawals_status ON withdrawals(status);
+ CREATE TRIGGER set_updated_at_withdrawals
+   BEFORE UPDATE ON withdrawals FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
 
 -- ============================================================
 -- PLATFORM FEES

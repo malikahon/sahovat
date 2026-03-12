@@ -4,12 +4,17 @@ import cors from 'cors';
 import { env } from './config/env.js';
 import { storagePaths } from './config/storage.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
+import { requireAuth, requireAdmin } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
 import { withdrawalAccountsRouter } from './modules/withdrawals/withdrawal-accounts.routes.js';
+import { withdrawalsRouter } from './modules/withdrawals/withdrawals.routes.js';
 import { campaignsRouter } from './modules/campaigns/campaigns.routes.js';
 import { donationsRouter } from './modules/donations/donations.routes.js';
+import { adminRouter } from './modules/admin/admin.routes.js';
+import { eventsRouter } from './modules/events/events.routes.js';
+import { feedRouter } from './modules/feed/feed.routes.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -47,8 +52,12 @@ export function createApp(): express.Express {
   app.use('/api/auth', authRouter);
   app.use('/api/users', usersRouter);
   app.use('/api/withdrawal-accounts', withdrawalAccountsRouter);
+  app.use('/api/withdrawals', withdrawalsRouter);
   app.use('/api/campaigns', campaignsRouter);
   app.use('/api/donations', donationsRouter);
+  app.use('/api/events', eventsRouter);
+  app.use('/api/feed', feedRouter);
+  app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
 
   // Global error handler (must be last)
   app.use(errorHandler);

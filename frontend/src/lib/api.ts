@@ -490,6 +490,399 @@ export const donationsApi = {
 };
 
 // ============================================================
+// WITHDRAWALS API (organizer — via BFF proxy routes)
+// ============================================================
+
+export const withdrawalsApi = {
+  /**
+   * GET /api/withdrawals/dashboard
+   * Returns per-campaign stats + withdrawal history for the organizer.
+   */
+  async getDashboard(): Promise<{
+    success: boolean;
+    data?: import('./types').OrganizerDashboard;
+    error?: string;
+  }> {
+    const res = await fetch('/api/withdrawals/dashboard');
+    if (res.status === 401) return { success: false, error: 'Not authenticated' };
+    return res.json();
+  },
+
+  /**
+   * GET /api/withdrawals/my
+   */
+  async listMy(query?: {
+    page?: number;
+    limit?: number;
+    campaign_id?: string;
+    status?: string;
+  }): Promise<{
+    success: boolean;
+    withdrawals?: import('./types').WithdrawalRequest[];
+    pagination?: { page: number; limit: number; total: number; total_pages: number };
+    error?: string;
+  }> {
+    const params = new URLSearchParams();
+    if (query) {
+      for (const [k, v] of Object.entries(query)) {
+        if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
+      }
+    }
+    const qs = params.toString();
+    const res = await fetch(`/api/withdrawals/my${qs ? `?${qs}` : ''}`);
+    if (res.status === 401) return { success: false, error: 'Not authenticated' };
+    return res.json();
+  },
+
+  /**
+   * GET /api/withdrawals/campaigns/:id/balance
+   */
+  async getCampaignBalance(campaignId: string): Promise<{
+    success: boolean;
+    data?: import('./types').CampaignWithBalance['balance'];
+    error?: string;
+  }> {
+    const res = await fetch(`/api/withdrawals/campaigns/${campaignId}/balance`);
+    if (res.status === 401) return { success: false, error: 'Not authenticated' };
+    return res.json();
+  },
+
+  /**
+   * POST /api/withdrawals
+   */
+  async request(data: {
+    campaign_id: string;
+    withdrawal_account_id: string;
+    amount: number;
+  }): Promise<{
+    success: boolean;
+    data?: { withdrawal: import('./types').WithdrawalRequest };
+    message?: string;
+    error?: string;
+  }> {
+    const res = await fetch('/api/withdrawals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+};
+
+// ============================================================
+// ADMIN API (via BFF proxy routes — admin-only)
+// ============================================================
+
+export const adminApi = {
+  // ---- Stats ----
+  async getStats(): Promise<{
+    success: boolean;
+    data?: import('./types').AdminDashboardStatsResponse;
+    error?: string;
+  }> {
+    const res = await fetch('/api/admin/stats');
+    return res.json();
+  },
+
+  async getDonationsOverTime(days = 30): Promise<{
+    success: boolean;
+    data?: import('./types').DonationOverTimeEntry[];
+    error?: string;
+  }> {
+    const res = await fetch(`/api/admin/stats/donations-over-time?days=${days}`);
+    return res.json();
+  },
+
+  async getDonationsByCategory(): Promise<{
+    success: boolean;
+    data?: import('./types').DonationByCategoryEntry[];
+    error?: string;
+  }> {
+    const res = await fetch('/api/admin/stats/donations-by-category');
+    return res.json();
+  },
+
+  // ---- Users ----
+  async listUsers(query?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    is_admin?: boolean;
+    is_banned?: boolean;
+    verification_status?: string;
+  }): Promise<{
+    success: boolean;
+    users?: import('./types').AdminUserListItem[];
+    pagination?: { page: number; limit: number; total: number; total_pages: number };
+    error?: string;
+  }> {
+    const params = new URLSearchParams();
+    if (query) {
+      for (const [k, v] of Object.entries(query)) {
+        if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
+      }
+    }
+    const qs = params.toString();
+    const res = await fetch(`/api/admin/users${qs ? `?${qs}` : ''}`);
+    return res.json();
+  },
+
+  async getUser(id: string): Promise<{
+    success: boolean;
+    data?: import('./types').AdminUserDetail;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/admin/users/${id}`);
+    return res.json();
+  },
+
+  async toggleAdmin(id: string, is_admin: boolean): Promise<{
+    success: boolean;
+    message?: string;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/admin/users/${id}/admin`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_admin }),
+    });
+    return res.json();
+  },
+
+  async toggleBan(id: string, is_banned: boolean, reason?: string): Promise<{
+    success: boolean;
+    message?: string;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/admin/users/${id}/ban`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_banned, reason }),
+    });
+    return res.json();
+  },
+
+  // ---- Campaigns ----
+  async listCampaigns(query?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    category?: string;
+    search?: string;
+    is_verified?: boolean;
+  }): Promise<{
+    success: boolean;
+    campaigns?: import('./types').AdminCampaignListItem[];
+    pagination?: { page: number; limit: number; total: number; total_pages: number };
+    error?: string;
+  }> {
+    const params = new URLSearchParams();
+    if (query) {
+      for (const [k, v] of Object.entries(query)) {
+        if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
+      }
+    }
+    const qs = params.toString();
+    const res = await fetch(`/api/admin/campaigns${qs ? `?${qs}` : ''}`);
+    return res.json();
+  },
+
+  async getCampaign(id: string): Promise<{
+    success: boolean;
+    data?: import('./types').AdminCampaignDetail;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/admin/campaigns/${id}`);
+    return res.json();
+  },
+
+  async verifyCampaign(id: string, verified: boolean, admin_notes?: string): Promise<{
+    success: boolean;
+    message?: string;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/admin/campaigns/${id}/verify`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verified, admin_notes }),
+    });
+    return res.json();
+  },
+
+  async updateCampaignStatus(
+    id: string,
+    status: string,
+    admin_notes?: string,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/admin/campaigns/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, admin_notes }),
+    });
+    return res.json();
+  },
+
+  // ---- Audit Log ----
+  async getAuditLog(query?: {
+    page?: number;
+    limit?: number;
+    action_type?: string;
+    target_type?: string;
+    admin_id?: string;
+    from_date?: string;
+    to_date?: string;
+  }): Promise<{
+    success: boolean;
+    actions?: import('./types').AdminAuditLogEntry[];
+    pagination?: { page: number; limit: number; total: number; total_pages: number };
+    error?: string;
+  }> {
+    const params = new URLSearchParams();
+    if (query) {
+      for (const [k, v] of Object.entries(query)) {
+        if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
+      }
+    }
+    const qs = params.toString();
+    const res = await fetch(`/api/admin/audit-log${qs ? `?${qs}` : ''}`);
+    return res.json();
+  },
+
+  // ---- Settings ----
+  async getSettings(): Promise<{
+    success: boolean;
+    data?: import('./types').AdminSettingsResponse;
+    error?: string;
+  }> {
+    const res = await fetch('/api/admin/settings');
+    return res.json();
+  },
+
+  async updateSettings(data: import('./types').AdminUpdateSettingsDto): Promise<{
+    success: boolean;
+    message?: string;
+    error?: string;
+  }> {
+    const res = await fetch('/api/admin/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  // ---- Escrow ----
+  async getEscrow(): Promise<{
+    success: boolean;
+    data?: import('./types').EscrowSummary;
+    error?: string;
+  }> {
+    const res = await fetch('/api/admin/escrow');
+    return res.json();
+  },
+
+  // ---- Withdrawal Queue (10.3 / 10.8) ----
+  async listWithdrawals(query?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    campaign_id?: string;
+  }): Promise<{
+    success: boolean;
+    withdrawals?: import('./types').AdminWithdrawalListItem[];
+    pagination?: { page: number; limit: number; total: number; total_pages: number };
+    error?: string;
+  }> {
+    const params = new URLSearchParams();
+    if (query) {
+      for (const [k, v] of Object.entries(query)) {
+        if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
+      }
+    }
+    const qs = params.toString();
+    const res = await fetch(`/api/admin/withdrawals${qs ? `?${qs}` : ''}`);
+    return res.json();
+  },
+
+  async getWithdrawal(id: string): Promise<{
+    success: boolean;
+    data?: import('./types').AdminWithdrawalDetail;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/admin/withdrawals/${id}`);
+    return res.json();
+  },
+
+  async reviewWithdrawal(
+    id: string,
+    action: 'approve' | 'reject',
+    admin_notes?: string,
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    const res = await fetch(`/api/admin/withdrawals/${id}/review`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, admin_notes }),
+    });
+    return res.json();
+  },
+
+  async completeWithdrawal(
+    id: string,
+    transaction_reference: string,
+    admin_notes?: string,
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    const res = await fetch(`/api/admin/withdrawals/${id}/complete`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transaction_reference, admin_notes }),
+    });
+    return res.json();
+  },
+};
+
+// ============================================================
+// EVENTS API (Week 11 — behavioral event tracking)
+// ============================================================
+
+export const eventsApi = {
+  async track(event: {
+    event_type: string;
+    campaign_id?: string;
+    session_id: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<{ success: boolean; data?: { event_id: string } }> {
+    const res = await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event),
+    });
+    return res.json();
+  },
+};
+
+// ============================================================
+// FEED API (Week 11 — personalized campaign feed)
+// ============================================================
+
+export const feedApi = {
+  async getPersonalized(query?: {
+    page?: number;
+    limit?: number;
+  }): Promise<import('./types').PaginatedResponse<import('./types').CampaignWithStats>> {
+    const params = new URLSearchParams();
+    if (query?.page) params.set('page', String(query.page));
+    if (query?.limit) params.set('limit', String(query.limit));
+    const qs = params.toString();
+    const res = await fetch(`/api/feed${qs ? `?${qs}` : ''}`);
+    return res.json();
+  },
+};
+
+// ============================================================
 // GENERAL API CLIENT (for non-auth endpoints, to be used in later weeks)
 // ============================================================
 
