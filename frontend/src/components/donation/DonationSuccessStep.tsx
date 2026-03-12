@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { CheckCircle, Download, Heart } from 'lucide-react';
+import { CheckCircle, Download, Heart, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { donationsApi } from '@/lib/api';
 import { formatUZS } from '@/lib/formatters';
@@ -12,6 +12,8 @@ interface Props {
   donationId: string;
   campaignTitle: string;
   amount: number;
+  isRecurring?: boolean;
+  recurringFrequency?: 'weekly' | 'monthly' | null;
   onDonateAgain: () => void;
   onClose: () => void;
 }
@@ -20,6 +22,8 @@ export function DonationSuccessStep({
   donationId,
   campaignTitle,
   amount,
+  isRecurring,
+  recurringFrequency,
   onDonateAgain,
   onClose,
 }: Props) {
@@ -66,13 +70,20 @@ export function DonationSuccessStep({
       </div>
 
       {/* Summary */}
-      <div className="w-full rounded-xl border border-border bg-muted/30 p-4 text-sm">
+      <div className="w-full rounded-xl border border-border bg-muted/30 p-4 text-sm space-y-2">
         <div className="flex items-center justify-center gap-2 text-foreground">
           <Heart className="size-4 text-red-500 fill-red-500" />
           <span>
             {t('youDonated', { amount: formatUZS(amount), campaign: campaignTitle })}
           </span>
         </div>
+
+        {isRecurring && recurringFrequency && (
+          <div className="flex items-center justify-center gap-2 text-primary text-xs font-medium">
+            <Repeat className="size-3.5" />
+            <span>{t('recurringSetup')}</span>
+          </div>
+        )}
       </div>
 
       {downloadError && (
@@ -98,6 +109,17 @@ export function DonationSuccessStep({
         >
           {t('viewMyDonations')}
         </Button>
+
+        {isRecurring && (
+          <Button
+            variant="ghost"
+            className="w-full gap-2"
+            render={<Link href="/recurring" onClick={onClose} />}
+          >
+            <Repeat className="size-4" />
+            {t('manageRecurring')}
+          </Button>
+        )}
 
         <div className="flex gap-2">
           <Button variant="outline" className="flex-1" onClick={onDonateAgain}>

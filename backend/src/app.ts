@@ -15,6 +15,7 @@ import { donationsRouter } from './modules/donations/donations.routes.js';
 import { adminRouter } from './modules/admin/admin.routes.js';
 import { eventsRouter } from './modules/events/events.routes.js';
 import { feedRouter } from './modules/feed/feed.routes.js';
+import { recurringRouter } from './modules/recurring/recurring.routes.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -57,6 +58,7 @@ export function createApp(): express.Express {
   app.use('/api/donations', donationsRouter);
   app.use('/api/events', eventsRouter);
   app.use('/api/feed', feedRouter);
+  app.use('/api/recurring-donations', requireAuth, recurringRouter);
   app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
 
   // Global error handler (must be last)

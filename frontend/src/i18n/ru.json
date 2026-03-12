@@ -217,6 +217,7 @@
      "profile": "Профиль",
      "myDonations": "Мои пожертвования",
      "myCampaigns": "Мои кампании",
+     "recurringDonations": "Регулярные пожертвования",
      "withdrawalAccounts": "Счета для вывода",
      "withdrawals": "Выводы средств"
    },
@@ -288,7 +289,15 @@
       "paymentFailed": "Оплата не прошла. Попробуйте снова.",
       "otpFailed": "Не удалось отправить код подтверждения.",
       "receiptFailed": "Не удалось скачать квитанцию."
-    }
+    },
+    "makeRecurring": "Сделать регулярным",
+    "recurringFrequency": "Повторение",
+    "recurringWeekly": "Еженедельно",
+    "recurringMonthly": "Ежемесячно",
+    "recurringConfirm": "Будет повторяться {frequency}",
+    "recurringSetup": "Регулярное пожертвование настроено!",
+    "recurringNextCharge": "Следующее списание: {date}",
+    "manageRecurring": "Управление регулярными"
   },
   "landing": {
     "hero": "Помогайте нуждающимся",
@@ -606,7 +615,56 @@
        "allStatuses": "Все статусы",
        "requestedAt": "Запрошено",
        "reviewedAt": "Рассмотрено",
-       "completedAt": "Выплачено"
-     }
-   }
+        "completedAt": "Выплачено"
+      }
+   },
+  "recurring": {
+    "title": "Регулярные пожертвования",
+    "subtitle": "Управляйте вашими автоматическими пожертвованиями",
+    "activeSubscriptions": "Активные подписки",
+    "monthlyTotal": "Месячный эквивалент",
+    "amount": "Сумма",
+    "frequency": "Частота",
+    "weekly": "Еженедельно",
+    "monthly": "Ежемесячно",
+    "nextCharge": "Следующее списание",
+    "lastCharge": "Последнее списание",
+    "perWeek": "/ неделю",
+    "perMonth": "/ месяц",
+    "status": {
+      "active": "Активно",
+      "paused": "Приостановлено",
+      "cancelled": "Отменено",
+      "failed": "Ошибка"
+    },
+    "actions": {
+      "pause": "Приостановить",
+      "resume": "Возобновить",
+      "cancel": "Отменить",
+      "delete": "Удалить"
+    },
+    "confirmPause": "Приостановить это регулярное пожертвование?",
+    "confirmCancel": "Отменить это регулярное пожертвование? Это действие нельзя отменить.",
+    "confirmResume": "Возобновить это регулярное пожертвование?",
+    "pauseSuccess": "Регулярное пожертвование приостановлено",
+    "resumeSuccess": "Регулярное пожертвование возобновлено",
+    "cancelSuccess": "Регулярное пожертвование отменено",
+    "deleteSuccess": "Регулярное пожертвование удалено",
+    "failureWarning": "Ошибка {count} раз(а)",
+    "empty": "Нет регулярных пожертвований",
+    "emptyDescription": "Настройте регулярное пожертвование на странице любой кампании для автоматической поддержки.",
+    "browseCampaigns": "Обзор кампаний",
+    "categoryBased": "Категория: {category}"
+  },
+  "impact": {
+    "title": "Ваш вклад",
+    "totalDonated": "Всего пожертвовано",
+    "campaignsSupported": "Кампаний поддержано",
+    "streak": "Серия пожертвований",
+    "streakWeeks": "серия {count} нед.",
+    "noStreak": "Серии пока нет",
+    "totalDonations": "Всего пожертвований",
+    "activeRecurring": "Активных регулярных",
+    "monthlyRecurring": "Ежемесячно регулярных"
+  }
 }

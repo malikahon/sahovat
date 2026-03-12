@@ -217,6 +217,7 @@
      "profile": "Profil",
      "myDonations": "Mening xayriyalarim",
      "myCampaigns": "Mening kampaniyalarim",
+     "recurringDonations": "Doimiy xayriyalar",
      "withdrawalAccounts": "Hisob raqamlar",
      "withdrawals": "Pul yechish"
    },
@@ -288,7 +289,15 @@
       "paymentFailed": "To'lov muvaffaqiyatsiz. Qaytadan urinib ko'ring.",
       "otpFailed": "Tasdiqlash kodi yuborishda xatolik.",
       "receiptFailed": "Kvitansiyani yuklab olishda xatolik."
-    }
+    },
+    "makeRecurring": "Doimiy qilish",
+    "recurringFrequency": "Takrorlash",
+    "recurringWeekly": "Haftalik",
+    "recurringMonthly": "Oylik",
+    "recurringConfirm": "Bu {frequency} takrorlanadi",
+    "recurringSetup": "Doimiy xayriya o'rnatildi!",
+    "recurringNextCharge": "Keyingi to'lov: {date}",
+    "manageRecurring": "Doimiy xayriyalarni boshqarish"
   },
   "landing": {
     "hero": "Ehtiyojmandlarga yordam bering",
@@ -606,7 +615,56 @@
        "allStatuses": "Barcha holatlar",
        "requestedAt": "So'raldi",
        "reviewedAt": "Ko'rib chiqildi",
-       "completedAt": "To'landi"
-     }
-   }
+        "completedAt": "To'landi"
+      }
+   },
+  "recurring": {
+    "title": "Doimiy xayriyalar",
+    "subtitle": "Avtomatik xayriya obunalaringizni boshqaring",
+    "activeSubscriptions": "Faol obunalar",
+    "monthlyTotal": "Oylik ekvivalent",
+    "amount": "Miqdor",
+    "frequency": "Chastota",
+    "weekly": "Haftalik",
+    "monthly": "Oylik",
+    "nextCharge": "Keyingi to'lov",
+    "lastCharge": "Oxirgi to'lov",
+    "perWeek": "/ hafta",
+    "perMonth": "/ oy",
+    "status": {
+      "active": "Faol",
+      "paused": "To'xtatilgan",
+      "cancelled": "Bekor qilingan",
+      "failed": "Muvaffaqiyatsiz"
+    },
+    "actions": {
+      "pause": "To'xtatish",
+      "resume": "Davom ettirish",
+      "cancel": "Bekor qilish",
+      "delete": "O'chirish"
+    },
+    "confirmPause": "Bu doimiy xayriyani to'xtatmoqchimisiz?",
+    "confirmCancel": "Bu doimiy xayriyani bekor qilmoqchimisiz? Buni qaytarib bo'lmaydi.",
+    "confirmResume": "Bu doimiy xayriyani davom ettirmoqchimisiz?",
+    "pauseSuccess": "Doimiy xayriya to'xtatildi",
+    "resumeSuccess": "Doimiy xayriya davom ettirildi",
+    "cancelSuccess": "Doimiy xayriya bekor qilindi",
+    "deleteSuccess": "Doimiy xayriya o'chirildi",
+    "failureWarning": "{count} marta muvaffaqiyatsiz",
+    "empty": "Hozircha doimiy xayriyalar yo'q",
+    "emptyDescription": "Sabablarga avtomatik yordam berish uchun istalgan kampaniya sahifasidan doimiy xayriya o'rnating.",
+    "browseCampaigns": "Kampaniyalarni ko'rish",
+    "categoryBased": "Kategoriya: {category}"
+  },
+  "impact": {
+    "title": "Sizning ta'siringiz",
+    "totalDonated": "Jami xayriya",
+    "campaignsSupported": "Qo'llab-quvvatlangan kampaniyalar",
+    "streak": "Xayriya davomiyligi",
+    "streakWeeks": "{count} haftalik davomiylik",
+    "noStreak": "Hali davomiylik yo'q",
+    "totalDonations": "Jami xayriyalar",
+    "activeRecurring": "Faol doimiy",
+    "monthlyRecurring": "Oylik doimiy"
+  }
 }

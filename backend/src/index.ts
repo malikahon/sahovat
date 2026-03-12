@@ -3,17 +3,24 @@ import { env } from './config/env.js';
 import { createApp } from './app.js';
 import { pool } from './config/database.js';
 import { redis } from './config/redis.js';
+import { startScheduler, stopScheduler } from './services/scheduler.service.js';
 
 const app = createApp();
 
 const server = app.listen(env.PORT, () => {
   console.log(`[Sahovat] Server running on port ${env.PORT}`);
   console.log(`[Sahovat] Environment: ${env.NODE_ENV}`);
+
+  // Start cron scheduler for recurring donations
+  startScheduler();
 });
 
 // Graceful shutdown
 function shutdown(signal: string) {
   console.log(`[Sahovat] ${signal} received. Starting graceful shutdown...`);
+
+  // Stop cron scheduler
+  stopScheduler();
 
   server.close(async () => {
     console.log('[Sahovat] HTTP server closed');

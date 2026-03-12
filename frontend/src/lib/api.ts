@@ -883,6 +883,118 @@ export const feedApi = {
 };
 
 // ============================================================
+// RECURRING DONATIONS API (Week 12)
+// ============================================================
+
+export const recurringApi = {
+  /**
+   * List the current user's recurring donations.
+   */
+  async listMy(query?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<{
+    success: boolean;
+    data?: import('./types').RecurringDonation[];
+    pagination?: { page: number; limit: number; total: number; totalPages: number };
+    error?: string;
+  }> {
+    const params = new URLSearchParams();
+    if (query) {
+      for (const [k, v] of Object.entries(query)) {
+        if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
+      }
+    }
+    const qs = params.toString();
+    const res = await fetch(`/api/recurring-donations${qs ? `?${qs}` : ''}`);
+    return res.json();
+  },
+
+  /**
+   * Create a new recurring donation subscription.
+   */
+  async create(data: import('./types').CreateRecurringDonationDto): Promise<{
+    success: boolean;
+    data?: import('./types').RecurringDonation;
+    message?: string;
+    error?: string;
+  }> {
+    const res = await fetch('/api/recurring-donations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  /**
+   * Get a single recurring donation by ID.
+   */
+  async getById(id: string): Promise<{
+    success: boolean;
+    data?: import('./types').RecurringDonation;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/recurring-donations/${id}`);
+    return res.json();
+  },
+
+  /**
+   * Update a recurring donation (amount, frequency, status).
+   */
+  async update(
+    id: string,
+    data: import('./types').UpdateRecurringDonationDto,
+  ): Promise<{
+    success: boolean;
+    data?: import('./types').RecurringDonation;
+    message?: string;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/recurring-donations/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  /**
+   * Delete a recurring donation (only cancelled/paused/failed).
+   */
+  async delete(id: string): Promise<{
+    success: boolean;
+    message?: string;
+    error?: string;
+  }> {
+    const res = await fetch(`/api/recurring-donations/${id}`, {
+      method: 'DELETE',
+    });
+    return res.json();
+  },
+
+  /**
+   * Get the user's impact stats.
+   */
+  async getImpact(): Promise<{
+    success: boolean;
+    data?: {
+      total_donated: number;
+      campaigns_supported: number;
+      streak_weeks: number;
+      total_donations_count: number;
+      recurring_active_count: number;
+      recurring_total_monthly: number;
+    };
+    error?: string;
+  }> {
+    const res = await fetch('/api/recurring-donations/impact');
+    return res.json();
+  },
+};
+
+// ============================================================
 // GENERAL API CLIENT (for non-auth endpoints, to be used in later weeks)
 // ============================================================
 

@@ -12,6 +12,7 @@ import { DonationAmountStep, type DonationFormData } from './DonationAmountStep'
 import { DonationOtpStep } from './DonationOtpStep';
 import { DonationConfirmStep } from './DonationConfirmStep';
 import { DonationSuccessStep } from './DonationSuccessStep';
+import { recurringApi } from '@/lib/api';
 
 // ============================================================
 // Types
@@ -71,10 +72,25 @@ export function DonationBottomSheet({
     setStep('confirm');
   }, []);
 
-  const handlePaymentSuccess = useCallback((donationId: string) => {
+  const handlePaymentSuccess = useCallback(async (donationId: string) => {
     setCompletedDonationId(donationId);
+
+    // If recurring was requested, create the subscription
+    if (formData?.isRecurring && formData.recurringFrequency) {
+      try {
+        await recurringApi.create({
+          campaign_id: campaignId,
+          amount: formData.amount,
+          frequency: formData.recurringFrequency as import('@/lib/types').RecurringFrequency,
+          payment_provider: 'payme' as import('@/lib/types').PaymentProvider,
+        });
+      } catch (err) {
+        console.error('[Sahovat] Failed to create recurring subscription:', err);
+      }
+    }
+
     setStep('success');
-  }, []);
+  }, [formData, campaignId]);
 
   const handleDonateAgain = useCallback(() => {
     resetFlow();
@@ -134,6 +150,8 @@ export function DonationBottomSheet({
             donationId={completedDonationId}
             campaignTitle={campaignTitle}
             amount={formData.amount}
+            isRecurring={formData.isRecurring}
+            recurringFrequency={formData.recurringFrequency}
             onDonateAgain={handleDonateAgain}
             onClose={handleClose}
           />

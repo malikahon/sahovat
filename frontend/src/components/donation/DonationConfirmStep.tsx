@@ -116,6 +116,16 @@ export function DonationConfirmStep({
           </div>
         </div>
 
+        {formData.isRecurring && formData.recurringFrequency && (
+          <div className="rounded-md bg-primary/10 px-3 py-1.5 text-xs text-primary font-medium">
+            {t('recurringConfirm', {
+              frequency: formData.recurringFrequency === 'weekly'
+                ? t('recurringWeekly').toLowerCase()
+                : t('recurringMonthly').toLowerCase(),
+            })}
+          </div>
+        )}
+
         {formData.isAnonymous && (
           <div className="rounded-md bg-muted px-3 py-1.5 text-xs text-muted-foreground">
             {t('anonymous')} — {t('anonymousHint')}

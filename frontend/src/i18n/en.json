@@ -217,6 +217,7 @@
     "profile": "Profile",
     "myDonations": "My Donations",
     "myCampaigns": "My Campaigns",
+    "recurringDonations": "Recurring Donations",
     "withdrawalAccounts": "Withdrawal Accounts",
     "withdrawals": "Withdrawals"
   },
@@ -383,7 +384,15 @@
       "paymentFailed": "Payment failed. Please try again.",
       "otpFailed": "Failed to send verification code.",
       "receiptFailed": "Failed to download receipt."
-    }
+    },
+    "makeRecurring": "Make this recurring",
+    "recurringFrequency": "Repeat",
+    "recurringWeekly": "Weekly",
+    "recurringMonthly": "Monthly",
+    "recurringConfirm": "This will repeat {frequency}",
+    "recurringSetup": "Recurring donation set up!",
+    "recurringNextCharge": "Next charge: {date}",
+    "manageRecurring": "Manage Recurring"
   },
   "landing": {
     "hero": "Help Those in Need",
@@ -609,5 +618,54 @@
       "allActions": "All actions",
       "allTargets": "All target types"
     }
+  },
+  "recurring": {
+    "title": "Recurring Donations",
+    "subtitle": "Manage your automatic donation subscriptions",
+    "activeSubscriptions": "Active Subscriptions",
+    "monthlyTotal": "Monthly Equivalent",
+    "amount": "Amount",
+    "frequency": "Frequency",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "nextCharge": "Next charge",
+    "lastCharge": "Last charge",
+    "perWeek": "/ week",
+    "perMonth": "/ month",
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "cancelled": "Cancelled",
+      "failed": "Failed"
+    },
+    "actions": {
+      "pause": "Pause",
+      "resume": "Resume",
+      "cancel": "Cancel",
+      "delete": "Remove"
+    },
+    "confirmPause": "Pause this recurring donation?",
+    "confirmCancel": "Cancel this recurring donation? This cannot be undone.",
+    "confirmResume": "Resume this recurring donation?",
+    "pauseSuccess": "Recurring donation paused",
+    "resumeSuccess": "Recurring donation resumed",
+    "cancelSuccess": "Recurring donation cancelled",
+    "deleteSuccess": "Recurring donation removed",
+    "failureWarning": "Failed {count} time(s)",
+    "empty": "No recurring donations yet",
+    "emptyDescription": "Set up a recurring donation from any campaign page to support causes automatically.",
+    "browseCampaigns": "Browse Campaigns",
+    "categoryBased": "Category: {category}"
+  },
+  "impact": {
+    "title": "Your Impact",
+    "totalDonated": "Total Donated",
+    "campaignsSupported": "Campaigns Supported",
+    "streak": "Donation Streak",
+    "streakWeeks": "{count}-week streak",
+    "noStreak": "No streak yet",
+    "totalDonations": "Total Donations",
+    "activeRecurring": "Active Recurring",
+    "monthlyRecurring": "Monthly Recurring"
   }
 }
