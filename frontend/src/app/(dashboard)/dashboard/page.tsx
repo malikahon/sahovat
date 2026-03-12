@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import CampaignCard from '@/components/campaign/CampaignCard';
+import { ImpactBadge } from '@/components/donation/ImpactBadge';
 import type { CampaignWithBalance, CampaignWithStats } from '@/lib/types';
 
 // ============================================================
@@ -269,6 +270,9 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Impact Badge (Week 12) */}
+      <ImpactBadge />
 
       {/* Personalized Feed — "For You" section (Week 11) */}
       <div>

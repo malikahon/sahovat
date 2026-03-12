@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { formatUZS } from '@/lib/formatters';
 
 // ============================================================
@@ -18,6 +20,8 @@ export interface DonationFormData {
   isAnonymous: boolean;
   displayName: string;
   note: string;
+  isRecurring: boolean;
+  recurringFrequency: 'weekly' | 'monthly' | null;
 }
 
 interface Props {
@@ -46,6 +50,8 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, onNext }: P
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [displayName, setDisplayName] = useState(userDisplayName ?? '');
   const [note, setNote] = useState('');
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringFrequency, setRecurringFrequency] = useState<'weekly' | 'monthly'>('monthly');
   const [error, setError] = useState('');
 
   const amount = customAmount
@@ -71,7 +77,14 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, onNext }: P
       setError(t('minimumAmount'));
       return;
     }
-    onNext({ amount, isAnonymous, displayName: displayName.trim(), note: note.trim() });
+    onNext({
+      amount,
+      isAnonymous,
+      displayName: displayName.trim(),
+      note: note.trim(),
+      isRecurring,
+      recurringFrequency: isRecurring ? recurringFrequency : null,
+    });
   };
 
   const needsOtp = amount > OTP_THRESHOLD;
@@ -180,6 +193,43 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, onNext }: P
           maxLength={500}
           className="resize-none"
         />
+      </div>
+
+      {/* Recurring toggle */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label htmlFor="recurring-toggle" className="cursor-pointer text-sm font-medium">
+              {t('makeRecurring')}
+            </Label>
+          </div>
+          <Switch
+            id="recurring-toggle"
+            checked={isRecurring}
+            onCheckedChange={(checked) => setIsRecurring(checked === true)}
+          />
+        </div>
+
+        {isRecurring && (
+          <RadioGroup
+            value={recurringFrequency}
+            onValueChange={(value) => setRecurringFrequency(value as 'weekly' | 'monthly')}
+            className="flex gap-4"
+          >
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="weekly" id="freq-weekly" />
+              <Label htmlFor="freq-weekly" className="cursor-pointer text-sm">
+                {t('recurringWeekly')}
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="monthly" id="freq-monthly" />
+              <Label htmlFor="freq-monthly" className="cursor-pointer text-sm">
+                {t('recurringMonthly')}
+              </Label>
+            </div>
+          </RadioGroup>
+        )}
       </div>
 
       {/* Selected amount summary */}

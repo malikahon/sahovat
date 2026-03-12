@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { Download, Heart, TrendingUp, FileText } from 'lucide-react';
+import { Download, Heart, FileText } from 'lucide-react';
 import { donationsApi } from '@/lib/api';
 import { DonationStatus } from '@/lib/types';
 import type { DonationWithCampaign } from '@/lib/types';
@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import { ImpactBadge } from '@/components/donation/ImpactBadge';
 
 // ============================================================
 // Status badge
@@ -163,15 +164,6 @@ export default function MyDonationsPage() {
   const donations = data?.data ?? [];
   const pagination = data?.pagination;
 
-  // Compute impact stats from all loaded donations
-  const completedDonations = donations.filter(
-    (d: DonationWithCampaign) => d.status === DonationStatus.COMPLETED,
-  );
-  const totalDonated = completedDonations.reduce(
-    (sum: number, d: DonationWithCampaign) => sum + d.amount, 0,
-  );
-  const uniqueCampaigns = new Set(completedDonations.map((d: DonationWithCampaign) => d.campaign_id)).size;
-
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       {/* Header */}
@@ -180,33 +172,8 @@ export default function MyDonationsPage() {
         <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
 
-      {/* Impact summary (only show once data loaded and there are donations) */}
-      {!isLoading && completedDonations.length > 0 && (
-        <div className="grid grid-cols-2 gap-4">
-          <Card>
-            <CardContent className="flex items-center gap-3 py-4">
-              <div className="flex size-10 items-center justify-center rounded-full bg-primary/10">
-                <TrendingUp className="size-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{t('totalDonated')}</p>
-                <p className="text-base font-bold text-foreground">{formatUZS(totalDonated)}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-3 py-4">
-              <div className="flex size-10 items-center justify-center rounded-full bg-primary/10">
-                <Heart className="size-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{t('campaignsSupported')}</p>
-                <p className="text-base font-bold text-foreground">{uniqueCampaigns}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Impact Badge (Week 12) */}
+      <ImpactBadge />
 
       <Separator />
 
