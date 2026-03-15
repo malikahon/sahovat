@@ -28,7 +28,7 @@ export default function CampaignCard({
 
   return (
     <Link href={`/campaigns/${campaign.id}`} className="group block">
-      <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
+      <Card className="h-full overflow-hidden border-border/50 bg-card/80 transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/10 sage-glow">
         {/* Cover image */}
         <div className="relative aspect-video overflow-hidden">
           {campaign.cover_image_url ? (
@@ -36,7 +36,7 @@ export default function CampaignCard({
               src={campaign.cover_image_url}
               alt={campaign.title}
               fill
-              className="object-cover transition-transform group-hover:scale-105"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           ) : (
@@ -47,17 +47,20 @@ export default function CampaignCard({
             </div>
           )}
 
+          {/* Gradient overlay for readability */}
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent" />
+
           {/* Category badge */}
           <Badge
             variant="secondary"
-            className="absolute right-2 top-2 text-xs"
+            className="absolute right-2 top-2 border-none bg-background/70 text-xs backdrop-blur-sm"
           >
             {t(`categories.${campaign.category}`)}
           </Badge>
 
           {/* Verified badge */}
           {campaign.is_verified && (
-            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-medium text-white">
+            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-primary/90 px-2 py-0.5 text-[10px] font-medium text-primary-foreground backdrop-blur-sm">
               <CheckCircle className="size-3" />
               {t('verified')}
             </div>
@@ -66,7 +69,7 @@ export default function CampaignCard({
 
         <CardContent className="flex flex-1 flex-col gap-3">
           {/* Title */}
-          <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground">
+          <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
             {campaign.title}
           </h3>
 
@@ -78,7 +81,7 @@ export default function CampaignCard({
           {/* Progress */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">
+              <span className="font-medium text-primary">
                 {Math.round(campaign.progress_percentage)}%
               </span>
               <span>
