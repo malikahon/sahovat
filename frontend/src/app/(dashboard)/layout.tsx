@@ -148,7 +148,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content area */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
         <header className="flex h-14 items-center border-b border-border bg-card px-4 md:hidden">
           <Button

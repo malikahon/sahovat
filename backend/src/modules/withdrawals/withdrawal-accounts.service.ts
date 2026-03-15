@@ -259,11 +259,11 @@ export async function deleteAccount(
   const totalCount = (countResult.rows[0] as { count: number }).count;
 
   if (totalCount <= 1) {
-    throw new ValidationError('Cannot delete the only withdrawal account');
+    throw new ValidationError('Cannot delete the only withdrawal account', 'LAST_WITHDRAWAL_ACCOUNT');
   }
 
   if (account.is_primary) {
-    throw new ValidationError('Cannot delete a primary account. Set another account as primary first.');
+    throw new ValidationError('Cannot delete a primary account. Set another account as primary first.', 'CANNOT_DELETE_PRIMARY');
   }
 
   await query(

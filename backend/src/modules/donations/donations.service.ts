@@ -73,22 +73,22 @@ export async function requestDonationOtp(
   const campaign = campaignResult.rows[0] as { id: string; status: string };
 
   if (campaign.status === CampaignStatus.FROZEN) {
-    throw new ValidationError('This campaign has been frozen by an administrator');
+    throw new ValidationError('This campaign has been frozen by an administrator', 'CAMPAIGN_FROZEN');
   }
 
   if (campaign.status !== CampaignStatus.ACTIVE) {
-    throw new ValidationError('Campaign is not active');
+    throw new ValidationError('Campaign is not active', 'CAMPAIGN_NOT_ACTIVE');
   }
 
   // Verify amount threshold
   if (amount <= 100000) {
-    throw new ValidationError('OTP is only required for donations over 100,000 UZS');
+    throw new ValidationError('OTP is only required for donations over 100,000 UZS', 'OTP_NOT_REQUIRED');
   }
 
   // Check lockout
   const locked = await isOtpLocked(phone);
   if (locked) {
-    throw new RateLimitError('Too many OTP attempts. Please try again later.');
+    throw new RateLimitError('Too many OTP attempts. Please try again later.', 'OTP_RATE_LIMIT');
   }
 
   // Generate, store, and send OTP
@@ -147,11 +147,11 @@ export async function initiateDonation(
   const campaign = campaignResult.rows[0] as { id: string; status: string };
 
   if (campaign.status === CampaignStatus.FROZEN) {
-    throw new ValidationError('This campaign has been frozen by an administrator');
+    throw new ValidationError('This campaign has been frozen by an administrator', 'CAMPAIGN_FROZEN');
   }
 
   if (campaign.status !== CampaignStatus.ACTIVE) {
-    throw new ValidationError('Campaign is not active');
+    throw new ValidationError('Campaign is not active', 'CAMPAIGN_NOT_ACTIVE');
   }
 
   // OTP check for large donations — verify state stored in Redis
@@ -160,7 +160,7 @@ export async function initiateDonation(
     const otpVerified = await redis.get(otpKey);
 
     if (!otpVerified) {
-      throw new ValidationError('OTP verification required for donations over 100,000 UZS');
+      throw new ValidationError('OTP verification required for donations over 100,000 UZS', 'DONATION_OTP_REQUIRED');
     }
 
     // Consume the OTP verification (one-time use)
@@ -246,7 +246,7 @@ export async function confirmDonation(
     const donation = donationResult.rows[0] as DonationRow;
 
     if (donation.status !== DonationStatus.PENDING) {
-      throw new ValidationError('Donation already processed');
+      throw new ValidationError('Donation already processed', 'DONATION_ALREADY_PROCESSED');
     }
 
     // Verify webhook amount matches the original donation amount

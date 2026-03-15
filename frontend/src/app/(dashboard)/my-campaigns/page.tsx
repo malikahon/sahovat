@@ -97,7 +97,7 @@ function CampaignCard({
 
   return (
     <Card>
-      <CardContent className="flex gap-4">
+      <CardContent className="flex flex-col gap-4 sm:flex-row">
         {/* Thumbnail */}
         <div className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
           {campaign.cover_image_url ? (
@@ -162,7 +162,7 @@ function CampaignCard({
         </div>
 
         {/* Action buttons */}
-        <div className="flex shrink-0 flex-col gap-1 self-start">
+        <div className="flex shrink-0 flex-row gap-1 self-start sm:flex-col">
           {campaign.status === CampaignStatus.DRAFT && (
             <>
               <Button variant="outline" size="sm" render={<Link href={`/create-campaign/step-1?id=${campaign.id}`} />}>

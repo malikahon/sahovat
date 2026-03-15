@@ -2,6 +2,23 @@ import { env } from '../config/env.js';
 import type { SmsService } from '../types/services.js';
 
 // ============================================================
+// LOCALIZED OTP MESSAGES
+// ============================================================
+
+const OTP_MESSAGES: Record<string, (otp: string) => string> = {
+  uz: (otp) => `Sahovat: Sizning tasdiqlash kodingiz: ${otp}. 5 daqiqa ichida amal qiladi.`,
+  ru: (otp) => `Sahovat: Ваш код подтверждения: ${otp}. Действителен 5 минут.`,
+  en: (otp) => `Sahovat: Your verification code is: ${otp}. Valid for 5 minutes.`,
+};
+
+function getOtpMessage(otp: string, locale: string): string {
+  const fn = OTP_MESSAGES[locale];
+  if (fn) return fn(otp);
+  // Default to Uzbek
+  return `Sahovat: Sizning tasdiqlash kodingiz: ${otp}. 5 daqiqa ichida amal qiladi.`;
+}
+
+// ============================================================
 // ESKIZ.UZ SMS SERVICE (Production)
 // ============================================================
 
@@ -92,8 +109,8 @@ class EskizSmsService implements SmsService {
     console.log(`[Sahovat] SMS sent to ${phone} via Eskiz.uz`);
   }
 
-  async sendOtp(phone: string, otp: string): Promise<void> {
-    const message = `Sahovat: Sizning tasdiqlash kodingiz: ${otp}. 5 daqiqa ichida amal qiladi.`;
+  async sendOtp(phone: string, otp: string, locale: string = 'uz'): Promise<void> {
+    const message = getOtpMessage(otp, locale);
     await this.sendSms(phone, message);
   }
 
@@ -107,8 +124,8 @@ class EskizSmsService implements SmsService {
 // ============================================================
 
 class MockSmsService implements SmsService {
-  async sendOtp(phone: string, otp: string): Promise<void> {
-    console.log(`[Sahovat] [MOCK SMS] OTP for ${phone}: ${otp}`);
+  async sendOtp(phone: string, otp: string, locale: string = 'uz'): Promise<void> {
+    console.log(`[Sahovat] [MOCK SMS] OTP for ${phone}: ${otp} (locale: ${locale})`);
   }
 
   async sendNotification(phone: string, message: string): Promise<void> {

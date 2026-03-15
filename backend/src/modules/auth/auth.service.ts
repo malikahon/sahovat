@@ -65,13 +65,13 @@ export async function requestOtp(phoneNumber: string): Promise<void> {
   const phone = formatPhone(phoneNumber);
 
   if (!validateUzbekPhone(phone)) {
-    throw new ValidationError('Invalid Uzbek phone number');
+    throw new ValidationError('Invalid Uzbek phone number', 'INVALID_PHONE');
   }
 
   // Check if phone is locked out from too many OTP attempts
   const locked = await isOtpLocked(phone);
   if (locked) {
-    throw new RateLimitError('Too many OTP attempts. Please try again later.');
+    throw new RateLimitError('Too many OTP attempts. Please try again later.', 'OTP_RATE_LIMIT');
   }
 
   // Upsert: find existing user or create minimal record
@@ -112,13 +112,13 @@ export async function verifyOtpAndLogin(
   // Check lockout
   const locked = await isOtpLocked(phone);
   if (locked) {
-    throw new RateLimitError('Too many OTP attempts. Please try again later.');
+    throw new RateLimitError('Too many OTP attempts. Please try again later.', 'OTP_RATE_LIMIT');
   }
 
   // Verify OTP
   const isValid = await verifyStoredOtp(phone, otp);
   if (!isValid) {
-    throw new UnauthorizedError('Invalid or expired OTP');
+    throw new UnauthorizedError('Invalid or expired OTP', 'INVALID_OTP');
   }
 
   // Fetch user
@@ -258,25 +258,25 @@ export async function adminLogin(
 
   if (result.rows.length === 0) {
     // Use generic message to prevent phone enumeration
-    throw new UnauthorizedError('Invalid credentials');
+    throw new UnauthorizedError('Invalid credentials', 'INVALID_CREDENTIALS');
   }
 
   const user = result.rows[0] as UserRow;
 
   // Must be an admin
   if (!user.is_admin) {
-    throw new ForbiddenError('Admin access required');
+    throw new ForbiddenError('Admin access required', 'ADMIN_REQUIRED');
   }
 
   // Must have a password set
   if (!user.password_hash) {
-    throw new UnauthorizedError('Password not configured for this admin account');
+    throw new UnauthorizedError('Password not configured for this admin account', 'ADMIN_NO_PASSWORD');
   }
 
   // Verify password
   const isPasswordValid = await bcrypt.compare(password, user.password_hash);
   if (!isPasswordValid) {
-    throw new UnauthorizedError('Invalid credentials');
+    throw new UnauthorizedError('Invalid credentials', 'INVALID_CREDENTIALS');
   }
 
   // Generate tokens
@@ -305,7 +305,7 @@ export async function refreshTokens(refreshToken: string): Promise<AuthTokens> {
   // Validate against stored token in Redis
   const isValid = await validateStoredRefreshToken(payload.userId, refreshToken);
   if (!isValid) {
-    throw new UnauthorizedError('Refresh token has been revoked');
+    throw new UnauthorizedError('Refresh token has been revoked', 'TOKEN_REVOKED');
   }
 
   // Generate new token pair and replace in Redis

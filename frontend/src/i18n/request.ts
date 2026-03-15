@@ -1,7 +1,16 @@
 import { getRequestConfig } from 'next-intl/server';
+import { cookies } from 'next/headers';
+
+const SUPPORTED_LOCALES = ['uz', 'en', 'ru'] as const;
+type Locale = (typeof SUPPORTED_LOCALES)[number];
 
 export default getRequestConfig(async () => {
-  const locale = 'uz'; // will read from cookie/user preference later
+  const cookieStore = await cookies();
+  const cookieLocale = cookieStore.get('locale')?.value;
+  const locale: Locale =
+    cookieLocale && SUPPORTED_LOCALES.includes(cookieLocale as Locale)
+      ? (cookieLocale as Locale)
+      : 'uz';
 
   return {
     locale,
