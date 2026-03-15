@@ -1,7 +1,20 @@
 import pg from 'pg';
 import { env } from './env.js';
 
-const { Pool } = pg;
+const { Pool, types } = pg;
+
+// Parse BIGINT (OID 20) as JavaScript number instead of string.
+// Safe for values up to Number.MAX_SAFE_INTEGER (9,007,199,254,740,991 ~= 9 quadrillion UZS).
+types.setTypeParser(20, (val: string) => {
+  const num = Number(val);
+  if (num > Number.MAX_SAFE_INTEGER || num < Number.MIN_SAFE_INTEGER) {
+    console.warn(`[Sahovat] BIGINT value ${val} exceeds safe integer range`);
+  }
+  return num;
+});
+
+// Parse NUMERIC/DECIMAL (OID 1700) as JavaScript number instead of string.
+types.setTypeParser(1700, (val: string) => parseFloat(val));
 
 export const pool = new Pool({
   connectionString: env.DATABASE_URL,

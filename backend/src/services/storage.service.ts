@@ -13,7 +13,7 @@ export interface StorageService {
   savePublic(file: Buffer, filename: string, mimetype: string): Promise<string>;
   savePrivate(file: Buffer, filename: string, mimetype: string): Promise<string>;
   getPrivate(filePath: string): Promise<Buffer>;
-  delete(filePath: string): Promise<void>;
+  delete(filePath: string, storage?: 'public' | 'private'): Promise<void>;
   getPublicUrl(relativePath: string): string;
 }
 
@@ -143,7 +143,7 @@ class LocalStorageService implements StorageService {
 
   // ---- delete (public or private) -----------------------------------------
 
-  async delete(filePath: string): Promise<void> {
+  async delete(filePath: string, storage?: 'public' | 'private'): Promise<void> {
     // Determine root: if the path starts with the public root or looks like a
     // URL-relative public path, target publicRoot. Otherwise privateRoot.
     let absolutePath: string;
@@ -157,8 +157,12 @@ class LocalStorageService implements StorageService {
       } else {
         throw new AppError('Invalid file path', 400, 'INVALID_PATH');
       }
+    } else if (storage === 'public') {
+      absolutePath = resolveSecure(this.publicRoot, filePath);
+    } else if (storage === 'private') {
+      absolutePath = resolveSecure(this.privateRoot, filePath);
     } else {
-      // Relative path — try private first (private paths are always stored as
+      // No storage hint — try private first (private paths are always stored as
       // relative), fall back to public.
       const privateCandid = resolveSecure(this.privateRoot, filePath);
       const publicCandid = resolveSecure(this.publicRoot, filePath);

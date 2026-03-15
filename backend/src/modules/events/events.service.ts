@@ -158,6 +158,7 @@ export async function getAgeBracketPatterns(): Promise<
   const result = await dbQuery(
     `SELECT
        CASE
+         WHEN EXTRACT(YEAR FROM AGE(u.date_of_birth::date)) < 18 THEN 'under-18'
          WHEN EXTRACT(YEAR FROM AGE(u.date_of_birth::date)) BETWEEN 18 AND 24 THEN '18-24'
          WHEN EXTRACT(YEAR FROM AGE(u.date_of_birth::date)) BETWEEN 25 AND 34 THEN '25-34'
          WHEN EXTRACT(YEAR FROM AGE(u.date_of_birth::date)) BETWEEN 35 AND 44 THEN '35-44'

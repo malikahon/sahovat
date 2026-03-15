@@ -12,17 +12,19 @@ interface Props {
   campaignId: string;
   campaignTitle: string;
   formData: DonationFormData;
+  platformFeePct?: number; // Fetched from admin settings; defaults to 1%
   onSuccess: (donationId: string) => void;
   onBack: () => void;
 }
 
-const PLATFORM_FEE_PCT = 1; // 1%
+const DEFAULT_PLATFORM_FEE_PCT = 1; // 1% fallback
 const IS_DEV = process.env.NODE_ENV === 'development';
 
 export function DonationConfirmStep({
   campaignId,
   campaignTitle,
   formData,
+  platformFeePct,
   onSuccess,
   onBack,
 }: Props) {
@@ -32,7 +34,8 @@ export function DonationConfirmStep({
   const [pendingDonationId, setPendingDonationId] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
-  const platformFee = Math.round(formData.amount * PLATFORM_FEE_PCT / 100);
+  const feePct = platformFeePct ?? DEFAULT_PLATFORM_FEE_PCT;
+  const platformFee = Math.round(formData.amount * feePct / 100);
   const netAmount = formData.amount - platformFee;
 
   const handleInitiate = async () => {

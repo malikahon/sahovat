@@ -45,6 +45,15 @@ export const registerSchema = {
     date_of_birth: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date of birth must be in YYYY-MM-DD format')
+      .refine((val) => {
+        const date = new Date(val);
+        if (isNaN(date.getTime())) return false;
+        // Verify the parsed date matches the input (catches invalid days like Feb 30)
+        const [y, m, d] = val.split('-').map(Number) as [number, number, number];
+        if (date.getUTCFullYear() !== y || date.getUTCMonth() + 1 !== m || date.getUTCDate() !== d) return false;
+        const currentYear = new Date().getFullYear();
+        return y >= 1900 && y <= currentYear;
+      }, 'Date of birth must be a valid calendar date between 1900 and the current year')
       .optional(),
     gender: z
       .enum(['male', 'female'])

@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { redis } from '../config/redis.js';
 import { env } from '../config/env.js';
@@ -94,5 +95,11 @@ export async function validateStoredRefreshToken(userId: string, token: string):
     return false;
   }
 
-  return storedToken === token;
+  // Use timing-safe comparison to prevent timing attacks
+  const storedBuf = Buffer.from(storedToken);
+  const tokenBuf = Buffer.from(token);
+  if (storedBuf.length !== tokenBuf.length) {
+    return false;
+  }
+  return timingSafeEqual(storedBuf, tokenBuf);
 }

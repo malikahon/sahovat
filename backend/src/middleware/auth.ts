@@ -45,6 +45,11 @@ export async function requireAuth(
     throw new UnauthorizedError('User not found');
   }
 
+  // Block banned users from all authenticated operations
+  if (user.is_banned) {
+    throw new ForbiddenError('Account is banned');
+  }
+
   // Attach AuthenticatedUser to request
   const authenticatedUser: AuthenticatedUser = {
     id: user.id,
@@ -52,6 +57,7 @@ export async function requireAuth(
     display_name: user.display_name,
     is_verified: user.is_verified,
     is_admin: user.is_admin,
+    is_banned: user.is_banned,
     verification_status: user.verification_status,
   };
 
@@ -77,13 +83,14 @@ export async function optionalAuth(
       const payload = verifyAccessToken(token);
       const user = await getUserById(payload.userId);
 
-      if (user) {
+      if (user && !user.is_banned) {
         const authenticatedUser: AuthenticatedUser = {
           id: user.id,
           phone_number: user.phone_number,
           display_name: user.display_name,
           is_verified: user.is_verified,
           is_admin: user.is_admin,
+          is_banned: user.is_banned,
           verification_status: user.verification_status,
         };
 

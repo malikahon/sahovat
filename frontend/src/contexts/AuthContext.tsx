@@ -109,7 +109,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Logout: revoke tokens and clear state.
    */
   const logout = useCallback(async () => {
-    await authApi.logout();
+    try {
+      await authApi.logout();
+    } catch {
+      // Clear local state even if API call fails
+    }
     setUser(null);
   }, []);
 

@@ -1,3 +1,5 @@
+import { ValidationError } from './errors.js';
+
 /**
  * Validates an Uzbek phone number in +998XXXXXXXXX format.
  * Must be exactly 13 characters: +998 followed by 9 digits.
@@ -14,7 +16,7 @@ export function validateUzbekPhone(phone: string): boolean {
  * - +998901234567 → +998901234567
  * - 901234567     → +998901234567
  *
- * @throws {Error} if the input cannot be normalized to a valid Uzbek phone number.
+ * @throws {ValidationError} if the input cannot be normalized to a valid Uzbek phone number.
  */
 export function formatPhone(phone: string): string {
   // Strip all whitespace, dashes, and parentheses
@@ -41,5 +43,5 @@ export function formatPhone(phone: string): string {
     }
   }
 
-  throw new Error(`Invalid Uzbek phone number: ${phone}`);
+  throw new ValidationError('Invalid Uzbek phone number format');
 }

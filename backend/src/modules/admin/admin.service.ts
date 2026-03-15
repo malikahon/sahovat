@@ -1,7 +1,7 @@
 import { query } from '../../config/database.js';
 import { encrypt, decrypt } from '../../lib/encryption.js';
 import { NotFoundError, ForbiddenError, ValidationError } from '../../lib/errors.js';
-import { getTotalEscrow, getPlatformRevenue } from '../donations/ledger.service.js';
+import { getTotalEscrow, getPlatformRevenue, invalidateFeeCache } from '../donations/ledger.service.js';
 import type { AdminDashboardStats } from '../../types/api.js';
 import type {
   AdminUserRow,
@@ -276,19 +276,25 @@ export async function toggleBan(
     throw new ForbiddenError('Admins cannot ban themselves', 'CANNOT_MODIFY_SELF');
   }
 
-  const result = await query(
-    `UPDATE users SET is_banned = $1 WHERE id = $2 RETURNING id, is_admin`,
-    [dto.is_banned, targetUserId],
+  // Check admin status BEFORE updating
+  const checkResult = await query(
+    `SELECT id, is_admin FROM users WHERE id = $1`,
+    [targetUserId],
   );
 
-  if (result.rows.length === 0) {
+  if (checkResult.rows.length === 0) {
     throw new NotFoundError('User', targetUserId);
   }
 
-  const target = result.rows[0] as { is_admin: boolean };
+  const target = checkResult.rows[0] as { is_admin: boolean };
   if (target.is_admin && dto.is_banned) {
     throw new ForbiddenError('Cannot ban an admin user. Revoke admin status first.', 'CANNOT_BAN_ADMIN');
   }
+
+  await query(
+    `UPDATE users SET is_banned = $1 WHERE id = $2`,
+    [dto.is_banned, targetUserId],
+  );
 
   await logAdminAction(
     adminId,
@@ -683,18 +689,33 @@ export async function getEscrowSummary() {
     getTotalEscrow(),
     getPlatformRevenue(),
     query(
-      `SELECT
+      `WITH donation_totals AS (
+         SELECT
+           campaign_id,
+           SUM(net_amount)   AS total_donated,
+           SUM(platform_fee) AS total_fees
+         FROM donations
+         WHERE status = 'completed'
+         GROUP BY campaign_id
+       ),
+       withdrawal_totals AS (
+         SELECT
+           campaign_id,
+           SUM(net_amount) AS total_withdrawn
+         FROM withdrawals
+         WHERE status = 'completed'
+         GROUP BY campaign_id
+       )
+       SELECT
          c.id             AS campaign_id,
          c.title          AS campaign_title,
-         COALESCE(SUM(CASE WHEN d.status = 'completed' THEN d.net_amount ELSE 0 END), 0)::text AS total_donated,
-         COALESCE(SUM(CASE WHEN d.status = 'completed' THEN d.platform_fee ELSE 0 END), 0)::text AS total_fees,
-         COALESCE(SUM(CASE WHEN w.status = 'completed' THEN w.net_amount ELSE 0 END), 0)::text AS total_withdrawn
+         COALESCE(dt.total_donated, 0)::text   AS total_donated,
+         COALESCE(dt.total_fees, 0)::text      AS total_fees,
+         COALESCE(wt.total_withdrawn, 0)::text AS total_withdrawn
        FROM campaigns c
-       LEFT JOIN donations d ON d.campaign_id = c.id
-       LEFT JOIN withdrawals w ON w.campaign_id = c.id
-       GROUP BY c.id, c.title
-       HAVING COALESCE(SUM(CASE WHEN d.status = 'completed' THEN d.net_amount ELSE 0 END), 0) > 0
-       ORDER BY COALESCE(SUM(CASE WHEN d.status = 'completed' THEN d.net_amount ELSE 0 END), 0) DESC`,
+       INNER JOIN donation_totals dt ON dt.campaign_id = c.id
+       LEFT JOIN withdrawal_totals wt ON wt.campaign_id = c.id
+       ORDER BY dt.total_donated DESC`,
     ),
   ]);
 
@@ -779,8 +800,8 @@ export async function updateSettings(adminId: string, dto: UpdateSettingsDto): P
     );
   }
 
-  // Invalidate ledger service fee cache (it will re-read on next call)
-  // The cache in ledger.service.ts will expire naturally on its 5-min TTL.
+  // Invalidate ledger service fee cache so the next read hits the DB
+  invalidateFeeCache();
 
   const settingsIdResult = await query(
     'SELECT id FROM admin_settings ORDER BY updated_at DESC LIMIT 1',

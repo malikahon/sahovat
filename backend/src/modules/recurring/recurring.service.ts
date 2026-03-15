@@ -44,7 +44,7 @@ function calculateNextChargeDate(frequency: RecurringFrequency): string {
   if (frequency === RecurringFrequency.WEEKLY) {
     now.setDate(now.getDate() + 7);
   } else {
-    now.setDate(now.getDate() + 30);
+    now.setMonth(now.getMonth() + 1);
   }
   return now.toISOString().split('T')[0]!;
 }
@@ -57,7 +57,7 @@ function advanceChargeDate(from: string, frequency: RecurringFrequency): string 
   if (frequency === RecurringFrequency.WEEKLY) {
     date.setDate(date.getDate() + 7);
   } else {
-    date.setDate(date.getDate() + 30);
+    date.setMonth(date.getMonth() + 1);
   }
   return date.toISOString().split('T')[0]!;
 }
@@ -483,9 +483,18 @@ export async function processRecurringCharge(
 
       if (candidateResult.rows.length === 0) {
         // No eligible campaign — skip this cycle without counting as failure
+        // Still advance next_charge_date so the scheduler doesn't retry every run
+        const nextDate = advanceChargeDate(
+          new Date().toISOString().split('T')[0]!,
+          recurring.frequency,
+        );
+        await client.query(
+          `UPDATE recurring_donations SET next_charge_date = $1, updated_at = NOW() WHERE id = $2`,
+          [nextDate, recurringId],
+        );
         await client.query('COMMIT');
         console.log(
-          `[Sahovat] No active campaign for category "${recurring.category}" — skipping recurring ${recurringId}`,
+          `[Sahovat] No active campaign for category "${recurring.category}" — skipping recurring ${recurringId}, next charge date advanced to ${nextDate}`,
         );
         return { success: false, error: 'No eligible campaign in category' };
       }

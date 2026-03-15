@@ -47,7 +47,7 @@ export interface StorageService {
   savePublic(file: Buffer, fileName: string, mimeType: string): Promise<string>;
   savePrivate(file: Buffer, fileName: string, mimeType: string): Promise<string>;
   getPrivate(filePath: string): Promise<Buffer>;
-  delete(filePath: string): Promise<void>;
+  delete(filePath: string, storage?: 'public' | 'private'): Promise<void>;
   getPublicUrl(filePath: string): string;
 }
 

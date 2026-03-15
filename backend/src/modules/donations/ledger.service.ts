@@ -1,5 +1,11 @@
+import pg from 'pg';
 import { query } from '../../config/database.js';
 import type { CampaignBalance } from '../../types/api.js';
+
+/** A queryable interface that accepts both pool.query and client.query */
+type Queryable = {
+  query(text: string, params?: unknown[]): Promise<pg.QueryResult>;
+};
 
 // ============================================================
 // PLATFORM FEE CACHE
@@ -8,6 +14,12 @@ import type { CampaignBalance } from '../../types/api.js';
 let cachedFeePercentage: number | null = null;
 let feePercentageCachedAt = 0;
 const FEE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/** Invalidate the cached fee percentage so the next read hits the DB. */
+export function invalidateFeeCache(): void {
+  cachedFeePercentage = null;
+  feePercentageCachedAt = 0;
+}
 
 // ============================================================
 // GET CAMPAIGN BALANCE
@@ -21,8 +33,10 @@ const FEE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
  */
 export async function getCampaignBalance(
   campaignId: string,
+  client?: Queryable,
 ): Promise<CampaignBalance> {
-  const result = await query(
+  const db = client ?? { query: (text: string, params?: unknown[]) => query(text, params) };
+  const result = await db.query(
     `SELECT
        $1::text                                             AS campaign_id,
        COALESCE((

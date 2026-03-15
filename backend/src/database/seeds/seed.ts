@@ -5,6 +5,11 @@ import { encrypt } from '../../lib/encryption.js';
 const log = (message: string) => console.log(`[Seed] ${message}`);
 
 async function seed(): Promise<void> {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('[Sahovat] FATAL: Cannot run seed in production!');
+    process.exit(1);
+  }
+
   const client = await pool.connect();
 
   try {

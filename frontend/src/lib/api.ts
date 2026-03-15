@@ -7,6 +7,73 @@
  */
 
 // ============================================================
+// FETCH WITH AUTO TOKEN REFRESH
+// ============================================================
+
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
+/**
+ * Wrapper around fetch that automatically retries on 401 after refreshing tokens.
+ * Auth endpoints (login, OTP, refresh, logout) bypass the retry logic.
+ */
+async function fetchWithRetry(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  const res = await fetch(input, init);
+
+  if (res.status !== 401) {
+    return res;
+  }
+
+  // Avoid infinite loops — don't retry auth endpoints
+  const url = typeof input === 'string' ? input : input.toString();
+  if (url.includes('/api/auth/')) {
+    return res;
+  }
+
+  // Attempt token refresh (deduplicate concurrent refreshes)
+  if (!isRefreshing) {
+    isRefreshing = true;
+    refreshPromise = fetch('/api/auth/refresh', { method: 'POST' })
+      .then((r) => r.ok)
+      .catch(() => false)
+      .finally(() => {
+        isRefreshing = false;
+        refreshPromise = null;
+      });
+  }
+
+  const refreshed = await (refreshPromise ?? Promise.resolve(false));
+  if (!refreshed) {
+    return res; // refresh failed — return original 401
+  }
+
+  // Retry the original request with new cookies
+  return fetch(input, init);
+}
+
+// ============================================================
+// SAFE JSON HELPER
+// ============================================================
+
+async function safeJson<T>(res: Response, fallback?: T): Promise<T> {
+  if (!res.ok) {
+    try {
+      return await res.json();
+    } catch {
+      return (fallback ?? { success: false, error: `HTTP ${res.status}` }) as T;
+    }
+  }
+  try {
+    return await res.json();
+  } catch {
+    return (fallback ?? { success: false, error: 'Invalid response' }) as T;
+  }
+}
+
+// ============================================================
 // AUTH API (via BFF proxy routes — cookies handled server-side)
 // ============================================================
 
@@ -107,11 +174,8 @@ export const usersApi = {
     data?: { user: import('./types').User };
     error?: string;
   }> {
-    const res = await fetch('/api/users/profile');
-    if (res.status === 401) {
-      return { success: false, error: 'Not authenticated' };
-    }
-    return res.json();
+    const res = await fetchWithRetry('/api/users/profile');
+    return safeJson(res);
   },
 
   async updateProfile(
@@ -121,12 +185,12 @@ export const usersApi = {
     data?: { user: import('./types').User };
     error?: string;
   }> {
-    const res = await fetch('/api/users/profile', {
+    const res = await fetchWithRetry('/api/users/profile', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async initiateOneId(): Promise<{
@@ -134,8 +198,8 @@ export const usersApi = {
     data?: { redirect_url: string };
     error?: string;
   }> {
-    const res = await fetch('/api/users/oneid/initiate');
-    return res.json();
+    const res = await fetchWithRetry('/api/users/oneid/initiate');
+    return safeJson(res);
   },
 };
 
@@ -149,11 +213,8 @@ export const withdrawalAccountsApi = {
     data?: { accounts: import('./types').SafeWithdrawalAccount[] };
     error?: string;
   }> {
-    const res = await fetch('/api/withdrawal-accounts');
-    if (res.status === 401) {
-      return { success: false, error: 'Not authenticated' };
-    }
-    return res.json();
+    const res = await fetchWithRetry('/api/withdrawal-accounts');
+    return safeJson(res);
   },
 
   async create(
@@ -163,12 +224,12 @@ export const withdrawalAccountsApi = {
     data?: { account: import('./types').SafeWithdrawalAccount };
     error?: string;
   }> {
-    const res = await fetch('/api/withdrawal-accounts', {
+    const res = await fetchWithRetry('/api/withdrawal-accounts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async update(
@@ -179,22 +240,22 @@ export const withdrawalAccountsApi = {
     data?: { account: import('./types').SafeWithdrawalAccount };
     error?: string;
   }> {
-    const res = await fetch(`/api/withdrawal-accounts/${id}`, {
+    const res = await fetchWithRetry(`/api/withdrawal-accounts/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async delete(id: string): Promise<{
     success: boolean;
     error?: string;
   }> {
-    const res = await fetch(`/api/withdrawal-accounts/${id}`, {
+    const res = await fetchWithRetry(`/api/withdrawal-accounts/${id}`, {
       method: 'DELETE',
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async setPrimary(id: string): Promise<{
@@ -202,10 +263,10 @@ export const withdrawalAccountsApi = {
     data?: { account: import('./types').SafeWithdrawalAccount };
     error?: string;
   }> {
-    const res = await fetch(`/api/withdrawal-accounts/${id}/primary`, {
+    const res = await fetchWithRetry(`/api/withdrawal-accounts/${id}/primary`, {
       method: 'PUT',
     });
-    return res.json();
+    return safeJson(res);
   },
 };
 
@@ -226,8 +287,8 @@ export const campaignsApi = {
       }
     }
     const qs = params.toString();
-    const res = await fetch(`/api/campaigns${qs ? `?${qs}` : ''}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/campaigns${qs ? `?${qs}` : ''}`);
+    return safeJson(res);
   },
 
   async get(id: string): Promise<{
@@ -235,8 +296,8 @@ export const campaignsApi = {
     data?: { campaign: import('./types').CampaignWithStats };
     error?: string;
   }> {
-    const res = await fetch(`/api/campaigns/${id}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/campaigns/${id}`);
+    return safeJson(res);
   },
 
   async create(
@@ -246,12 +307,12 @@ export const campaignsApi = {
     data?: { campaign: import('./types').Campaign };
     error?: string;
   }> {
-    const res = await fetch('/api/campaigns', {
+    const res = await fetchWithRetry('/api/campaigns', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async update(
@@ -262,22 +323,22 @@ export const campaignsApi = {
     data?: { campaign: import('./types').Campaign };
     error?: string;
   }> {
-    const res = await fetch(`/api/campaigns/${id}`, {
+    const res = await fetchWithRetry(`/api/campaigns/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async delete(id: string): Promise<{
     success: boolean;
     error?: string;
   }> {
-    const res = await fetch(`/api/campaigns/${id}`, {
+    const res = await fetchWithRetry(`/api/campaigns/${id}`, {
       method: 'DELETE',
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async submit(id: string): Promise<{
@@ -285,10 +346,10 @@ export const campaignsApi = {
     data?: { campaign: import('./types').Campaign };
     error?: string;
   }> {
-    const res = await fetch(`/api/campaigns/${id}/submit`, {
+    const res = await fetchWithRetry(`/api/campaigns/${id}/submit`, {
       method: 'PUT',
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async uploadCoverImage(
@@ -301,11 +362,11 @@ export const campaignsApi = {
   }> {
     const formData = new FormData();
     formData.append('image', file);
-    const res = await fetch(`/api/campaigns/${id}/cover-image`, {
+    const res = await fetchWithRetry(`/api/campaigns/${id}/cover-image`, {
       method: 'POST',
       body: formData,
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async listDocuments(id: string): Promise<{
@@ -313,8 +374,8 @@ export const campaignsApi = {
     data?: { documents: import('./types').CampaignDocument[] };
     error?: string;
   }> {
-    const res = await fetch(`/api/campaigns/${id}/documents`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/campaigns/${id}/documents`);
+    return safeJson(res);
   },
 
   async uploadDocument(
@@ -331,11 +392,11 @@ export const campaignsApi = {
     formData.append('document', file);
     formData.append('document_type', documentType);
     if (notes) formData.append('notes', notes);
-    const res = await fetch(`/api/campaigns/${campaignId}/documents`, {
+    const res = await fetchWithRetry(`/api/campaigns/${campaignId}/documents`, {
       method: 'POST',
       body: formData,
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async deleteDocument(
@@ -345,10 +406,10 @@ export const campaignsApi = {
     success: boolean;
     error?: string;
   }> {
-    const res = await fetch(`/api/campaigns/${campaignId}/documents/${docId}`, {
+    const res = await fetchWithRetry(`/api/campaigns/${campaignId}/documents/${docId}`, {
       method: 'DELETE',
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async getStats(id: string): Promise<{
@@ -356,8 +417,8 @@ export const campaignsApi = {
     data?: { stats: { total_donated: number; donor_count: number; net_donated: number } };
     error?: string;
   }> {
-    const res = await fetch(`/api/campaigns/${id}/stats`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/campaigns/${id}/stats`);
+    return safeJson(res);
   },
 };
 
@@ -367,30 +428,42 @@ export const campaignsApi = {
 
 export const donationsApi = {
   /**
+   * Get current platform fee percentage (public, no auth needed).
+   */
+  async getFeeInfo(): Promise<{
+    success: boolean;
+    data?: { platform_fee_percentage: number };
+    error?: string;
+  }> {
+    const res = await fetch('/api/donations/fee-info');
+    return safeJson(res);
+  },
+
+  /**
    * Request OTP for a donation > 100,000 UZS.
    */
   async requestOtp(
     campaign_id: string,
     amount: number,
   ): Promise<{ success: boolean; message?: string; error?: string }> {
-    const res = await fetch('/api/donations/request-otp', {
+    const res = await fetchWithRetry('/api/donations/request-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ campaign_id, amount }),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   /**
    * Verify OTP code for a high-value donation.
    */
   async verifyOtp(otp: string): Promise<{ success: boolean; message?: string; error?: string }> {
-    const res = await fetch('/api/donations/verify-otp', {
+    const res = await fetchWithRetry('/api/donations/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ otp }),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   /**
@@ -401,12 +474,12 @@ export const donationsApi = {
     data?: { donation: import('./types').Donation; checkout_url: string };
     error?: string;
   }> {
-    const res = await fetch('/api/donations/initiate', {
+    const res = await fetchWithRetry('/api/donations/initiate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   /**
@@ -438,8 +511,8 @@ export const donationsApi = {
     data?: import('./types').Donation;
     error?: string;
   }> {
-    const res = await fetch(`/api/donations/${id}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/donations/${id}`);
+    return safeJson(res);
   },
 
   /**
@@ -455,8 +528,8 @@ export const donationsApi = {
     if (query?.page) params.set('page', String(query.page));
     if (query?.limit) params.set('limit', String(query.limit));
     const qs = params.toString();
-    const res = await fetch(`/api/donations/my${qs ? `?${qs}` : ''}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/donations/my${qs ? `?${qs}` : ''}`);
+    return safeJson(res);
   },
 
   /**
@@ -475,8 +548,8 @@ export const donationsApi = {
     if (query?.page) params.set('page', String(query.page));
     if (query?.limit) params.set('limit', String(query.limit));
     const qs = params.toString();
-    const res = await fetch(`/api/donations/campaign/${campaignId}${qs ? `?${qs}` : ''}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/donations/campaign/${campaignId}${qs ? `?${qs}` : ''}`);
+    return safeJson(res);
   },
 
   /**
@@ -503,9 +576,8 @@ export const withdrawalsApi = {
     data?: import('./types').OrganizerDashboard;
     error?: string;
   }> {
-    const res = await fetch('/api/withdrawals/dashboard');
-    if (res.status === 401) return { success: false, error: 'Not authenticated' };
-    return res.json();
+    const res = await fetchWithRetry('/api/withdrawals/dashboard');
+    return safeJson(res);
   },
 
   /**
@@ -529,9 +601,8 @@ export const withdrawalsApi = {
       }
     }
     const qs = params.toString();
-    const res = await fetch(`/api/withdrawals/my${qs ? `?${qs}` : ''}`);
-    if (res.status === 401) return { success: false, error: 'Not authenticated' };
-    return res.json();
+    const res = await fetchWithRetry(`/api/withdrawals/my${qs ? `?${qs}` : ''}`);
+    return safeJson(res);
   },
 
   /**
@@ -542,9 +613,8 @@ export const withdrawalsApi = {
     data?: import('./types').CampaignWithBalance['balance'];
     error?: string;
   }> {
-    const res = await fetch(`/api/withdrawals/campaigns/${campaignId}/balance`);
-    if (res.status === 401) return { success: false, error: 'Not authenticated' };
-    return res.json();
+    const res = await fetchWithRetry(`/api/withdrawals/campaigns/${campaignId}/balance`);
+    return safeJson(res);
   },
 
   /**
@@ -560,12 +630,12 @@ export const withdrawalsApi = {
     message?: string;
     error?: string;
   }> {
-    const res = await fetch('/api/withdrawals', {
+    const res = await fetchWithRetry('/api/withdrawals', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 };
 
@@ -580,8 +650,8 @@ export const adminApi = {
     data?: import('./types').AdminDashboardStatsResponse;
     error?: string;
   }> {
-    const res = await fetch('/api/admin/stats');
-    return res.json();
+    const res = await fetchWithRetry('/api/admin/stats');
+    return safeJson(res);
   },
 
   async getDonationsOverTime(days = 30): Promise<{
@@ -589,8 +659,8 @@ export const adminApi = {
     data?: import('./types').DonationOverTimeEntry[];
     error?: string;
   }> {
-    const res = await fetch(`/api/admin/stats/donations-over-time?days=${days}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/admin/stats/donations-over-time?days=${days}`);
+    return safeJson(res);
   },
 
   async getDonationsByCategory(): Promise<{
@@ -598,8 +668,8 @@ export const adminApi = {
     data?: import('./types').DonationByCategoryEntry[];
     error?: string;
   }> {
-    const res = await fetch('/api/admin/stats/donations-by-category');
-    return res.json();
+    const res = await fetchWithRetry('/api/admin/stats/donations-by-category');
+    return safeJson(res);
   },
 
   // ---- Users ----
@@ -623,8 +693,8 @@ export const adminApi = {
       }
     }
     const qs = params.toString();
-    const res = await fetch(`/api/admin/users${qs ? `?${qs}` : ''}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/admin/users${qs ? `?${qs}` : ''}`);
+    return safeJson(res);
   },
 
   async getUser(id: string): Promise<{
@@ -632,8 +702,8 @@ export const adminApi = {
     data?: import('./types').AdminUserDetail;
     error?: string;
   }> {
-    const res = await fetch(`/api/admin/users/${id}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/admin/users/${id}`);
+    return safeJson(res);
   },
 
   async toggleAdmin(id: string, is_admin: boolean): Promise<{
@@ -641,12 +711,12 @@ export const adminApi = {
     message?: string;
     error?: string;
   }> {
-    const res = await fetch(`/api/admin/users/${id}/admin`, {
+    const res = await fetchWithRetry(`/api/admin/users/${id}/admin`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_admin }),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async toggleBan(id: string, is_banned: boolean, reason?: string): Promise<{
@@ -654,12 +724,12 @@ export const adminApi = {
     message?: string;
     error?: string;
   }> {
-    const res = await fetch(`/api/admin/users/${id}/ban`, {
+    const res = await fetchWithRetry(`/api/admin/users/${id}/ban`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_banned, reason }),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   // ---- Campaigns ----
@@ -683,8 +753,8 @@ export const adminApi = {
       }
     }
     const qs = params.toString();
-    const res = await fetch(`/api/admin/campaigns${qs ? `?${qs}` : ''}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/admin/campaigns${qs ? `?${qs}` : ''}`);
+    return safeJson(res);
   },
 
   async getCampaign(id: string): Promise<{
@@ -692,8 +762,8 @@ export const adminApi = {
     data?: import('./types').AdminCampaignDetail;
     error?: string;
   }> {
-    const res = await fetch(`/api/admin/campaigns/${id}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/admin/campaigns/${id}`);
+    return safeJson(res);
   },
 
   async verifyCampaign(id: string, verified: boolean, admin_notes?: string): Promise<{
@@ -701,12 +771,12 @@ export const adminApi = {
     message?: string;
     error?: string;
   }> {
-    const res = await fetch(`/api/admin/campaigns/${id}/verify`, {
+    const res = await fetchWithRetry(`/api/admin/campaigns/${id}/verify`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ verified, admin_notes }),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async updateCampaignStatus(
@@ -718,12 +788,12 @@ export const adminApi = {
     message?: string;
     error?: string;
   }> {
-    const res = await fetch(`/api/admin/campaigns/${id}/status`, {
+    const res = await fetchWithRetry(`/api/admin/campaigns/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, admin_notes }),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   // ---- Audit Log ----
@@ -748,8 +818,8 @@ export const adminApi = {
       }
     }
     const qs = params.toString();
-    const res = await fetch(`/api/admin/audit-log${qs ? `?${qs}` : ''}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/admin/audit-log${qs ? `?${qs}` : ''}`);
+    return safeJson(res);
   },
 
   // ---- Settings ----
@@ -758,8 +828,8 @@ export const adminApi = {
     data?: import('./types').AdminSettingsResponse;
     error?: string;
   }> {
-    const res = await fetch('/api/admin/settings');
-    return res.json();
+    const res = await fetchWithRetry('/api/admin/settings');
+    return safeJson(res);
   },
 
   async updateSettings(data: import('./types').AdminUpdateSettingsDto): Promise<{
@@ -767,12 +837,12 @@ export const adminApi = {
     message?: string;
     error?: string;
   }> {
-    const res = await fetch('/api/admin/settings', {
+    const res = await fetchWithRetry('/api/admin/settings', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   // ---- Escrow ----
@@ -781,8 +851,8 @@ export const adminApi = {
     data?: import('./types').EscrowSummary;
     error?: string;
   }> {
-    const res = await fetch('/api/admin/escrow');
-    return res.json();
+    const res = await fetchWithRetry('/api/admin/escrow');
+    return safeJson(res);
   },
 
   // ---- Withdrawal Queue (10.3 / 10.8) ----
@@ -804,8 +874,8 @@ export const adminApi = {
       }
     }
     const qs = params.toString();
-    const res = await fetch(`/api/admin/withdrawals${qs ? `?${qs}` : ''}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/admin/withdrawals${qs ? `?${qs}` : ''}`);
+    return safeJson(res);
   },
 
   async getWithdrawal(id: string): Promise<{
@@ -813,8 +883,8 @@ export const adminApi = {
     data?: import('./types').AdminWithdrawalDetail;
     error?: string;
   }> {
-    const res = await fetch(`/api/admin/withdrawals/${id}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/admin/withdrawals/${id}`);
+    return safeJson(res);
   },
 
   async reviewWithdrawal(
@@ -822,12 +892,12 @@ export const adminApi = {
     action: 'approve' | 'reject',
     admin_notes?: string,
   ): Promise<{ success: boolean; message?: string; error?: string }> {
-    const res = await fetch(`/api/admin/withdrawals/${id}/review`, {
+    const res = await fetchWithRetry(`/api/admin/withdrawals/${id}/review`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, admin_notes }),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async completeWithdrawal(
@@ -835,12 +905,12 @@ export const adminApi = {
     transaction_reference: string,
     admin_notes?: string,
   ): Promise<{ success: boolean; message?: string; error?: string }> {
-    const res = await fetch(`/api/admin/withdrawals/${id}/complete`, {
+    const res = await fetchWithRetry(`/api/admin/withdrawals/${id}/complete`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ transaction_reference, admin_notes }),
     });
-    return res.json();
+    return safeJson(res);
   },
 };
 
@@ -855,12 +925,12 @@ export const eventsApi = {
     session_id: string;
     metadata?: Record<string, unknown>;
   }): Promise<{ success: boolean; data?: { event_id: string } }> {
-    const res = await fetch('/api/events', {
+    const res = await fetchWithRetry('/api/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(event),
     });
-    return res.json();
+    return safeJson(res);
   },
 };
 
@@ -877,8 +947,8 @@ export const feedApi = {
     if (query?.page) params.set('page', String(query.page));
     if (query?.limit) params.set('limit', String(query.limit));
     const qs = params.toString();
-    const res = await fetch(`/api/feed${qs ? `?${qs}` : ''}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/feed${qs ? `?${qs}` : ''}`);
+    return safeJson(res);
   },
 };
 
@@ -907,8 +977,8 @@ export const recurringApi = {
       }
     }
     const qs = params.toString();
-    const res = await fetch(`/api/recurring-donations${qs ? `?${qs}` : ''}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/recurring-donations${qs ? `?${qs}` : ''}`);
+    return safeJson(res);
   },
 
   /**
@@ -920,12 +990,12 @@ export const recurringApi = {
     message?: string;
     error?: string;
   }> {
-    const res = await fetch('/api/recurring-donations', {
+    const res = await fetchWithRetry('/api/recurring-donations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   /**
@@ -936,8 +1006,8 @@ export const recurringApi = {
     data?: import('./types').RecurringDonation;
     error?: string;
   }> {
-    const res = await fetch(`/api/recurring-donations/${id}`);
-    return res.json();
+    const res = await fetchWithRetry(`/api/recurring-donations/${id}`);
+    return safeJson(res);
   },
 
   /**
@@ -952,12 +1022,12 @@ export const recurringApi = {
     message?: string;
     error?: string;
   }> {
-    const res = await fetch(`/api/recurring-donations/${id}`, {
+    const res = await fetchWithRetry(`/api/recurring-donations/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   /**
@@ -968,10 +1038,10 @@ export const recurringApi = {
     message?: string;
     error?: string;
   }> {
-    const res = await fetch(`/api/recurring-donations/${id}`, {
+    const res = await fetchWithRetry(`/api/recurring-donations/${id}`, {
       method: 'DELETE',
     });
-    return res.json();
+    return safeJson(res);
   },
 
   /**
@@ -989,58 +1059,9 @@ export const recurringApi = {
     };
     error?: string;
   }> {
-    const res = await fetch('/api/recurring-donations/impact');
-    return res.json();
+    const res = await fetchWithRetry('/api/recurring-donations/impact');
+    return safeJson(res);
   },
 };
 
-// ============================================================
-// GENERAL API CLIENT (for non-auth endpoints, to be used in later weeks)
-// ============================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-
-class ApiClient {
-  private baseUrl: string;
-
-  constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
-  }
-
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string>),
-    };
-
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      headers,
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || error.error || `HTTP ${response.status}`);
-    }
-
-    return response.json();
-  }
-
-  get<T>(endpoint: string) {
-    return this.request<T>(endpoint);
-  }
-
-  post<T>(endpoint: string, body: unknown) {
-    return this.request<T>(endpoint, { method: 'POST', body: JSON.stringify(body) });
-  }
-
-  put<T>(endpoint: string, body: unknown) {
-    return this.request<T>(endpoint, { method: 'PUT', body: JSON.stringify(body) });
-  }
-
-  delete<T>(endpoint: string) {
-    return this.request<T>(endpoint, { method: 'DELETE' });
-  }
-}
-
-export const api = new ApiClient(API_BASE_URL);

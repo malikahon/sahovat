@@ -25,8 +25,15 @@ export function validate(schema: ValidationSchemas): RequestHandler {
       if (!result.success) {
         errors['query'] = result.error.flatten().fieldErrors;
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (req as any).query = result.data;
+        const parsed = result.data as Record<string, unknown>;
+        // Store parsed query for use by handlers (authoritative source)
+        (req as any).parsedQuery = parsed;
+        // Also try to update req.query for backward compatibility
+        try {
+          (req as any).query = parsed;
+        } catch {
+          // Express 5 may prevent direct assignment; parsedQuery is the authoritative source
+        }
       }
     }
 
