@@ -88,11 +88,11 @@ export async function createRecurringDonation(
     const campaign = campaignResult.rows[0] as { id: string; status: string };
 
     if (campaign.status === CampaignStatus.FROZEN) {
-      throw new ValidationError('This campaign has been frozen by an administrator');
+      throw new ValidationError('This campaign has been frozen by an administrator', 'CAMPAIGN_FROZEN');
     }
 
     if (campaign.status !== CampaignStatus.ACTIVE) {
-      throw new ValidationError('Campaign is not active');
+      throw new ValidationError('Campaign is not active', 'CAMPAIGN_NOT_ACTIVE');
     }
   }
 
@@ -105,7 +105,7 @@ export async function createRecurringDonation(
     );
 
     if (existingResult.rows.length > 0) {
-      throw new ValidationError('You already have an active recurring donation for this campaign');
+      throw new ValidationError('You already have an active recurring donation for this campaign', 'DUPLICATE_RECURRING');
     }
   }
 

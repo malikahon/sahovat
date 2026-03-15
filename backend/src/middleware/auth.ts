@@ -115,7 +115,7 @@ export async function requireVerified(
   }
 
   if (authReq.user.verification_status !== 'approved') {
-    throw new ForbiddenError('Account verification required');
+    throw new ForbiddenError('Account verification required', 'VERIFICATION_REQUIRED');
   }
 
   next();
@@ -139,7 +139,7 @@ export async function requireAdmin(
   }
 
   if (!authReq.user.is_admin) {
-    throw new ForbiddenError('Admin access required');
+    throw new ForbiddenError('Admin access required', 'ADMIN_REQUIRED');
   }
 
   next();

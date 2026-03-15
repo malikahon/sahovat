@@ -219,7 +219,13 @@
     "myCampaigns": "My Campaigns",
     "recurringDonations": "Recurring Donations",
     "withdrawalAccounts": "Withdrawal Accounts",
-    "withdrawals": "Withdrawals"
+    "withdrawals": "Withdrawals",
+    "about": "About",
+    "discover": "Discover",
+    "projects": "Projects",
+    "impact": "Impact",
+    "newCampaign": "New Campaign",
+    "makeDonation": "Donate"
   },
 
   "dashboard": {
@@ -667,5 +673,61 @@
     "totalDonations": "Total Donations",
     "activeRecurring": "Active Recurring",
     "monthlyRecurring": "Monthly Recurring"
+  },
+  "footer": {
+    "tagline": "Uzbekistan's trusted crowdfunding platform. Support causes that matter.",
+    "platform": "Platform",
+    "aboutUs": "About Us",
+    "howItWorks": "How It Works",
+    "trustSafety": "Trust & Safety",
+    "transparency": "Transparency",
+    "resources": "Resources",
+    "helpCenter": "Help Center",
+    "organizerGuidelines": "Organizer Guidelines",
+    "impactStories": "Impact Stories",
+    "contact": "Contact",
+    "copyright": "All rights reserved."
+  },
+  "authHero": {
+    "trustBadge": "Uzbekistan's trusted platform",
+    "headline": "Let's do good",
+    "headlineAccent": "together",
+    "description": "Sahovat is a crowdfunding platform created to help those in need and make a positive impact on the community.",
+    "activeUsers": "Active users"
+  },
+  "errors": {
+    "INVALID_PHONE": "Invalid Uzbek phone number",
+    "OTP_RATE_LIMIT": "Too many attempts. Please try again later.",
+    "INVALID_OTP": "Invalid or expired code",
+    "INVALID_CREDENTIALS": "Invalid credentials",
+    "ADMIN_REQUIRED": "Admin access required",
+    "ADMIN_NO_PASSWORD": "Password not configured for this admin account",
+    "TOKEN_REVOKED": "Session expired. Please log in again.",
+    "UNAUTHORIZED": "Authentication required",
+    "VERIFICATION_REQUIRED": "Account verification required",
+    "WITHDRAWAL_ACCOUNT_REQUIRED": "You must add a withdrawal account before creating a campaign",
+    "NOT_CAMPAIGN_OWNER": "You can only manage your own campaigns",
+    "CAMPAIGN_NOT_EDITABLE": "Campaign cannot be edited in its current status",
+    "CAMPAIGN_NOT_DRAFT": "Only draft campaigns can be modified",
+    "MAX_DOCUMENTS": "Maximum 15 documents per campaign",
+    "CAMPAIGN_FROZEN": "This campaign has been frozen by an administrator",
+    "CAMPAIGN_NOT_ACTIVE": "Campaign is not active",
+    "OTP_NOT_REQUIRED": "Verification is not required for donations under 100,000 UZS",
+    "DONATION_OTP_REQUIRED": "SMS verification required for donations over 100,000 UZS",
+    "DONATION_ALREADY_PROCESSED": "This donation has already been processed",
+    "CAMPAIGN_INVALID_STATUS": "Cannot withdraw from a campaign in this status",
+    "INSUFFICIENT_BALANCE": "Insufficient available balance",
+    "INVALID_AMOUNT": "Please enter a valid amount",
+    "LAST_WITHDRAWAL_ACCOUNT": "Cannot delete the only withdrawal account",
+    "CANNOT_DELETE_PRIMARY": "Set another account as primary before deleting this one",
+    "DUPLICATE_RECURRING": "You already have an active recurring donation for this campaign",
+    "CANNOT_MODIFY_SELF": "You cannot modify your own account",
+    "CANNOT_BAN_ADMIN": "Cannot ban an admin user. Revoke admin status first.",
+    "INVALID_FEE_RANGE": "Platform fee must be between 0 and 10 percent",
+    "NOT_FOUND": "Not found",
+    "VALIDATION_ERROR": "Invalid input",
+    "FORBIDDEN": "Insufficient permissions",
+    "RATE_LIMIT": "Too many requests. Please wait a moment.",
+    "INTERNAL_ERROR": "An internal error occurred"
   }
 }

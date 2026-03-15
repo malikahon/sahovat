@@ -87,7 +87,7 @@ export async function createCampaign(
   );
   const accountCount = (accountResult.rows[0] as { count: number }).count;
   if (accountCount === 0) {
-    throw new ValidationError('You must add a withdrawal account before creating a campaign');
+    throw new ValidationError('You must add a withdrawal account before creating a campaign', 'WITHDRAWAL_ACCOUNT_REQUIRED');
   }
 
   const result = await query(
@@ -172,12 +172,12 @@ export async function updateCampaign(
   const existing = existingResult.rows[0] as CampaignRow;
 
   if (existing.creator_id !== creatorId) {
-    throw new ForbiddenError('You can only edit your own campaigns');
+    throw new ForbiddenError('You can only edit your own campaigns', 'NOT_CAMPAIGN_OWNER');
   }
 
   // Only draft or pending_review campaigns can be edited
   if (existing.status !== CampaignStatus.DRAFT && existing.status !== CampaignStatus.PENDING_REVIEW) {
-    throw new ValidationError('Campaign can only be edited in draft or pending review status');
+    throw new ValidationError('Campaign can only be edited in draft or pending review status', 'CAMPAIGN_NOT_EDITABLE');
   }
 
   // Build SET clause dynamically
@@ -258,11 +258,11 @@ export async function deleteCampaign(
   const existing = existingResult.rows[0] as CampaignRow;
 
   if (existing.creator_id !== creatorId) {
-    throw new ForbiddenError('You can only delete your own campaigns');
+    throw new ForbiddenError('You can only delete your own campaigns', 'NOT_CAMPAIGN_OWNER');
   }
 
   if (existing.status !== CampaignStatus.DRAFT) {
-    throw new ValidationError('Only draft campaigns can be deleted');
+    throw new ValidationError('Only draft campaigns can be deleted', 'CAMPAIGN_NOT_DRAFT');
   }
 
   // Delete associated documents' files first
@@ -317,11 +317,11 @@ export async function uploadDocument(
   const campaign = campaignResult.rows[0] as CampaignRow;
 
   if (campaign.creator_id !== creatorId) {
-    throw new ForbiddenError('You can only upload documents to your own campaigns');
+    throw new ForbiddenError('You can only upload documents to your own campaigns', 'NOT_CAMPAIGN_OWNER');
   }
 
   if (campaign.status !== CampaignStatus.DRAFT && campaign.status !== CampaignStatus.PENDING_REVIEW) {
-    throw new ValidationError('Documents can only be uploaded to draft or pending review campaigns');
+    throw new ValidationError('Documents can only be uploaded to draft or pending review campaigns', 'CAMPAIGN_NOT_EDITABLE');
   }
 
   // Check document count (max 15)
@@ -331,7 +331,7 @@ export async function uploadDocument(
   );
   const docCount = (countResult.rows[0] as { count: number }).count;
   if (docCount >= 15) {
-    throw new ValidationError('Maximum 15 documents per campaign');
+    throw new ValidationError('Maximum 15 documents per campaign', 'MAX_DOCUMENTS');
   }
 
   // Determine if private based on doc type or explicit override
@@ -418,11 +418,11 @@ export async function deleteDocument(
   const campaign = campaignResult.rows[0] as { creator_id: string; status: string };
 
   if (campaign.creator_id !== creatorId) {
-    throw new ForbiddenError('You can only delete documents from your own campaigns');
+    throw new ForbiddenError('You can only delete documents from your own campaigns', 'NOT_CAMPAIGN_OWNER');
   }
 
   if (campaign.status !== CampaignStatus.DRAFT && campaign.status !== CampaignStatus.PENDING_REVIEW) {
-    throw new ValidationError('Documents can only be deleted from draft or pending review campaigns');
+    throw new ValidationError('Documents can only be deleted from draft or pending review campaigns', 'CAMPAIGN_NOT_EDITABLE');
   }
 
   const docResult = await query(
@@ -674,11 +674,11 @@ export async function submitCampaign(
   const existing = existingResult.rows[0] as CampaignRow;
 
   if (existing.creator_id !== creatorId) {
-    throw new ForbiddenError('You can only submit your own campaigns');
+    throw new ForbiddenError('You can only submit your own campaigns', 'NOT_CAMPAIGN_OWNER');
   }
 
   if (existing.status !== CampaignStatus.DRAFT) {
-    throw new ValidationError('Only draft campaigns can be submitted for review');
+    throw new ValidationError('Only draft campaigns can be submitted for review', 'CAMPAIGN_NOT_DRAFT');
   }
 
   // Validate required fields
@@ -731,11 +731,11 @@ export async function uploadCoverImage(
   const existing = existingResult.rows[0] as CampaignRow;
 
   if (existing.creator_id !== creatorId) {
-    throw new ForbiddenError('You can only update your own campaigns');
+    throw new ForbiddenError('You can only update your own campaigns', 'NOT_CAMPAIGN_OWNER');
   }
 
   if (existing.status !== CampaignStatus.DRAFT && existing.status !== CampaignStatus.PENDING_REVIEW) {
-    throw new ValidationError('Cover image can only be updated for draft or pending review campaigns');
+    throw new ValidationError('Cover image can only be updated for draft or pending review campaigns', 'CAMPAIGN_NOT_EDITABLE');
   }
 
   // Delete old cover image if it exists

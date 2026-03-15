@@ -5,7 +5,7 @@ import type { Campaign, Donation, PaymentProvider, WithdrawalProvider } from './
 // ============================================================
 
 export interface SmsService {
-  sendOtp(phone: string, otp: string): Promise<void>;
+  sendOtp(phone: string, otp: string, locale?: string): Promise<void>;
   sendNotification(phone: string, message: string): Promise<void>;
 }
 

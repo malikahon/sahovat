@@ -99,7 +99,7 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, onNext }: P
       {/* Preset chips */}
       <div>
         <Label className="mb-2 block text-sm font-medium">{t('amount')}</Label>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {PRESET_AMOUNTS.map((preset) => (
             <button
               key={preset}

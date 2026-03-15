@@ -45,7 +45,7 @@ export async function getCampaignAvailableBalance(
   };
 
   if (campaign.creator_id !== requesterId) {
-    throw new ForbiddenError('You do not own this campaign');
+    throw new ForbiddenError('You do not own this campaign', 'NOT_CAMPAIGN_OWNER');
   }
 
   const balance = await getCampaignBalance(campaignId);
@@ -93,12 +93,13 @@ export async function requestWithdrawal(
     };
 
     if (campaign.creator_id !== organizerId) {
-      throw new ForbiddenError('You do not own this campaign');
+      throw new ForbiddenError('You do not own this campaign', 'NOT_CAMPAIGN_OWNER');
     }
 
     if (!['active', 'completed', 'paused'].includes(campaign.status)) {
       throw new ValidationError(
         `Cannot withdraw from a campaign with status "${campaign.status}"`,
+        'CAMPAIGN_INVALID_STATUS',
       );
     }
 
@@ -122,11 +123,12 @@ export async function requestWithdrawal(
     if (dto.amount > balance.available_balance) {
       throw new ValidationError(
         `Requested amount (${dto.amount}) exceeds available balance (${balance.available_balance})`,
+        'INSUFFICIENT_BALANCE',
       );
     }
 
     if (dto.amount <= 0) {
-      throw new ValidationError('Withdrawal amount must be greater than 0');
+      throw new ValidationError('Withdrawal amount must be greater than 0', 'INVALID_AMOUNT');
     }
 
     // 4. Calculate platform fee (10.5)

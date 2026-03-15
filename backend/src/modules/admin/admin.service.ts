@@ -246,7 +246,7 @@ export async function toggleAdmin(
   dto: ToggleAdminDto,
 ): Promise<void> {
   if (adminId === targetUserId) {
-    throw new ForbiddenError('Admins cannot modify their own admin status');
+    throw new ForbiddenError('Admins cannot modify their own admin status', 'CANNOT_MODIFY_SELF');
   }
 
   const result = await query(
@@ -273,7 +273,7 @@ export async function toggleBan(
   dto: ToggleBanDto,
 ): Promise<void> {
   if (adminId === targetUserId) {
-    throw new ForbiddenError('Admins cannot ban themselves');
+    throw new ForbiddenError('Admins cannot ban themselves', 'CANNOT_MODIFY_SELF');
   }
 
   const result = await query(
@@ -287,7 +287,7 @@ export async function toggleBan(
 
   const target = result.rows[0] as { is_admin: boolean };
   if (target.is_admin && dto.is_banned) {
-    throw new ForbiddenError('Cannot ban an admin user. Revoke admin status first.');
+    throw new ForbiddenError('Cannot ban an admin user. Revoke admin status first.', 'CANNOT_BAN_ADMIN');
   }
 
   await logAdminAction(
@@ -749,7 +749,7 @@ export async function updateSettings(adminId: string, dto: UpdateSettingsDto): P
   }
   if (dto.platform_fee_percentage !== undefined) {
     if (dto.platform_fee_percentage < 0 || dto.platform_fee_percentage > 10) {
-      throw new ValidationError('Platform fee must be between 0 and 10 percent');
+      throw new ValidationError('Platform fee must be between 0 and 10 percent', 'INVALID_FEE_RANGE');
     }
     setClauses.push(`platform_fee_percentage = $${idx}`);
     params.push(dto.platform_fee_percentage);
