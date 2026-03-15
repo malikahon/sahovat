@@ -138,6 +138,11 @@ export async function verifyOtpAndLogin(
 
   const user = result.rows[0] as UserRow;
 
+  // Block banned users from logging in
+  if (user.is_banned) {
+    throw new ForbiddenError('Account is banned');
+  }
+
   // Determine if the user is new (hasn't completed registration)
   const isNewUser = user.display_name === null;
 
@@ -181,6 +186,10 @@ export async function register(
     throw new NotFoundError('User not found');
   }
 
+  if ((existingResult.rows[0] as { display_name: string | null }).display_name !== null) {
+    throw new ValidationError('User already registered');
+  }
+
   // Build SET clause dynamically
   const setClauses: string[] = ['display_name = $1'];
   const params: unknown[] = [data.display_name];
@@ -209,6 +218,9 @@ export async function register(
     params.push(data.language_preference);
     paramIndex++;
   }
+
+  // Always update the timestamp
+  setClauses.push('updated_at = NOW()');
 
   // Add userId as last parameter for WHERE clause
   params.push(userId);
@@ -263,14 +275,19 @@ export async function adminLogin(
 
   const user = result.rows[0] as UserRow;
 
+  // Block banned users
+  if (user.is_banned) {
+    throw new UnauthorizedError('Invalid credentials', 'INVALID_CREDENTIALS');
+  }
+
   // Must be an admin
   if (!user.is_admin) {
-    throw new ForbiddenError('Admin access required', 'ADMIN_REQUIRED');
+    throw new UnauthorizedError('Invalid credentials', 'INVALID_CREDENTIALS');
   }
 
   // Must have a password set
   if (!user.password_hash) {
-    throw new UnauthorizedError('Password not configured for this admin account', 'ADMIN_NO_PASSWORD');
+    throw new UnauthorizedError('Invalid credentials', 'INVALID_CREDENTIALS');
   }
 
   // Verify password
@@ -308,8 +325,26 @@ export async function refreshTokens(refreshToken: string): Promise<AuthTokens> {
     throw new UnauthorizedError('Refresh token has been revoked', 'TOKEN_REVOKED');
   }
 
-  // Generate new token pair and replace in Redis
-  const tokens = await generateTokenPair(payload.userId, payload.isAdmin);
+  // Verify user still exists and is not banned
+  const userResult = await query(
+    'SELECT id, is_admin, is_banned FROM users WHERE id = $1',
+    [payload.userId],
+  );
+
+  if (userResult.rows.length === 0) {
+    await revokeRefreshToken(payload.userId);
+    throw new UnauthorizedError('User no longer exists');
+  }
+
+  const user = userResult.rows[0] as { id: string; is_admin: boolean; is_banned: boolean };
+
+  if (user.is_banned) {
+    await revokeRefreshToken(payload.userId);
+    throw new ForbiddenError('Account is banned');
+  }
+
+  // Generate new token pair with fresh admin status from DB
+  const tokens = await generateTokenPair(payload.userId, user.is_admin);
 
   return tokens;
 }

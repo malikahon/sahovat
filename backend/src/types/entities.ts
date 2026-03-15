@@ -196,6 +196,7 @@ export interface Withdrawal {
   admin_notes: string | null;
   transaction_reference: string | null;
   created_at: string;
+  updated_at: string;
   reviewed_at: string | null;
   completed_at: string | null;
 }

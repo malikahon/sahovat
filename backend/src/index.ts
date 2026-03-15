@@ -51,3 +51,13 @@ function shutdown(signal: string) {
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Sahovat] Unhandled promise rejection:', reason);
+  shutdown('unhandledRejection');
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[Sahovat] Uncaught exception:', err);
+  shutdown('uncaughtException');
+});

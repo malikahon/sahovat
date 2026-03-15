@@ -129,6 +129,18 @@ CREATE TABLE withdrawal_accounts (
 CREATE INDEX idx_withdrawal_accounts_user ON withdrawal_accounts(user_id);
 
 -- ============================================================
+-- UPDATED_AT TRIGGER FUNCTION
+-- (Defined early so it can be referenced by subsequent triggers)
+-- ============================================================
+CREATE OR REPLACE FUNCTION trigger_set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================
 -- WITHDRAWALS
 -- ============================================================
 CREATE TABLE withdrawals (
@@ -276,17 +288,6 @@ CREATE TABLE donation_receipts (
 
 CREATE INDEX idx_donation_receipts_donation ON donation_receipts(donation_id);
 
--- ============================================================
--- UPDATED_AT TRIGGER FUNCTION
--- ============================================================
-CREATE OR REPLACE FUNCTION trigger_set_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 -- Apply updated_at trigger to all tables with updated_at column
 CREATE TRIGGER set_updated_at_users
   BEFORE UPDATE ON users
@@ -298,10 +299,6 @@ CREATE TRIGGER set_updated_at_campaigns
 
 CREATE TRIGGER set_updated_at_withdrawal_accounts
   BEFORE UPDATE ON withdrawal_accounts
-  FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
-
-CREATE TRIGGER set_updated_at_withdrawals
-  BEFORE UPDATE ON withdrawals
   FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
 
 CREATE TRIGGER set_updated_at_user_category_scores

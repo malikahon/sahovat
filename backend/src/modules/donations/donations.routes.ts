@@ -24,6 +24,13 @@ const campaignDonationsSchema = {
 };
 
 // ============================================================
+// PUBLIC: Platform fee percentage
+// ============================================================
+
+// GET /api/donations/fee-info — public endpoint returning current platform fee %
+donationsRouter.get('/fee-info', donationsController.getFeeInfo);
+
+// ============================================================
 // 5.1 — OTP
 // ============================================================
 

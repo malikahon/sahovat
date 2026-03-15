@@ -1,4 +1,4 @@
-import { query } from '../../config/database.js';
+import { query, getClient } from '../../config/database.js';
 import { storageService } from '../../services/storage.service.js';
 import {
   NotFoundError,
@@ -220,6 +220,8 @@ export async function updateCampaign(
     throw new ValidationError('No fields to update');
   }
 
+  setClauses.push('updated_at = NOW()');
+
   params.push(campaignId);
   params.push(creatorId);
 
@@ -246,50 +248,64 @@ export async function deleteCampaign(
   campaignId: string,
   creatorId: string,
 ): Promise<void> {
-  const existingResult = await query(
-    'SELECT * FROM campaigns WHERE id = $1',
-    [campaignId],
-  );
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
 
-  if (existingResult.rows.length === 0) {
-    throw new NotFoundError('Campaign not found');
-  }
+    // Lock the campaign row to prevent concurrent modifications
+    const existingResult = await client.query(
+      'SELECT * FROM campaigns WHERE id = $1 FOR UPDATE',
+      [campaignId],
+    );
 
-  const existing = existingResult.rows[0] as CampaignRow;
-
-  if (existing.creator_id !== creatorId) {
-    throw new ForbiddenError('You can only delete your own campaigns', 'NOT_CAMPAIGN_OWNER');
-  }
-
-  if (existing.status !== CampaignStatus.DRAFT) {
-    throw new ValidationError('Only draft campaigns can be deleted', 'CAMPAIGN_NOT_DRAFT');
-  }
-
-  // Delete associated documents' files first
-  const docsResult = await query(
-    'SELECT * FROM campaign_documents WHERE campaign_id = $1',
-    [campaignId],
-  );
-
-  for (const doc of docsResult.rows as CampaignDocumentRow[]) {
-    try {
-      await storageService.delete(doc.file_url);
-    } catch (err) {
-      console.warn(`Failed to delete document file ${doc.file_url}:`, err);
+    if (existingResult.rows.length === 0) {
+      throw new NotFoundError('Campaign not found');
     }
-  }
 
-  // Delete cover image if exists
-  if (existing.cover_image_url) {
-    try {
-      await storageService.delete(existing.cover_image_url);
-    } catch (err) {
-      console.warn(`Failed to delete cover image ${existing.cover_image_url}:`, err);
+    const existing = existingResult.rows[0] as CampaignRow;
+
+    if (existing.creator_id !== creatorId) {
+      throw new ForbiddenError('You can only delete your own campaigns', 'NOT_CAMPAIGN_OWNER');
     }
-  }
 
-  // CASCADE on campaign_documents handles the rows
-  await query('DELETE FROM campaigns WHERE id = $1', [campaignId]);
+    if (existing.status !== CampaignStatus.DRAFT) {
+      throw new ValidationError('Only draft campaigns can be deleted', 'CAMPAIGN_NOT_DRAFT');
+    }
+
+    // Fetch associated documents within the transaction
+    const docsResult = await client.query(
+      'SELECT * FROM campaign_documents WHERE campaign_id = $1',
+      [campaignId],
+    );
+
+    // Delete document files from storage
+    for (const doc of docsResult.rows as CampaignDocumentRow[]) {
+      try {
+        await storageService.delete(doc.file_url);
+      } catch (err) {
+        console.warn(`Failed to delete document file ${doc.file_url}:`, err);
+      }
+    }
+
+    // Delete cover image if exists
+    if (existing.cover_image_url) {
+      try {
+        await storageService.delete(existing.cover_image_url);
+      } catch (err) {
+        console.warn(`Failed to delete cover image ${existing.cover_image_url}:`, err);
+      }
+    }
+
+    // CASCADE on campaign_documents handles the rows
+    await client.query('DELETE FROM campaigns WHERE id = $1', [campaignId]);
+
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 // ============================================================
@@ -304,40 +320,15 @@ export async function uploadDocument(
   notes?: string,
   isPrivateOverride?: boolean,
 ): Promise<CampaignDocumentRow> {
-  // Verify campaign exists and is owned by user
-  const campaignResult = await query(
-    'SELECT * FROM campaigns WHERE id = $1',
-    [campaignId],
-  );
-
-  if (campaignResult.rows.length === 0) {
-    throw new NotFoundError('Campaign not found');
-  }
-
-  const campaign = campaignResult.rows[0] as CampaignRow;
-
-  if (campaign.creator_id !== creatorId) {
-    throw new ForbiddenError('You can only upload documents to your own campaigns', 'NOT_CAMPAIGN_OWNER');
-  }
-
-  if (campaign.status !== CampaignStatus.DRAFT && campaign.status !== CampaignStatus.PENDING_REVIEW) {
-    throw new ValidationError('Documents can only be uploaded to draft or pending review campaigns', 'CAMPAIGN_NOT_EDITABLE');
-  }
-
-  // Check document count (max 15)
-  const countResult = await query(
-    'SELECT COUNT(*)::int AS count FROM campaign_documents WHERE campaign_id = $1',
-    [campaignId],
-  );
-  const docCount = (countResult.rows[0] as { count: number }).count;
-  if (docCount >= 15) {
-    throw new ValidationError('Maximum 15 documents per campaign', 'MAX_DOCUMENTS');
-  }
-
   // Determine if private based on doc type or explicit override
-  const isPrivate = isPrivateOverride ?? PRIVATE_DOC_TYPES.has(documentType);
+  let isPrivate = isPrivateOverride ?? PRIVATE_DOC_TYPES.has(documentType);
 
-  // Save file
+  // Force private for inherently sensitive document types regardless of override
+  if (PRIVATE_DOC_TYPES.has(documentType)) {
+    isPrivate = true;
+  }
+
+  // Save file before transaction to avoid holding locks during I/O
   let fileUrl: string;
   if (isPrivate) {
     fileUrl = await storageService.savePrivate(file.buffer, file.originalname, file.mimetype);
@@ -345,14 +336,62 @@ export async function uploadDocument(
     fileUrl = await storageService.savePublic(file.buffer, file.originalname, file.mimetype);
   }
 
-  const result = await query(
-    `INSERT INTO campaign_documents (campaign_id, document_type, file_url, file_name, file_size, mime_type, is_private, notes)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     RETURNING *`,
-    [campaignId, documentType, fileUrl, file.originalname, file.size, file.mimetype, isPrivate, notes ?? null],
-  );
+  // Use a transaction with FOR UPDATE to prevent race conditions on document count
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
 
-  return toDocument(result.rows[0] as CampaignDocumentRow);
+    // Lock the campaign row to prevent concurrent uploads exceeding the limit
+    const campaignResult = await client.query(
+      'SELECT * FROM campaigns WHERE id = $1 FOR UPDATE',
+      [campaignId],
+    );
+
+    if (campaignResult.rows.length === 0) {
+      throw new NotFoundError('Campaign not found');
+    }
+
+    const campaign = campaignResult.rows[0] as CampaignRow;
+
+    if (campaign.creator_id !== creatorId) {
+      throw new ForbiddenError('You can only upload documents to your own campaigns', 'NOT_CAMPAIGN_OWNER');
+    }
+
+    if (campaign.status !== CampaignStatus.DRAFT && campaign.status !== CampaignStatus.PENDING_REVIEW) {
+      throw new ValidationError('Documents can only be uploaded to draft or pending review campaigns', 'CAMPAIGN_NOT_EDITABLE');
+    }
+
+    // Check document count (max 15) — atomic with the lock above
+    const countResult = await client.query(
+      'SELECT COUNT(*)::int AS count FROM campaign_documents WHERE campaign_id = $1',
+      [campaignId],
+    );
+    const docCount = (countResult.rows[0] as { count: number }).count;
+    if (docCount >= 15) {
+      throw new ValidationError('Maximum 15 documents per campaign', 'MAX_DOCUMENTS');
+    }
+
+    const result = await client.query(
+      `INSERT INTO campaign_documents (campaign_id, document_type, file_url, file_name, file_size, mime_type, is_private, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [campaignId, documentType, fileUrl, file.originalname, file.size, file.mimetype, isPrivate, notes ?? null],
+    );
+
+    await client.query('COMMIT');
+    return toDocument(result.rows[0] as CampaignDocumentRow);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    // Clean up the uploaded file on failure
+    try {
+      await storageService.delete(fileUrl);
+    } catch {
+      // best-effort cleanup
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 // ============================================================
@@ -535,17 +574,24 @@ export async function listCampaigns(
   const params: unknown[] = [];
   let paramIndex = 1;
 
-  // Status filter
-  if (filters.status) {
-    whereClauses.push(`c.status = $${paramIndex}`);
-    params.push(filters.status);
-    paramIndex++;
+  // Status filter — only admins and creators viewing their own campaigns
+  // can use the status filter; everyone else is forced to 'active'
+  if (isAdmin) {
+    // Admin can filter by any status or see all
+    if (filters.status) {
+      whereClauses.push(`c.status = $${paramIndex}`);
+      params.push(filters.status);
+      paramIndex++;
+    }
   } else if (filters.creator_id && filters.creator_id === requesterId) {
-    // Creator viewing their own campaigns — show all statuses
-  } else if (isAdmin) {
-    // Admin can see all statuses
+    // Creator viewing their own campaigns — honor status filter or show all
+    if (filters.status) {
+      whereClauses.push(`c.status = $${paramIndex}`);
+      params.push(filters.status);
+      paramIndex++;
+    }
   } else {
-    // Public: only active campaigns
+    // Public: always force active only, ignore query parameter
     whereClauses.push(`c.status = 'active'`);
   }
 
@@ -703,7 +749,7 @@ export async function submitCampaign(
   }
 
   const result = await query(
-    `UPDATE campaigns SET status = 'pending_review' WHERE id = $1 RETURNING *`,
+    `UPDATE campaigns SET status = 'pending_review', updated_at = NOW() WHERE id = $1 RETURNING *`,
     [campaignId],
   );
 
@@ -751,7 +797,7 @@ export async function uploadCoverImage(
   const imageUrl = await storageService.savePublic(file.buffer, file.originalname, file.mimetype);
 
   const result = await query(
-    'UPDATE campaigns SET cover_image_url = $1 WHERE id = $2 RETURNING *',
+    'UPDATE campaigns SET cover_image_url = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
     [imageUrl, campaignId],
   );
 

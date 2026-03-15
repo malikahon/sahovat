@@ -117,8 +117,12 @@ export async function requestWithdrawal(
     const decryptedNumber = decrypt(account.account_number_encrypted);
     const cardNumberMasked = maskCardNumber(decryptedNumber);
 
-    // 3. Check available balance (locking rows to prevent race conditions)
-    const balance = await getCampaignBalance(dto.campaign_id);
+    // 3. Lock the campaign row to prevent concurrent withdrawals, then check balance
+    await client.query(
+      `SELECT id FROM campaigns WHERE id = $1::uuid FOR UPDATE`,
+      [dto.campaign_id],
+    );
+    const balance = await getCampaignBalance(dto.campaign_id, client);
 
     if (dto.amount > balance.available_balance) {
       throw new ValidationError(

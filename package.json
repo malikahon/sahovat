@@ -12,12 +12,16 @@
     "build:frontend": "npm run build --prefix frontend",
     "lint": "npm run lint --prefix backend && npm run lint --prefix frontend",
     "test": "npm run test --prefix backend",
+    "test:frontend": "npm run test --prefix frontend",
+    "test:e2e": "playwright test",
+    "test:all": "npm run test --prefix backend && npm run test --prefix frontend",
     "db:migrate": "npm run db:migrate --prefix backend",
     "db:seed": "npm run db:seed --prefix backend",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "concurrently": "^9.1.0"
   }
 }

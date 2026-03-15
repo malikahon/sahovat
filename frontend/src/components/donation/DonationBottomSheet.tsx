@@ -26,6 +26,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   userDisplayName: string | null;
+  platformFeePct?: number; // From admin settings; defaults to 1%
 }
 
 const OTP_THRESHOLD = 100_000;
@@ -40,6 +41,7 @@ export function DonationBottomSheet({
   isOpen,
   onClose,
   userDisplayName,
+  platformFeePct,
 }: Props) {
   const t = useTranslations('donations');
 
@@ -139,6 +141,7 @@ export function DonationBottomSheet({
             campaignId={campaignId}
             campaignTitle={campaignTitle}
             formData={formData}
+            platformFeePct={platformFeePct}
             onSuccess={handlePaymentSuccess}
             onBack={() => setStep(formData.amount > OTP_THRESHOLD ? 'otp' : 'amount')}
           />

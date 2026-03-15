@@ -25,6 +25,7 @@ function getOtpMessage(otp: string, locale: string): string {
 class EskizSmsService implements SmsService {
   private token: string | null = null;
   private tokenExpiresAt: number = 0;
+  private authPromise: Promise<string> | null = null;
 
   private get baseUrl(): string {
     return env.SMS_API_URL;
@@ -34,6 +35,7 @@ class EskizSmsService implements SmsService {
    * Authenticates with Eskiz.uz API and caches the bearer token.
    * Eskiz tokens are valid for ~30 days; we refresh proactively
    * when the token is within 1 day of expiry, or on 401 response.
+   * Uses a promise-based mutex to prevent concurrent auth requests.
    */
   private async authenticate(): Promise<string> {
     // Return cached token if still valid (with 1-day buffer)
@@ -41,6 +43,17 @@ class EskizSmsService implements SmsService {
       return this.token;
     }
 
+    // Deduplicate concurrent auth calls
+    if (!this.authPromise) {
+      this.authPromise = this._doAuth().finally(() => { this.authPromise = null; });
+    }
+    return this.authPromise;
+  }
+
+  /**
+   * Performs the actual authentication request to Eskiz.uz.
+   */
+  private async _doAuth(): Promise<string> {
     const response = await fetch(`${this.baseUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

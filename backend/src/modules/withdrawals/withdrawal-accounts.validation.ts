@@ -45,3 +45,19 @@ export const accountParamsSchema = {
     id: z.string().uuid('Invalid account ID format'),
   }),
 };
+
+// ============================================================
+// REQUEST WITHDRAWAL
+// ============================================================
+
+export const requestWithdrawalSchema = {
+  body: z.object({
+    campaign_id: z.string().uuid('Invalid campaign ID format'),
+    withdrawal_account_id: z.string().uuid('Invalid withdrawal account ID format'),
+    amount: z
+      .number({ required_error: 'Amount is required', invalid_type_error: 'Amount must be a number' })
+      .int('Amount must be an integer')
+      .positive('Amount must be positive')
+      .min(1000, 'Minimum withdrawal amount is 1000'),
+  }),
+};

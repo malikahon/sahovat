@@ -7,6 +7,7 @@ export interface AuthenticatedUser {
   display_name: string | null;
   is_verified: boolean;
   is_admin: boolean;
+  is_banned: boolean;
   verification_status: VerificationStatus;
 }
 

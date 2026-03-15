@@ -47,7 +47,8 @@ export default function LoginPage() {
     try {
       const fullPhone = `+998${data.phone}`;
       await login(fullPhone);
-      router.push(`/verify?phone=${encodeURIComponent(fullPhone)}`);
+      sessionStorage.setItem('verify_phone', fullPhone);
+      router.push('/verify');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('otpInvalid'));
     }

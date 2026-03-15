@@ -23,13 +23,14 @@ export function VerifyForm() {
   const t = useTranslations('auth');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const phone = searchParams.get('phone') || '';
+  const phone = searchParams.get('phone') || (typeof window !== 'undefined' ? sessionStorage.getItem('verify_phone') : null) || '';
 
   const { verifyOtp, login } = useAuth();
 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [countdown, setCountdown] = useState(RESEND_COOLDOWN);
   const [isResending, setIsResending] = useState(false);
 
@@ -54,7 +55,8 @@ export function VerifyForm() {
   // Auto-submit when all 6 digits are entered
   const submitOtp = useCallback(
     async (code: string) => {
-      if (code.length !== OTP_LENGTH || isSubmitting) return;
+      if (code.length !== OTP_LENGTH || isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
       setIsSubmitting(true);
       setError(null);
 
@@ -71,10 +73,11 @@ export function VerifyForm() {
         setOtp(Array(OTP_LENGTH).fill(''));
         inputRefs.current[0]?.focus();
       } finally {
+        isSubmittingRef.current = false;
         setIsSubmitting(false);
       }
     },
-    [phone, verifyOtp, router, isSubmitting, t],
+    [phone, verifyOtp, router, t],
   );
 
   function handleChange(index: number, value: string) {

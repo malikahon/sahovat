@@ -9,6 +9,22 @@ import * as donationsService from './donations.service.js';
 import * as ledgerService from './ledger.service.js';
 
 // ============================================================
+// PUBLIC: Fee info
+// ============================================================
+
+/**
+ * GET /api/donations/fee-info
+ * Returns the current platform fee percentage (public, no auth required).
+ */
+export async function getFeeInfo(_req: Request, res: Response): Promise<void> {
+  const feePercentage = await ledgerService.getPlatformFeePercentage();
+  res.status(200).json({
+    success: true,
+    data: { platform_fee_percentage: feePercentage },
+  });
+}
+
+// ============================================================
 // 5.1 — OTP
 // ============================================================
 

@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/auth.js';
+import { validate } from '../../middleware/validate.js';
+import { requestWithdrawalSchema } from './withdrawal-accounts.validation.js';
 import * as withdrawalsController from './withdrawals.controller.js';
 
 export const withdrawalsRouter = Router();
@@ -26,6 +28,7 @@ withdrawalsRouter.get(
 withdrawalsRouter.post(
   '/',
   requireAuth,
+  validate(requestWithdrawalSchema),
   withdrawalsController.requestWithdrawal,
 );
 

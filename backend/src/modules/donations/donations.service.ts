@@ -246,11 +246,18 @@ export async function confirmDonation(
     const donation = donationResult.rows[0] as DonationRow;
 
     if (donation.status !== DonationStatus.PENDING) {
+      // If the donation already has the same terminal status, return idempotently
+      // to avoid webhook retry loops from payment providers.
+      if (donation.status === status) {
+        await client.query('COMMIT');
+        return toDonation(donation);
+      }
+      // Genuine conflict: e.g., trying to mark as failed when already completed
       throw new ValidationError('Donation already processed', 'DONATION_ALREADY_PROCESSED');
     }
 
     // Verify webhook amount matches the original donation amount
-    if (amount !== Number(donation.amount)) {
+    if (Number(amount) !== Number(donation.amount)) {
       throw new ValidationError('Webhook amount does not match donation amount');
     }
 

@@ -1,4 +1,4 @@
-import { randomInt } from 'node:crypto';
+import { randomInt, timingSafeEqual } from 'node:crypto';
 import { redis } from '../config/redis.js';
 import { env } from '../config/env.js';
 
@@ -26,10 +26,24 @@ export async function storeOtp(phone: string, otp: string): Promise<void> {
  * On failure: increments the attempts counter, returns false.
  */
 export async function verifyOtp(phone: string, otp: string): Promise<boolean> {
+  // Check lockout inside verify to reduce race window
+  const locked = await isOtpLocked(phone);
+  if (locked) {
+    return false;
+  }
+
   const key = `${OTP_PREFIX}${phone}`;
   const storedOtp = await redis.get(key);
 
-  if (!storedOtp || storedOtp !== otp) {
+  if (!storedOtp) {
+    await incrementOtpAttempts(phone);
+    return false;
+  }
+
+  // Use timing-safe comparison to prevent timing attacks on OTP guessing
+  const storedBuf = Buffer.from(storedOtp);
+  const otpBuf = Buffer.from(otp);
+  if (storedBuf.length !== otpBuf.length || !timingSafeEqual(storedBuf, otpBuf)) {
     await incrementOtpAttempts(phone);
     return false;
   }
@@ -62,8 +76,6 @@ export async function incrementOtpAttempts(phone: string): Promise<void> {
   const attemptsKey = `${OTP_ATTEMPTS_PREFIX}${phone}`;
   const current = await redis.incr(attemptsKey);
 
-  // Set TTL on first attempt or refresh on subsequent attempts
-  if (current === 1) {
-    await redis.expire(attemptsKey, env.OTP_LOCKOUT_SECONDS);
-  }
+  // Set/refresh TTL on every failed attempt to prevent TTL drain attacks
+  await redis.expire(attemptsKey, env.OTP_LOCKOUT_SECONDS);
 }

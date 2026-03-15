@@ -1,10 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { query } from '../../config/database.js';
+import { redis } from '../../config/redis.js';
 import { env } from '../../config/env.js';
-import { NotFoundError, ValidationError } from '../../lib/errors.js';
+import { NotFoundError, ValidationError, UnauthorizedError } from '../../lib/errors.js';
 import { storageService } from '../../services/storage.service.js';
 import type { UpdateProfileDto } from '../../types/api.js';
 import type { UserRow, SafeUser } from './users.types.js';
+
+const ONEID_STATE_PREFIX = 'oneid_state:';
+const ONEID_STATE_TTL_SECONDS = 600; // 10 minutes
 
 // ============================================================
 // HELPERS
@@ -132,9 +136,18 @@ export async function initiateOneIdVerification(
     throw new NotFoundError('User not found');
   }
 
+  // Generate a secure, single-use state token and store in Redis mapped to userId
+  const stateToken = randomUUID();
+  await redis.set(
+    `${ONEID_STATE_PREFIX}${stateToken}`,
+    userId,
+    'EX',
+    ONEID_STATE_TTL_SECONDS,
+  );
+
   if (!env.ONEID_ENABLED) {
     // Dev mode — return mock callback URL that auto-verifies
-    const redirect_url = `${env.ONEID_REDIRECT_URI}?code=mock_code&state=${userId}`;
+    const redirect_url = `${env.ONEID_REDIRECT_URI}?code=mock_code&state=${stateToken}`;
     return { redirect_url };
   }
 
@@ -143,7 +156,7 @@ export async function initiateOneIdVerification(
     response_type: 'code',
     client_id: env.ONEID_CLIENT_ID,
     redirect_uri: env.ONEID_REDIRECT_URI,
-    state: userId,
+    state: stateToken,
     scope: 'openid profile',
   });
 
@@ -164,7 +177,16 @@ export async function handleOneIdCallback(
   code: string,
   state: string,
 ): Promise<SafeUser> {
-  const userId = state;
+  // Resolve the state token to a userId from Redis (single-use)
+  const stateKey = `${ONEID_STATE_PREFIX}${state}`;
+  const userId = await redis.get(stateKey);
+
+  if (!userId) {
+    throw new UnauthorizedError('Invalid or expired verification state');
+  }
+
+  // Delete the state token immediately to prevent reuse
+  await redis.del(stateKey);
 
   if (!env.ONEID_ENABLED) {
     // Dev mode — auto-verify the user

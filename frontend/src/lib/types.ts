@@ -108,12 +108,12 @@ export interface User {
   id: string;
   phone_number: string;
   display_name: string | null;
-  password_hash: string | null;
   date_of_birth: string | null;
   gender: 'male' | 'female' | null;
   preferred_categories: CampaignCategory[];
   is_verified: boolean;
   is_admin: boolean;
+  is_banned: boolean;
   verification_status: VerificationStatus;
   oneid_id: string | null;
   oneid_verified_at: string | null;

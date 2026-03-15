@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { validate } from '../../middleware/validate.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { authLimiter, otpLimiter } from '../../middleware/rateLimiter.js';
+import { env } from '../../config/env.js';
+import { redis } from '../../config/redis.js';
 import {
   requestOtpSchema,
   verifyOtpSchema,
@@ -66,3 +68,21 @@ authRouter.get(
   requireAuth,
   authController.getMe,
 );
+
+// GET /api/auth/test-otp/:phone — Retrieve stored OTP (TEST ENVIRONMENT ONLY)
+// Used by E2E tests to retrieve the OTP without real SMS delivery.
+if (env.NODE_ENV === 'test') {
+  authRouter.get('/test-otp/:phone', async (req, res, next) => {
+    try {
+      const phone = decodeURIComponent(req.params['phone'] ?? '');
+      const otp = await redis.get(`otp:${phone}`);
+      if (!otp) {
+        res.status(404).json({ success: false, error: 'No OTP found for this phone' });
+        return;
+      }
+      res.json({ success: true, otp });
+    } catch (err) {
+      next(err);
+    }
+  });
+}
