@@ -10,13 +10,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Phone, ArrowRight, Loader2 } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -54,61 +47,69 @@ export default function LoginPage() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <Phone className="h-6 w-6 text-primary" />
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="space-y-2">
+        <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-sage-100 shadow-warm-xs">
+          <Phone className="h-5 w-5 text-sage-600" />
         </div>
-        <CardTitle className="text-2xl">{t('welcomeTitle')}</CardTitle>
-        <CardDescription>{t('welcomeSubtitle')}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="phone">{t('phoneNumber')}</Label>
-            <div className="flex gap-2">
-              <div className="flex h-8 items-center rounded-lg border border-input bg-muted px-3 text-sm font-medium text-muted-foreground">
-                {t('phonePrefix')}
-              </div>
-              <Input
-                id="phone"
-                type="tel"
-                inputMode="numeric"
-                placeholder={t('phonePlaceholder')}
-                autoComplete="tel-national"
-                autoFocus
-                maxLength={9}
-                {...register('phone')}
-              />
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {t('welcomeTitle')}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {t('welcomeSubtitle')}
+        </p>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="phone" className="text-sm font-medium">
+            {t('phoneNumber')}
+          </Label>
+          <div className="flex gap-2">
+            <div className="flex h-10 items-center rounded-lg border border-border bg-sage-50 px-3.5 text-sm font-semibold text-sage-700">
+              {t('phonePrefix')}
             </div>
-            {errors.phone && (
-              <p className="text-sm text-destructive">{t('phoneInvalid')}</p>
-            )}
+            <Input
+              id="phone"
+              type="tel"
+              inputMode="numeric"
+              placeholder={t('phonePlaceholder')}
+              autoComplete="tel-national"
+              autoFocus
+              maxLength={9}
+              className="h-10"
+              {...register('phone')}
+            />
           </div>
-
-          {error && (
-            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
+          {errors.phone && (
+            <p className="text-sm text-destructive">{t('phoneInvalid')}</p>
           )}
+        </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            size="lg"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                {t('sendOtp')}
-                <ArrowRight className="ml-1 h-4 w-4" data-icon="inline-end" />
-              </>
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+        {error && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        <Button
+          type="submit"
+          className="w-full shadow-warm-sm"
+          size="lg"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              {t('sendOtp')}
+              <ArrowRight className="ml-1.5 h-4 w-4" data-icon="inline-end" />
+            </>
+          )}
+        </Button>
+      </form>
+    </div>
   );
 }

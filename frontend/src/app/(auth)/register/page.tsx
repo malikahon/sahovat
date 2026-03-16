@@ -12,13 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Loader2, UserPlus } from 'lucide-react';
 
 const campaignCategories = Object.values(CampaignCategory);
@@ -61,14 +54,12 @@ export default function RegisterPage() {
   const { isAuthenticated, isLoading, user, register: authRegister } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace('/login');
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // Redirect to dashboard if already registered (has display_name)
   useEffect(() => {
     if (!isLoading && user?.display_name) {
       router.replace('/dashboard');
@@ -107,8 +98,8 @@ export default function RegisterPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-sage-500" />
       </div>
     );
   }
@@ -116,163 +107,170 @@ export default function RegisterPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <Card className="w-full max-w-lg">
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <UserPlus className="h-6 w-6 text-primary" />
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="space-y-2">
+        <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-sage-100 shadow-warm-xs">
+          <UserPlus className="h-5 w-5 text-sage-600" />
         </div>
-        <CardTitle className="text-2xl">{t('registerTitle')}</CardTitle>
-        <CardDescription>{t('registerSubtitle')}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Display Name */}
-          <div className="space-y-2">
-            <Label htmlFor="display_name">
-              {t('displayName')} <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="display_name"
-              placeholder={t('displayNamePlaceholder')}
-              autoFocus
-              {...register('display_name')}
-            />
-            {errors.display_name && (
-              <p className="text-sm text-destructive">{errors.display_name.message}</p>
-            )}
-          </div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {t('registerTitle')}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {t('registerSubtitle')}
+        </p>
+      </div>
 
-          {/* Date of Birth */}
-          <div className="space-y-2">
-            <Label htmlFor="date_of_birth">
-              {t('dateOfBirth')}{' '}
-              <span className="text-muted-foreground text-xs font-normal">
-                ({tCommon('optional')})
-              </span>
-            </Label>
-            <Input
-              id="date_of_birth"
-              type="date"
-              max={new Date().toISOString().split('T')[0]}
-              min="1920-01-01"
-              {...register('date_of_birth')}
-            />
-            {errors.date_of_birth && (
-              <p className="text-sm text-destructive">{errors.date_of_birth.message}</p>
-            )}
-          </div>
-
-          {/* Gender */}
-          <div className="space-y-2">
-            <Label>
-              {t('gender')}{' '}
-              <span className="text-muted-foreground text-xs font-normal">
-                ({tCommon('optional')})
-              </span>
-            </Label>
-            <Controller
-              name="gender"
-              control={control}
-              render={({ field }) => (
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => field.onChange(field.value === 'male' ? undefined : 'male')}
-                    className={`flex-1 rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                      field.value === 'male'
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border bg-background text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {t('genderMale')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => field.onChange(field.value === 'female' ? undefined : 'female')}
-                    className={`flex-1 rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                      field.value === 'female'
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border bg-background text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {t('genderFemale')}
-                  </button>
-                </div>
-              )}
-            />
-          </div>
-
-          {/* Preferred Categories */}
-          <div className="space-y-3">
-            <div>
-              <Label>{t('preferredCategories')}</Label>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('preferredCategoriesHint')}
-              </p>
-            </div>
-            <Controller
-              name="preferred_categories"
-              control={control}
-              render={({ field }) => (
-                <div className="grid grid-cols-2 gap-2">
-                  {campaignCategories.map((category) => {
-                    const isChecked = field.value?.includes(category) || false;
-                    const translationKey = CATEGORY_TRANSLATION_KEY[category];
-                    return (
-                      <label
-                        key={category}
-                        className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                          isChecked
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-border hover:bg-muted'
-                        }`}
-                      >
-                        <Checkbox
-                          checked={isChecked}
-                          onCheckedChange={(checked) => {
-                            const current = field.value || [];
-                            if (checked) {
-                              if (current.length >= 7) return;
-                              field.onChange([...current, category]);
-                            } else {
-                              field.onChange(current.filter((c) => c !== category));
-                            }
-                          }}
-                        />
-                        <span>{tc(translationKey)}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-            />
-            {errors.preferred_categories && (
-              <p className="text-sm text-destructive">{errors.preferred_categories.message}</p>
-            )}
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
+      {/* Form */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Display Name */}
+        <div className="space-y-2">
+          <Label htmlFor="display_name" className="text-sm font-medium">
+            {t('displayName')} <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="display_name"
+            placeholder={t('displayNamePlaceholder')}
+            autoFocus
+            className="h-10"
+            {...register('display_name')}
+          />
+          {errors.display_name && (
+            <p className="text-sm text-destructive">{errors.display_name.message}</p>
           )}
+        </div>
 
-          {/* Submit */}
-          <Button
-            type="submit"
-            className="w-full"
-            size="lg"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              t('completeRegistration')
+        {/* Date of Birth */}
+        <div className="space-y-2">
+          <Label htmlFor="date_of_birth" className="text-sm font-medium">
+            {t('dateOfBirth')}{' '}
+            <span className="text-muted-foreground text-xs font-normal">
+              ({tCommon('optional')})
+            </span>
+          </Label>
+          <Input
+            id="date_of_birth"
+            type="date"
+            max={new Date().toISOString().split('T')[0]}
+            min="1920-01-01"
+            className="h-10"
+            {...register('date_of_birth')}
+          />
+          {errors.date_of_birth && (
+            <p className="text-sm text-destructive">{errors.date_of_birth.message}</p>
+          )}
+        </div>
+
+        {/* Gender */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">
+            {t('gender')}{' '}
+            <span className="text-muted-foreground text-xs font-normal">
+              ({tCommon('optional')})
+            </span>
+          </Label>
+          <Controller
+            name="gender"
+            control={control}
+            render={({ field }) => (
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => field.onChange(field.value === 'male' ? undefined : 'male')}
+                  className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all ${
+                    field.value === 'male'
+                      ? 'border-sage-400 bg-sage-50 text-sage-700 shadow-warm-xs'
+                      : 'border-border bg-background text-foreground hover:bg-muted'
+                  }`}
+                >
+                  {t('genderMale')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => field.onChange(field.value === 'female' ? undefined : 'female')}
+                  className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all ${
+                    field.value === 'female'
+                      ? 'border-sage-400 bg-sage-50 text-sage-700 shadow-warm-xs'
+                      : 'border-border bg-background text-foreground hover:bg-muted'
+                  }`}
+                >
+                  {t('genderFemale')}
+                </button>
+              </div>
             )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+          />
+        </div>
+
+        {/* Preferred Categories */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-sm font-medium">{t('preferredCategories')}</Label>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('preferredCategoriesHint')}
+            </p>
+          </div>
+          <Controller
+            name="preferred_categories"
+            control={control}
+            render={({ field }) => (
+              <div className="grid grid-cols-2 gap-2">
+                {campaignCategories.map((category) => {
+                  const isChecked = field.value?.includes(category) || false;
+                  const translationKey = CATEGORY_TRANSLATION_KEY[category];
+                  return (
+                    <label
+                      key={category}
+                      className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition-all ${
+                        isChecked
+                          ? 'border-sage-400 bg-sage-50 text-sage-700 shadow-warm-xs'
+                          : 'border-border hover:bg-muted'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={isChecked}
+                        onCheckedChange={(checked) => {
+                          const current = field.value || [];
+                          if (checked) {
+                            if (current.length >= 7) return;
+                            field.onChange([...current, category]);
+                          } else {
+                            field.onChange(current.filter((c) => c !== category));
+                          }
+                        }}
+                      />
+                      <span>{tc(translationKey)}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          />
+          {errors.preferred_categories && (
+            <p className="text-sm text-destructive">{errors.preferred_categories.message}</p>
+          )}
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        {/* Submit */}
+        <Button
+          type="submit"
+          className="w-full shadow-warm-sm"
+          size="lg"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            t('completeRegistration')
+          )}
+        </Button>
+      </form>
+    </div>
   );
 }
