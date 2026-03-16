@@ -59,8 +59,8 @@ export function DonationSuccessStep({
   return (
     <div className="flex flex-col items-center space-y-5 py-2 text-center">
       {/* Success icon */}
-      <div className="flex size-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-950">
-        <CheckCircle className="size-10 text-green-600 dark:text-green-400" />
+      <div className="flex size-20 items-center justify-center rounded-full bg-green-100">
+        <CheckCircle className="size-10 text-green-600" />
       </div>
 
       {/* Title */}

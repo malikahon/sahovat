@@ -316,7 +316,7 @@ export default function CampaignDetailPage() {
                 <CampaignStatusBadge status={campaign.status} />
               )}
               {campaign.is_verified && (
-                <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
+                <span className="inline-flex items-center gap-1 text-green-600">
                   <CheckCircle className="size-4" />
                   {t('verified')}
                 </span>

@@ -7,7 +7,6 @@ import { useTranslations } from 'next-intl';
 import { Menu, X, HeartHandshake, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
-import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { cn } from '@/lib/utils';
 
 interface NavbarProps {
@@ -73,10 +72,9 @@ export function Navbar({ variant = 'public' }: NavbarProps) {
           ))}
         </nav>
 
-        {/* Right section: Language | Theme | CTA */}
+        {/* Right section: Language | CTA */}
         <div className="hidden items-center gap-2 md:flex">
           <LanguageSwitcher />
-          <ThemeToggle />
           <div className="ml-1 h-5 w-px bg-border" />
           {variant === 'authenticated' ? (
             <>
@@ -144,10 +142,9 @@ export function Navbar({ variant = 'public' }: NavbarProps) {
             ))}
           </nav>
 
-          {/* Mobile language + theme row */}
+          {/* Mobile language row */}
           <div className="mt-4 flex items-center gap-2">
             <LanguageSwitcher />
-            <ThemeToggle />
           </div>
 
           {/* Mobile CTAs */}

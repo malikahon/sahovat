@@ -22,8 +22,8 @@ const statusVariantMap: Record<CampaignStatus, 'default' | 'secondary' | 'destru
 
 const statusColorMap: Record<CampaignStatus, string> = {
   [CampaignStatus.DRAFT]: '',
-  [CampaignStatus.PENDING_REVIEW]: 'border-amber-300 text-amber-700 dark:border-amber-600 dark:text-amber-400',
-  [CampaignStatus.ACTIVE]: 'bg-green-600 text-white dark:bg-green-700',
+  [CampaignStatus.PENDING_REVIEW]: 'border-amber-300 text-amber-700',
+  [CampaignStatus.ACTIVE]: 'bg-green-600 text-white',
   [CampaignStatus.PAUSED]: '',
   [CampaignStatus.COMPLETED]: '',
   [CampaignStatus.CANCELLED]: '',

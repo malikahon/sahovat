@@ -37,14 +37,14 @@ const ACTION_TYPES = [
 const TARGET_TYPES = ['campaign', 'user', 'withdrawal', 'settings'];
 
 const ACTION_COLORS: Record<string, string> = {
-  verify_campaign: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  reject_campaign: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  freeze_campaign: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  ban_user: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  unban_user: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  make_admin: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  revoke_admin: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  update_settings: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  verify_campaign: 'bg-green-100 text-green-800',
+  reject_campaign: 'bg-red-100 text-red-800',
+  freeze_campaign: 'bg-blue-100 text-blue-800',
+  ban_user: 'bg-red-100 text-red-800',
+  unban_user: 'bg-green-100 text-green-800',
+  make_admin: 'bg-purple-100 text-purple-800',
+  revoke_admin: 'bg-orange-100 text-orange-800',
+  update_settings: 'bg-yellow-100 text-yellow-800',
 };
 
 const PAGE_SIZE = 20;

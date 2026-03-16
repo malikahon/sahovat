@@ -60,9 +60,9 @@ const PROVIDER_LABELS: Record<WithdrawalProvider, string> = {
 };
 
 const PROVIDER_COLORS: Record<WithdrawalProvider, string> = {
-  [WithdrawalProvider.PAYME]: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
-  [WithdrawalProvider.UZCARD]: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  [WithdrawalProvider.HUMO]: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+  [WithdrawalProvider.PAYME]: 'bg-cyan-100 text-cyan-800',
+  [WithdrawalProvider.UZCARD]: 'bg-blue-100 text-blue-800',
+  [WithdrawalProvider.HUMO]: 'bg-emerald-100 text-emerald-800',
 };
 
 // ============================================================
@@ -102,7 +102,7 @@ function AccountCard({
                 {PROVIDER_LABELS[account.provider]}
               </Badge>
               {account.is_primary && (
-                <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                <Badge className="bg-amber-100 text-amber-800">
                   <Star className="size-3" />
                   {t('primary')}
                 </Badge>
@@ -403,8 +403,8 @@ export default function WithdrawalAccountsPage() {
         <div
           className={`rounded-lg border p-3 text-sm ${
             message.type === 'success'
-              ? 'border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200'
-              : 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200'
+              ? 'border-green-200 bg-green-50 text-green-800'
+              : 'border-red-200 bg-red-50 text-red-800'
           }`}
         >
           {message.text}
