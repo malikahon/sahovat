@@ -31,11 +31,11 @@ const envSchema = z.object({
     : z.string().regex(/^[0-9a-fA-F]{64}$/, 'Must be exactly 64 hex characters'),
 
   SMS_API_URL: z.string().default('https://notify.eskiz.uz'),
-  SMS_API_EMAIL: isDev ? z.string().optional().default('') : z.string().min(1),
-  SMS_API_PASSWORD: isDev ? z.string().optional().default('') : z.string().min(1),
+  SMS_API_EMAIL: z.string().optional().default(''),
+  SMS_API_PASSWORD: z.string().optional().default(''),
 
-  PAYME_MERCHANT_ID: isDev ? z.string().optional().default('') : z.string().min(1),
-  PAYME_KEY: isDev ? z.string().optional().default('') : z.string().min(1),
+  PAYME_MERCHANT_ID: z.string().optional().default(''),
+  PAYME_KEY: z.string().optional().default(''),
   PAYME_SANDBOX: z
     .enum(['true', 'false', '1', '0'])
     .default('true')
