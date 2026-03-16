@@ -2,6 +2,8 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import { env } from './config/env.js';
+import { pool } from './config/database.js';
+import { redis } from './config/redis.js';
 import { storagePaths } from './config/storage.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
 import { requireAuth, requireAdmin } from './middleware/auth.js';
@@ -41,11 +43,32 @@ export function createApp(): express.Express {
   // Static file serving for public storage
   app.use('/storage', express.static(storagePaths.publicPath));
 
-  // Health check
-  app.get('/api/health', (_req, res) => {
-    res.json({
-      status: 'ok',
+  // Health check — verifies DB + Redis connectivity
+  app.get('/api/health', async (_req, res) => {
+    const checks: Record<string, string> = {};
+    let healthy = true;
+
+    try {
+      const dbResult = await pool.query('SELECT 1');
+      checks.database = dbResult.rows.length > 0 ? 'ok' : 'error';
+    } catch {
+      checks.database = 'error';
+      healthy = false;
+    }
+
+    try {
+      const pong = await redis.ping();
+      checks.redis = pong === 'PONG' ? 'ok' : 'error';
+    } catch {
+      checks.redis = 'error';
+      healthy = false;
+    }
+
+    const status = healthy ? 'ok' : 'degraded';
+    res.status(healthy ? 200 : 503).json({
+      status,
       timestamp: new Date().toISOString(),
+      checks,
     });
   });
 
