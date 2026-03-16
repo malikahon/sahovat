@@ -10,6 +10,10 @@ out/
 .env
 .env.local
 .env.*.local
+.env.production
+
+# Backups
+backups/
 
 # Logs
 *.log
@@ -49,3 +53,4 @@ docker-compose.override.yml
 *.tsbuildinfo
 .turbo/
 roadmap.md
+week16.md
