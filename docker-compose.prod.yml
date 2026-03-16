@@ -87,19 +87,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - certbot_conf:/etc/letsencrypt:ro
-      - certbot_www:/var/www/certbot:ro
-    networks:
-      - internal
-
-  # Certbot for SSL (run manually, see week16.md)
-  certbot:
-    image: certbot/certbot
-    container_name: sahovat_certbot
-    volumes:
-      - certbot_conf:/etc/letsencrypt
-      - certbot_www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 6h & wait $${!}; certbot renew; done'"
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - internal
 
@@ -107,8 +95,6 @@ volumes:
   postgres_data:
   redis_data:
   backend_storage:
-  certbot_conf:
-  certbot_www:
 
 networks:
   internal:
