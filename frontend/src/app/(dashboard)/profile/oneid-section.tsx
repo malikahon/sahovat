@@ -60,7 +60,7 @@ export function OneIdSection() {
       </CardHeader>
       <CardContent className="space-y-4">
         {showSuccess && (
-          <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+          <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
             <div className="flex items-center gap-2">
               <CheckCircle className="size-4" />
               {t('success')}
@@ -70,7 +70,7 @@ export function OneIdSection() {
 
         {status === 'approved' && (
           <div className="flex items-center gap-3">
-            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+            <Badge className="bg-green-100 text-green-800">
               <CheckCircle className="size-3" />
               {t('approved')}
             </Badge>
@@ -84,7 +84,7 @@ export function OneIdSection() {
 
         {status === 'pending' && (
           <div className="space-y-2">
-            <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+            <Badge className="bg-yellow-100 text-yellow-800">
               <Clock className="size-3" />
               {t('pending')}
             </Badge>

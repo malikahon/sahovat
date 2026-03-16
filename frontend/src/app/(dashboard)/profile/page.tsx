@@ -223,8 +223,8 @@ export default function ProfilePage() {
               <div
                 className={`rounded-lg border p-3 text-sm ${
                   saveMessage.type === 'success'
-                    ? 'border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200'
-                    : 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200'
+                    ? 'border-green-200 bg-green-50 text-green-800'
+                    : 'border-red-200 bg-red-50 text-red-800'
                 }`}
               >
                 {saveMessage.text}

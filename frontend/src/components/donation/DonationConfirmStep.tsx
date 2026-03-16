@@ -186,7 +186,7 @@ export function DonationConfirmStep({
       {/* Step 2 (dev mode): Simulate payment */}
       {pendingDonationId && IS_DEV && (
         <div className="space-y-3">
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
             <strong>Dev Mode</strong> — checkout URL: <code className="break-all">{checkoutUrl}</code>
           </div>
           <Button

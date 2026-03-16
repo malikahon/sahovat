@@ -306,14 +306,18 @@
     "manageRecurring": "Doimiy xayriyalarni boshqarish"
   },
   "landing": {
-    "hero": "Ehtiyojmandlarga yordam bering",
-    "heroSubtitle": "Sahovat — O'zbekistonning ishonchli xayriya platformasi. Muhim kampaniyalarni qo'llab-quvvatlang.",
+    "hero": "Har bir hissa o'zgarish yaratadi",
+    "heroSubtitle": "Sahovat saxiy qalblarni O'zbekiston bo'ylab muhtojlar bilan bog'laydi. Shaffof, xavfsiz va samarali.",
+    "heroBadge": "O'zbekistonning ishonchli platformasi",
     "browseCampaigns": "Kampaniyalarni ko'rish",
     "startCampaign": "Kampaniya boshlash",
+    "makeDonation": "Xayriya qilish",
     "stats": {
       "totalRaised": "Jami to'plangan",
       "activeCampaigns": "Faol kampaniyalar",
-      "donors": "Xayriyachilar"
+      "donors": "Xayriyachilar",
+      "regions": "Hududlar",
+      "categories": "Kategoriyalar"
     },
     "featuredCampaigns": "Tanlangan kampaniyalar",
     "featuredSubtitle": "Hozir qo'llab-quvvatlashni talab qiladigan kampaniyalar",
@@ -323,15 +327,22 @@
     "howItWorks": "Qanday ishlaydi",
     "howItWorksSubtitle": "Farq qilish uchun uchta oddiy qadam",
     "step1Title": "Kampaniyalarni ko'ring",
+    "step1Num": "01",
     "step1Description": "O'zbekiston bo'ylab tasdiqlangan kampaniyalarni toping. Kategoriya, hudud va shoshilinchligi bo'yicha filtrlang.",
     "step2Title": "Xayriya qiling",
+    "step2Num": "02",
     "step2Description": "PayMe orqali xavfsiz xayriya qiling. Anonim xayriyalar qabul qilinadi. PDF kvitansiya oling.",
     "step3Title": "Ta'siringizni kuzating",
+    "step3Num": "03",
     "step3Description": "Kampaniya jarayonini kuzating va xayriyangiz qanday farq qilayotganini ko'ring.",
     "cta": "Farq qilishga tayyormisiz?",
-    "ctaSubtitle": "O'zbekiston bo'ylab minglab xayriyachilar bilan qo'shiling.",
-    "getStarted": "Boshlash",
-    "noCampaigns": "Hali faol kampaniyalar yo'q. Keyinroq qarang!"
+    "ctaSubtitle": "O'zbekiston bo'ylab minglab xayriyachilar bilan qo'shiling. Har bir so'm muhim.",
+    "ctaSocialProof": "Barcha 14 hudud xayriyachilari ishonadi",
+    "getStarted": "Xayriya qilishni boshlash",
+    "noCampaigns": "Hali faol kampaniyalar yo'q. Keyinroq qarang!",
+    "securePayments": "Xavfsiz to'lovlar",
+    "verifiedCampaigns": "Tasdiqlangan kampaniyalar",
+    "transparentTracking": "Shaffof kuzatuv"
   },
    "dashboard": {
      "sidebar": {

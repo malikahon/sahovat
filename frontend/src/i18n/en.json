@@ -401,14 +401,18 @@
     "manageRecurring": "Manage Recurring"
   },
   "landing": {
-    "hero": "Help Those in Need",
-    "heroSubtitle": "Sahovat — Uzbekistan's trusted crowdfunding platform. Support campaigns that matter.",
+    "hero": "Every Contribution Creates Change",
+    "heroSubtitle": "Sahovat connects generous hearts with those in need across Uzbekistan. Transparent, secure, and impactful.",
+    "heroBadge": "Uzbekistan's Trusted Platform",
     "browseCampaigns": "Browse Campaigns",
     "startCampaign": "Start a Campaign",
+    "makeDonation": "Make a Donation",
     "stats": {
       "totalRaised": "Total Raised",
       "activeCampaigns": "Active Campaigns",
-      "donors": "Donors"
+      "donors": "Donors",
+      "regions": "Regions Covered",
+      "categories": "Categories"
     },
     "featuredCampaigns": "Featured Campaigns",
     "featuredSubtitle": "Campaigns that need your support right now",
@@ -418,15 +422,22 @@
     "howItWorks": "How It Works",
     "howItWorksSubtitle": "Three simple steps to make a difference",
     "step1Title": "Browse Campaigns",
+    "step1Num": "01",
     "step1Description": "Discover verified campaigns across Uzbekistan. Filter by category, region, and urgency.",
     "step2Title": "Make a Donation",
+    "step2Num": "02",
     "step2Description": "Donate securely via PayMe. Anonymous donations are supported. Get a PDF receipt.",
     "step3Title": "Track Your Impact",
+    "step3Num": "03",
     "step3Description": "Follow campaign progress and see how your contribution makes a real difference.",
     "cta": "Ready to Make a Difference?",
-    "ctaSubtitle": "Join thousands of donors supporting campaigns across Uzbekistan.",
-    "getStarted": "Get Started",
-    "noCampaigns": "No active campaigns yet. Check back soon!"
+    "ctaSubtitle": "Join thousands of donors supporting campaigns across Uzbekistan. Every sum counts.",
+    "ctaSocialProof": "Trusted by donors in all 14 regions",
+    "getStarted": "Start Donating",
+    "noCampaigns": "No active campaigns yet. Check back soon!",
+    "securePayments": "Secure Payments",
+    "verifiedCampaigns": "Verified Campaigns",
+    "transparentTracking": "Transparent Tracking"
   },
   "withdrawalAccounts": {
     "title": "Withdrawal Accounts",

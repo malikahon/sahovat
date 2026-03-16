@@ -5,6 +5,7 @@ import { getAccessToken } from '@/lib/auth-cookies';
 /**
  * GET /api/campaigns/[id]/documents
  * Proxy to backend — list campaign documents.
+ * Wraps backend response so frontend receives { success, data: { documents } }.
  */
 export async function GET(
   _request: NextRequest,
@@ -22,6 +23,16 @@ export async function GET(
     });
 
     const data = await res.json();
+
+    // Backend returns { success, data: Document[] }
+    // Frontend expects { success, data: { documents: Document[] } }
+    if (data.success && Array.isArray(data.data)) {
+      return NextResponse.json(
+        { success: true, data: { documents: data.data } },
+        { status: res.status },
+      );
+    }
+
     return NextResponse.json(data, { status: res.status });
   } catch {
     return NextResponse.json(

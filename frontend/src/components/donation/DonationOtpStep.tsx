@@ -96,7 +96,7 @@ export function DonationOtpStep({ campaignId, amount, onVerified, onBack }: Prop
       </div>
 
       {hasSent && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+        <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800">
           {t('otpSent')}
         </div>
       )}

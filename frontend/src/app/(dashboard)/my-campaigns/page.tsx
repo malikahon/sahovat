@@ -64,16 +64,16 @@ const STATUS_BADGE_CONFIG: Record<
   [CampaignStatus.DRAFT]: { variant: 'outline' },
   [CampaignStatus.PENDING_REVIEW]: {
     variant: 'secondary',
-    className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+    className: 'bg-yellow-100 text-yellow-800',
   },
   [CampaignStatus.ACTIVE]: {
     variant: 'secondary',
-    className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    className: 'bg-green-100 text-green-800',
   },
   [CampaignStatus.PAUSED]: { variant: 'secondary' },
   [CampaignStatus.COMPLETED]: {
     variant: 'secondary',
-    className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    className: 'bg-blue-100 text-blue-800',
   },
   [CampaignStatus.CANCELLED]: { variant: 'destructive' },
   [CampaignStatus.FROZEN]: { variant: 'destructive' },
