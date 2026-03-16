@@ -32,8 +32,8 @@ const DONOR_NAMES = [
 ];
 
 async function seed(): Promise<void> {
-  if (process.env.NODE_ENV === 'production') {
-    console.error('[Sahovat] FATAL: Cannot run seed in production!');
+  if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force')) {
+    console.error('[Sahovat] FATAL: Cannot run seed in production! Use --force to override.');
     process.exit(1);
   }
 

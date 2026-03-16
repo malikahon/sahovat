@@ -12,6 +12,7 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY src/ ./src/
 RUN npm run build
+RUN cp -r src/database/migrations dist/database/migrations
 
 # ── Stage 3: Production image ───────────────────────────────
 FROM node:22-alpine AS runner
