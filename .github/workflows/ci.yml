@@ -1,0 +1,120 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: lint & typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: install root deps
+        run: npm ci
+
+      - name: install backend deps
+        run: npm ci
+        working-directory: backend
+
+      - name: install frontend deps
+        run: npm ci
+        working-directory: frontend
+
+      - name: lint backend (typecheck)
+        run: npm run lint
+        working-directory: backend
+
+      - name: lint frontend
+        run: npm run lint
+        working-directory: frontend
+
+  test-backend:
+    name: test backend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: sahovat
+          POSTGRES_PASSWORD: sahovat
+          POSTGRES_DB: sahovat
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U sahovat"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: install backend deps
+        run: npm ci
+        working-directory: backend
+
+      - name: create test database
+        run: PGPASSWORD=sahovat psql -h localhost -p 5433 -U sahovat -d sahovat -c "CREATE DATABASE sahovat_test;"
+
+      - name: run backend tests
+        run: npm test
+        working-directory: backend
+
+  test-frontend:
+    name: test frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: install frontend deps
+        run: npm ci
+        working-directory: frontend
+
+      - name: run frontend tests
+        run: npm test
+        working-directory: frontend
+
+  build:
+    name: docker build check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: build backend image
+        run: docker build ./backend
+
+      - name: build frontend image
+        run: docker build ./frontend
