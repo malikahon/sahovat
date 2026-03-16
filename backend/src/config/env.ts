@@ -54,7 +54,10 @@ const envSchema = z.object({
   ONEID_CLIENT_ID: z.string().default('mock_client_id'),
   ONEID_CLIENT_SECRET: z.string().default('mock_client_secret'),
   ONEID_REDIRECT_URI: z.string().default('http://localhost:3001/api/users/oneid/callback'),
-  ONEID_ENABLED: z.coerce.boolean().default(false),
+  ONEID_ENABLED: z
+    .enum(['true', 'false', '1', '0'])
+    .default('false')
+    .transform((v) => v === 'true' || v === '1'),
 }).refine(
   (data) => {
     // In production, if OneID is enabled, ONEID_CLIENT_SECRET must be explicitly set
