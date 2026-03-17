@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { campaignsApi } from '@/lib/api';
 import {
   CampaignCategory,
@@ -61,6 +62,9 @@ function CampaignCardSkeleton() {
 
 export default function CampaignsPage() {
   const t = useTranslations('campaigns');
+  const { user, isAuthenticated, logout } = useAuth();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   // Filter state
   const [searchInput, setSearchInput] = useState('');
@@ -83,6 +87,17 @@ export default function CampaignsPage() {
   useEffect(() => {
     setPage(1);
   }, [category, region, sortIndex]);
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Build query object
   const query = useMemo<CampaignListQuery>(() => {
@@ -121,9 +136,66 @@ export default function CampaignsPage() {
             {t('browse.subtitle')}
           </p>
         </div>
-        <Button render={<Link href="/create-campaign" />}>
-          {t('create')}
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAuthenticated ? (
+            <>
+              {user && (
+                <div className="relative" ref={profileRef}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setProfileOpen(!profileOpen)}
+                  >
+                    <User className="size-4" />
+                    <span className="max-w-[100px] truncate">
+                      {user.display_name || user.phone_number?.slice(-9) || 'Profile'}
+                    </span>
+                  </Button>
+                  
+                  {profileOpen && (
+                    <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-background py-1 shadow-lg z-50">
+                      <Link
+                        href="/dashboard"
+                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <LayoutDashboard className="size-4" />
+                        Dashboard
+                      </Link>
+                      <Link
+                        href="/profile"
+                        className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <User className="size-4" />
+                        Profile
+                      </Link>
+                      <hr className="my-1" />
+                      <button
+                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-accent"
+                        onClick={async () => {
+                          await logout();
+                          setProfileOpen(false);
+                        }}
+                      >
+                        <LogOut className="size-4" />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              <Button render={<Link href="/create-campaign" />}>
+                {t('create')}
+              </Button>
+            </>
+          ) : (
+            <Button render={<Link href="/login" />}>
+              Login
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Filters bar */}

@@ -155,16 +155,41 @@ export default function Step3Page() {
           </p>
         )}
 
-        <div className="flex justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() =>
-              router.push(`/create-campaign/step-2?id=${campaignId}`)
-            }
-          >
-            {t('wizard.step2')}
-          </Button>
+        <div className="flex items-center justify-between">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/create-campaign/step-1?id=${campaignId}`)}
+            >
+              ← {t('wizard.step1')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/create-campaign/step-2?id=${campaignId}`)}
+            >
+              ← {t('wizard.step2')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/create-campaign/step-4?id=${campaignId}`)}
+            >
+              {t('wizard.step4')} →
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/create-campaign/step-5?id=${campaignId}`)}
+            >
+              {t('wizard.step5')} →
+            </Button>
+          </div>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={handleSkip}>
               Skip
@@ -178,7 +203,7 @@ export default function Step3Page() {
                 <Loader2 className="size-4 animate-spin" />
               )}
               <Upload className="size-4" />
-              {t('wizard.saveDraft')}
+              Update & Continue
             </Button>
           </div>
         </div>

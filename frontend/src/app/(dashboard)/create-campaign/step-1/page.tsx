@@ -232,10 +232,48 @@ export default function Step1Page() {
           )}
 
           {/* Submit */}
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2">
+              {campaignId && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/create-campaign/step-2?id=${campaignId}`)}
+                  >
+                    {t('wizard.step2')} →
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/create-campaign/step-3?id=${campaignId}`)}
+                  >
+                    {t('wizard.step3')} →
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/create-campaign/step-4?id=${campaignId}`)}
+                  >
+                    {t('wizard.step4')} →
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/create-campaign/step-5?id=${campaignId}`)}
+                  >
+                    {t('wizard.step5')} →
+                  </Button>
+                </>
+              )}
+            </div>
             <Button type="submit" disabled={isPending}>
               {isPending && <Loader2 className="size-4 animate-spin" />}
-              {t('wizard.saveDraft')}
+              {campaignId ? 'Update & Continue' : t('wizard.saveDraft')}
             </Button>
           </div>
         </form>

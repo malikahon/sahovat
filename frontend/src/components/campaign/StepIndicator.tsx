@@ -7,8 +7,18 @@ import { cn } from '@/lib/utils';
 const STEPS = [1, 2, 3, 4, 5] as const;
 const STEP_KEYS = ['step1', 'step2', 'step3', 'step4', 'step5'] as const;
 
-export function StepIndicator({ currentStep }: { currentStep: number }) {
+interface StepIndicatorProps {
+  currentStep: number;
+  campaignId?: string | null;
+}
+
+export function StepIndicator({ currentStep, campaignId }: StepIndicatorProps) {
   const t = useTranslations('campaigns.wizard');
+
+  const getStepHref = (step: number) => {
+    if (!campaignId) return `/create-campaign/step-${step}`;
+    return `/create-campaign/step-${step}?id=${campaignId}`;
+  };
 
   return (
     <div className="flex items-center gap-1">
@@ -18,7 +28,12 @@ export function StepIndicator({ currentStep }: { currentStep: number }) {
 
         return (
           <div key={step} className="flex items-center gap-1">
-            <div className="flex items-center gap-2">
+            <a
+              href={getStepHref(step)}
+              className={cn(
+                'flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity',
+              )}
+            >
               <div
                 className={cn(
                   'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-medium transition-colors',
@@ -45,7 +60,7 @@ export function StepIndicator({ currentStep }: { currentStep: number }) {
               >
                 {t(STEP_KEYS[index])}
               </span>
-            </div>
+            </a>
             {index < STEPS.length - 1 && (
               <div
                 className={cn(

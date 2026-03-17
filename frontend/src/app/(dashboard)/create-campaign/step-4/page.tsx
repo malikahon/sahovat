@@ -252,23 +252,40 @@ export default function Step4Page() {
         </CardContent>
       </Card>
 
-      <div className="flex justify-between">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() =>
-            router.push(`/create-campaign/step-3?id=${campaignId}`)
-          }
-        >
-          {t('wizard.step3')}
-        </Button>
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(`/create-campaign/step-1?id=${campaignId}`)}
+          >
+            ← {t('wizard.step1')}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(`/create-campaign/step-2?id=${campaignId}`)}
+          >
+            ← {t('wizard.step2')}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(`/create-campaign/step-3?id=${campaignId}`)}
+          >
+            ← {t('wizard.step3')}
+          </Button>
+        </div>
         <Button
           type="button"
           onClick={() =>
             router.push(`/create-campaign/step-5?id=${campaignId}`)
           }
         >
-          {t('wizard.step5')}
+          {t('wizard.step5')} →
         </Button>
       </div>
     </div>

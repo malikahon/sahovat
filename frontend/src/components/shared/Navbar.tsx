@@ -1,23 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Menu, X, HeartHandshake, Heart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Menu, X, HeartHandshake, Heart, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-interface NavbarProps {
-  variant?: 'public' | 'authenticated';
-}
-
-export function Navbar({ variant = 'public' }: NavbarProps) {
+export function Navbar() {
   const t = useTranslations('nav');
   const tAuth = useTranslations('auth');
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isAuthenticated, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   const publicLinks = [
     { href: '/', label: t('home') },
@@ -26,20 +27,32 @@ export function Navbar({ variant = 'public' }: NavbarProps) {
 
   const authLinks = [
     { href: '/campaigns', label: t('discover') },
-    { href: '/my-campaigns', label: t('projects') },
     { href: '/dashboard', label: t('impact') },
-    { href: '/my-donations', label: t('myDonations') },
   ];
 
-  const links = variant === 'authenticated' ? authLinks : publicLinks;
+  const links = isAuthenticated ? authLinks : publicLinks;
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+    setProfileOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-primary/10 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-      {/* Subtle sage gradient line at bottom */}
       <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Logo */}
         <Link href="/" className="group flex items-center gap-2.5">
           <div className="relative">
             <HeartHandshake className="size-7 text-primary transition-transform duration-300 group-hover:scale-110" />
@@ -50,7 +63,6 @@ export function Navbar({ variant = 'public' }: NavbarProps) {
           </span>
         </Link>
 
-        {/* Desktop nav links */}
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((link) => (
             <Link
@@ -64,7 +76,6 @@ export function Navbar({ variant = 'public' }: NavbarProps) {
               )}
             >
               {link.label}
-              {/* Active indicator dot */}
               {pathname === link.href && (
                 <span className="absolute inset-x-0 -bottom-[13px] mx-auto h-0.5 w-6 rounded-full bg-primary" />
               )}
@@ -72,29 +83,53 @@ export function Navbar({ variant = 'public' }: NavbarProps) {
           ))}
         </nav>
 
-        {/* Right section: Language | CTA */}
         <div className="hidden items-center gap-2 md:flex">
           <LanguageSwitcher />
           <div className="ml-1 h-5 w-px bg-border" />
-          {variant === 'authenticated' ? (
-            <>
+          
+          {isAuthenticated ? (
+            <div className="relative" ref={profileRef}>
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-full border-primary/30 text-primary hover:border-primary hover:bg-primary/10"
-                render={<Link href="/create-campaign" />}
+                className="gap-2 rounded-full border-primary/30"
+                onClick={() => setProfileOpen(!profileOpen)}
               >
-                {t('newCampaign')}
+                <User className="size-4" />
+                <span className="max-w-[100px] truncate">
+                  {user?.display_name || user?.phone_number?.slice(-9) || 'Profile'}
+                </span>
               </Button>
-              <Button
-                size="sm"
-                className="rounded-full shadow-md shadow-primary/20 transition-shadow hover:shadow-lg hover:shadow-primary/30"
-                render={<Link href="/campaigns" />}
-              >
-                <Heart className="mr-1.5 size-3.5" />
-                {t('makeDonation')}
-              </Button>
-            </>
+              
+              {profileOpen && (
+                <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-background py-1 shadow-lg">
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <LayoutDashboard className="size-4" />
+                    {t('dashboard')}
+                  </Link>
+                  <Link
+                    href="/profile"
+                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <User className="size-4" />
+                    {t('profile')}
+                  </Link>
+                  <hr className="my-1" />
+                  <button
+                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-accent"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="size-4" />
+                    {tAuth('logout')}
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <Button
               size="sm"
@@ -106,7 +141,6 @@ export function Navbar({ variant = 'public' }: NavbarProps) {
           )}
         </div>
 
-        {/* Mobile hamburger */}
         <button
           className="inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -116,7 +150,6 @@ export function Navbar({ variant = 'public' }: NavbarProps) {
         </button>
       </div>
 
-      {/* Mobile menu — slide down overlay */}
       <div
         className={cn(
           'overflow-hidden border-t border-primary/10 bg-background/95 backdrop-blur-xl transition-all duration-300 ease-in-out md:hidden',
@@ -142,30 +175,36 @@ export function Navbar({ variant = 'public' }: NavbarProps) {
             ))}
           </nav>
 
-          {/* Mobile language row */}
           <div className="mt-4 flex items-center gap-2">
             <LanguageSwitcher />
           </div>
 
-          {/* Mobile CTAs */}
           <div className="mt-4 flex flex-col gap-2">
-            {variant === 'authenticated' ? (
+            {isAuthenticated ? (
               <>
+                <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <LayoutDashboard className="mr-2 size-4" />
+                    {t('dashboard')}
+                  </Button>
+                </Link>
+                <Link href="/profile" onClick={() => setMobileOpen(false)}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <User className="mr-2 size-4" />
+                    {t('profile')}
+                  </Button>
+                </Link>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="w-full rounded-full border-primary/30 text-primary"
-                  render={<Link href="/create-campaign" />}
+                  className="w-full justify-start text-destructive"
+                  onClick={() => {
+                    handleLogout();
+                    setMobileOpen(false);
+                  }}
                 >
-                  {t('newCampaign')}
-                </Button>
-                <Button
-                  size="sm"
-                  className="w-full rounded-full shadow-md shadow-primary/20"
-                  render={<Link href="/campaigns" />}
-                >
-                  <Heart className="mr-1.5 size-3.5" />
-                  {t('makeDonation')}
+                  <LogOut className="mr-2 size-4" />
+                  {tAuth('logout')}
                 </Button>
               </>
             ) : (

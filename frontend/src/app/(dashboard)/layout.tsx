@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   X,
+  HeartHandshake,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute';
@@ -53,7 +54,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex h-full flex-col">
       {/* Logo / App name */}
       <div className="px-4 py-5">
-        <h2 className="text-lg font-semibold text-foreground">Sahovat</h2>
+        <Link href="/campaigns" className="flex items-center gap-2.5 group">
+          <div className="relative">
+            <HeartHandshake className="size-6 text-primary transition-transform duration-300 group-hover:scale-110" />
+            <div className="absolute inset-0 rounded-full bg-primary/20 blur-md" />
+          </div>
+          <span className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+            Sahovat
+          </span>
+        </Link>
       </div>
 
       {/* Navigation links */}
@@ -158,9 +167,12 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           >
             <Menu className="size-5" />
           </Button>
-          <span className="ml-3 text-sm font-semibold text-foreground">
-            Sahovat
-          </span>
+          <Link href="/campaigns" className="ml-3 flex items-center gap-2 group">
+            <HeartHandshake className="size-5 text-primary" />
+            <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+              Sahovat
+            </span>
+          </Link>
         </header>
 
         {/* Page content */}
