@@ -10,6 +10,7 @@ vi.mock('next-intl', () => ({
 // Mock API module
 vi.mock('@/lib/api', () => ({
   recurringApi: { create: vi.fn() },
+  savedCardsApi: { list: vi.fn() },
 }));
 
 // Mock all child steps to isolate DonationBottomSheet logic
@@ -27,6 +28,15 @@ vi.mock('@/components/donation/DonationOtpStep', () => ({
   DonationOtpStep: ({ onVerified }: { onVerified: () => void }) => (
     <div data-testid="otp-step">
       <button onClick={onVerified}>Verify OTP</button>
+    </div>
+  ),
+}));
+
+// Mock card selection step with dummy saved card data
+vi.mock('@/components/payment/SavedCardSelect', () => ({
+  SavedCardSelect: ({ onCardSelected }: { onCardSelected: (id: string) => void }) => (
+    <div data-testid="card-step">
+      <button onClick={() => onCardSelected('saved-card-001')}>Select Card</button>
     </div>
   ),
 }));
@@ -82,23 +92,37 @@ describe('DonationBottomSheet', () => {
     expect(screen.getByTestId('amount-step')).toBeInTheDocument();
   });
 
-  it('progresses from amount step to confirm step for amounts <= 100k', async () => {
+  it('progresses from amount to card selection for amounts <= 100k', async () => {
     render(<DonationBottomSheet {...defaultProps} />);
 
-    // Click Continue in the amount step (mocked to submit 50,000)
+    // click continue in amount step (mocked to submit 50,000)
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
 
-    // Should now show confirm step (amount 50k doesn't need OTP)
-    expect(screen.getByTestId('confirm-step')).toBeInTheDocument();
+    // should now show card selection step (amount 50k skips OTP, goes to card)
+    expect(screen.getByTestId('card-step')).toBeInTheDocument();
     expect(screen.queryByTestId('amount-step')).not.toBeInTheDocument();
   });
 
-  it('shows success step after payment is confirmed', async () => {
+  it('progresses from card selection to confirm step', async () => {
     render(<DonationBottomSheet {...defaultProps} />);
 
-    // Go to confirm step
+    // amount -> card
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
-    // Complete payment
+    // card -> confirm
+    await userEvent.click(screen.getByRole('button', { name: /select card/i }));
+
+    expect(screen.getByTestId('confirm-step')).toBeInTheDocument();
+    expect(screen.queryByTestId('card-step')).not.toBeInTheDocument();
+  });
+
+  it('shows success step after full flow (amount -> card -> confirm -> success)', async () => {
+    render(<DonationBottomSheet {...defaultProps} />);
+
+    // amount -> card
+    await userEvent.click(screen.getByRole('button', { name: /continue/i }));
+    // card -> confirm
+    await userEvent.click(screen.getByRole('button', { name: /select card/i }));
+    // confirm -> success
     await userEvent.click(screen.getByRole('button', { name: /pay/i }));
 
     expect(screen.getByTestId('success-step')).toBeInTheDocument();
