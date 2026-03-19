@@ -53,4 +53,4 @@ docker-compose.override.yml
 *.tsbuildinfo
 .turbo/
 roadmap.md
-week16.md
+functional-requirements.md
