@@ -535,37 +535,72 @@ export async function processRecurringCharge(
 
     const donation = donationResult.rows[0] as { id: string; amount: number };
 
-    // Initiate payment (mock auto-creates a transaction)
-    let paymentResult;
-    try {
-      paymentResult = await paymentService.createPayment({
+    // Look up the user's default saved card for charging
+    const { getDefaultCard } = await import('../saved-cards/saved-cards.service.js');
+    const defaultCard = await getDefaultCard(recurring.donor_id);
+
+    let transactionId: string;
+
+    if (defaultCard) {
+      // Charge the saved card via PayMe Subscribe API
+      const chargeResult = await paymentService.chargeCard({
         amount,
         donation_id: donation.id,
-        provider: recurring.payment_provider as PaymentProvider,
-        return_url: undefined,
+        card_token: defaultCard.card_token,
+        payer_phone: recurring.phone_number,
       });
-    } catch (paymentErr) {
-      // Payment initiation failed — mark donation as failed, increment failure count
-      await client.query(
-        `UPDATE donations SET status = $1 WHERE id = $2`,
-        [DonationStatus.FAILED, donation.id],
-      );
-      await handleChargeFailure(client, recurringId, recurring.phone_number);
-      await client.query('COMMIT');
-      return {
-        success: false,
-        donationId: donation.id,
-        error: `Payment initiation failed: ${paymentErr}`,
-      };
+
+      if (!chargeResult.success) {
+        // Card charge failed — mark donation as failed, increment failure count
+        await client.query(
+          `UPDATE donations SET status = $1 WHERE id = $2`,
+          [DonationStatus.FAILED, donation.id],
+        );
+        await handleChargeFailure(client, recurringId, recurring.phone_number);
+        await client.query('COMMIT');
+        return {
+          success: false,
+          donationId: donation.id,
+          error: `Card charge failed: ${chargeResult.error || 'Unknown error'}`,
+        };
+      }
+
+      transactionId = chargeResult.transaction_id;
+    } else {
+      // No saved card — fall back to mock/redirect flow
+      // In mock mode this auto-creates a transaction; in production the user
+      // needs to have a saved card for recurring to work.
+      let paymentResult;
+      try {
+        paymentResult = await paymentService.createPayment({
+          amount,
+          donation_id: donation.id,
+          provider: recurring.payment_provider as PaymentProvider,
+          return_url: undefined,
+        });
+      } catch (paymentErr) {
+        await client.query(
+          `UPDATE donations SET status = $1 WHERE id = $2`,
+          [DonationStatus.FAILED, donation.id],
+        );
+        await handleChargeFailure(client, recurringId, recurring.phone_number);
+        await client.query('COMMIT');
+        return {
+          success: false,
+          donationId: donation.id,
+          error: `Payment initiation failed: ${paymentErr}`,
+        };
+      }
+
+      transactionId = paymentResult.transaction_id;
     }
 
-    // In mock mode, auto-complete the donation (simulate webhook)
-    // Update donation to completed
+    // Complete the donation
     await client.query(
       `UPDATE donations
        SET status = $1, payment_transaction_id = $2, completed_at = NOW()
        WHERE id = $3`,
-      [DonationStatus.COMPLETED, paymentResult.transaction_id, donation.id],
+      [DonationStatus.COMPLETED, transactionId, donation.id],
     );
 
     // Record platform fee

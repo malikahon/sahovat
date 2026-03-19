@@ -224,6 +224,7 @@
     "discover": "Discover",
     "projects": "Projects",
     "impact": "Impact",
+    "paymentMethods": "Payment Methods",
     "newCampaign": "New Campaign",
     "makeDonation": "Donate"
   },
@@ -398,7 +399,39 @@
     "recurringConfirm": "This will repeat {frequency}",
     "recurringSetup": "Recurring donation set up!",
     "recurringNextCharge": "Next charge: {date}",
-    "manageRecurring": "Manage Recurring"
+    "manageRecurring": "Manage Recurring",
+    "selectPaymentMethod": "Select Payment Method",
+    "savedCard": "saved card"
+  },
+  "savedCards": {
+    "title": "Payment Methods",
+    "subtitle": "Manage your saved cards for quick donations",
+    "cardNumber": "Card Number",
+    "cardExpire": "Expiry (MM/YY)",
+    "addCard": "Add Card",
+    "addNewCard": "Add New Card",
+    "addFirstCard": "Add Your First Card",
+    "verifyCard": "Verify Card",
+    "processing": "Processing...",
+    "cancel": "Cancel",
+    "back": "Back",
+    "default": "Default",
+    "makeDefault": "Set as default",
+    "removeCard": "Remove card",
+    "selectCard": "Select a payment card",
+    "continueWithCard": "Continue",
+    "noCards": "No saved cards",
+    "noCardsDescription": "Add a card to make donations faster and set up recurring payments.",
+    "cardSecurityNotice": "Your card data is processed securely by PayMe. We only store a token — your full card number is never saved on our servers.",
+    "otpSentTo": "A verification code was sent to {phone}",
+    "enterOtp": "Enter 6-digit code",
+    "otpExpiresIn": "Code expires in {seconds}s",
+    "errors": {
+      "addFailed": "Failed to add card. Please check the details and try again.",
+      "verifyFailed": "Verification failed. Please check the code and try again.",
+      "removeFailed": "Failed to remove card.",
+      "defaultFailed": "Failed to set default card."
+    }
   },
   "landing": {
     "hero": "Every Contribution Creates Change",

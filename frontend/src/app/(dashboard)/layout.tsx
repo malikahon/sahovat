@@ -34,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/my-campaigns', labelKey: 'myCampaigns', icon: <FolderHeart className="size-5" /> },
   { href: '/my-donations', labelKey: 'myDonations', icon: <Heart className="size-5" /> },
   { href: '/recurring', labelKey: 'recurringDonations', icon: <Repeat className="size-5" /> },
+  { href: '/payment-methods', labelKey: 'paymentMethods', icon: <CreditCard className="size-5" /> },
   { href: '/withdrawal-accounts', labelKey: 'withdrawalAccounts', icon: <CreditCard className="size-5" /> },
   { href: '/withdrawals', labelKey: 'withdrawals', icon: <ArrowDownToLine className="size-5" /> },
 ];

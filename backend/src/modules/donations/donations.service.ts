@@ -199,7 +199,45 @@ export async function initiateDonation(
 
   const donation = insertResult.rows[0] as DonationRow;
 
-  // Create payment session
+  // If a saved card was provided, charge it directly
+  if (data.saved_card_id) {
+    const { getCardWithToken } = await import('../saved-cards/saved-cards.service.js');
+    const savedCard = await getCardWithToken(data.saved_card_id, userId);
+
+    const chargeResult = await paymentService.chargeCard({
+      amount: data.amount,
+      donation_id: donation.id,
+      card_token: savedCard.card_token,
+    });
+
+    if (chargeResult.success) {
+      // Auto-confirm the donation synchronously
+      const confirmedDonation = await confirmDonation(
+        donation.id,
+        chargeResult.transaction_id,
+        'completed',
+        data.amount,
+      );
+
+      return {
+        donation: toDonation(confirmedDonation),
+        checkout_url: '',
+      };
+    }
+
+    // Charge failed — mark donation as failed
+    await query(
+      `UPDATE donations SET status = $1 WHERE id = $2`,
+      [DonationStatus.FAILED, donation.id],
+    );
+
+    throw new ValidationError(
+      chargeResult.error || 'Card payment failed. Please try again.',
+      'CARD_CHARGE_FAILED',
+    );
+  }
+
+  // No saved card — create a checkout session for redirect-based payment
   const paymentResult = await paymentService.createPayment({
     amount: data.amount,
     donation_id: donation.id,

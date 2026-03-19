@@ -160,14 +160,15 @@ describe('POST /api/auth/admin/login', () => {
     expect(res.status).toBe(401);
   });
 
-  it('returns 403 for non-admin user', async () => {
+  it('returns 401 for non-admin user', async () => {
     const user = await createTestUser({ phone_number: '+998901234508' });
 
     const res = await request(app)
       .post('/api/auth/admin/login')
       .send({ phone_number: user.phone_number, password: 'anypassword' });
 
-    expect(res.status).toBe(403);
+    // service returns 401 (not 403) to prevent role/phone enumeration
+    expect(res.status).toBe(401);
   });
 });
 

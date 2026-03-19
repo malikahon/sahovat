@@ -144,6 +144,7 @@ export interface InitiateDonationDto {
   is_anonymous?: boolean;
   donor_display_name?: string;
   note?: string;
+  saved_card_id?: string;
 }
 
 export interface ConfirmDonationDto {

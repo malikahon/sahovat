@@ -34,8 +34,24 @@ export interface WebhookVerificationResult {
   amount: number | null;
 }
 
+export interface ChargeCardParams {
+  amount: number;          // UZS
+  donation_id: string;
+  card_token: string;
+  payer_phone?: string;
+}
+
+export interface ChargeCardResult {
+  success: boolean;
+  receipt_id: string | null;
+  transaction_id: string;
+  state: number;
+  error?: string;
+}
+
 export interface PaymentService {
   createPayment(params: CreatePaymentParams): Promise<PaymentResult>;
+  chargeCard(params: ChargeCardParams): Promise<ChargeCardResult>;
   verifyWebhook(provider: PaymentProvider, headers: Record<string, string>, body: unknown): WebhookVerificationResult;
 }
 

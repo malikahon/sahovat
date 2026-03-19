@@ -58,7 +58,7 @@ const mockCampaign: CampaignWithStats = {
   updated_at: '2025-01-01T00:00:00Z',
   donor_count: 25,
   progress_percentage: 50,
-  days_remaining: null,
+  creator_display_name: null,
 };
 
 describe('CampaignCard', () => {

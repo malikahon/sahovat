@@ -12,13 +12,14 @@ import { DonationAmountStep, type DonationFormData } from './DonationAmountStep'
 import { DonationOtpStep } from './DonationOtpStep';
 import { DonationConfirmStep } from './DonationConfirmStep';
 import { DonationSuccessStep } from './DonationSuccessStep';
+import { SavedCardSelect } from '@/components/payment/SavedCardSelect';
 import { recurringApi } from '@/lib/api';
 
 // ============================================================
 // Types
 // ============================================================
 
-type DonationStep = 'amount' | 'otp' | 'confirm' | 'success';
+type DonationStep = 'amount' | 'otp' | 'card' | 'confirm' | 'success';
 
 interface Props {
   campaignId: string;
@@ -47,11 +48,13 @@ export function DonationBottomSheet({
 
   const [step, setStep] = useState<DonationStep>('amount');
   const [formData, setFormData] = useState<DonationFormData | null>(null);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [completedDonationId, setCompletedDonationId] = useState<string | null>(null);
 
   const resetFlow = useCallback(() => {
     setStep('amount');
     setFormData(null);
+    setSelectedCardId(null);
     setCompletedDonationId(null);
   }, []);
 
@@ -66,11 +69,16 @@ export function DonationBottomSheet({
     if (data.amount > OTP_THRESHOLD) {
       setStep('otp');
     } else {
-      setStep('confirm');
+      setStep('card');
     }
   }, []);
 
   const handleOtpVerified = useCallback(() => {
+    setStep('card');
+  }, []);
+
+  const handleCardSelected = useCallback((cardId: string) => {
+    setSelectedCardId(cardId);
     setStep('confirm');
   }, []);
 
@@ -102,6 +110,7 @@ export function DonationBottomSheet({
   const stepTitle: Record<DonationStep, string> = {
     amount: t('donate'),
     otp: t('otpRequired'),
+    card: t('selectPaymentMethod'),
     confirm: t('confirmDonation'),
     success: t('successTitle'),
   };
@@ -135,15 +144,24 @@ export function DonationBottomSheet({
           />
         )}
 
+        {/* Card selection step */}
+        {step === 'card' && formData && (
+          <SavedCardSelect
+            onCardSelected={handleCardSelected}
+            onBack={() => setStep(formData.amount > OTP_THRESHOLD ? 'otp' : 'amount')}
+          />
+        )}
+
         {/* Confirm step */}
         {step === 'confirm' && formData && (
           <DonationConfirmStep
             campaignId={campaignId}
             campaignTitle={campaignTitle}
             formData={formData}
+            savedCardId={selectedCardId}
             platformFeePct={platformFeePct}
             onSuccess={handlePaymentSuccess}
-            onBack={() => setStep(formData.amount > OTP_THRESHOLD ? 'otp' : 'amount')}
+            onBack={() => setStep('card')}
           />
         )}
 

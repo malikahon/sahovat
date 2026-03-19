@@ -224,6 +224,7 @@
      "discover": "Kashf qilish",
      "projects": "Loyihalar",
      "impact": "Ta'sir",
+     "paymentMethods": "To'lov usullari",
      "newCampaign": "Yangi kampaniya",
      "makeDonation": "Xayriya qilish"
    },
@@ -303,7 +304,39 @@
     "recurringConfirm": "Bu {frequency} takrorlanadi",
     "recurringSetup": "Doimiy xayriya o'rnatildi!",
     "recurringNextCharge": "Keyingi to'lov: {date}",
-    "manageRecurring": "Doimiy xayriyalarni boshqarish"
+    "manageRecurring": "Doimiy xayriyalarni boshqarish",
+    "selectPaymentMethod": "To'lov usulini tanlang",
+    "savedCard": "saqlangan karta"
+  },
+  "savedCards": {
+    "title": "To'lov usullari",
+    "subtitle": "Tez xayriya qilish uchun saqlangan kartalaringizni boshqaring",
+    "cardNumber": "Karta raqami",
+    "cardExpire": "Amal qilish muddati (OO/YY)",
+    "addCard": "Karta qo'shish",
+    "addNewCard": "Yangi karta qo'shish",
+    "addFirstCard": "Birinchi kartangizni qo'shing",
+    "verifyCard": "Kartani tasdiqlash",
+    "processing": "Jarayonda...",
+    "cancel": "Bekor qilish",
+    "back": "Orqaga",
+    "default": "Asosiy",
+    "makeDefault": "Asosiy qilish",
+    "removeCard": "Kartani o'chirish",
+    "selectCard": "To'lov kartasini tanlang",
+    "continueWithCard": "Davom etish",
+    "noCards": "Saqlangan kartalar yo'q",
+    "noCardsDescription": "Tez xayriya qilish va doimiy to'lovlarni sozlash uchun karta qo'shing.",
+    "cardSecurityNotice": "Karta ma'lumotlari PayMe orqali xavfsiz qayta ishlanadi. Biz faqat tokenni saqlaymiz — to'liq karta raqami serverlarimizda hech qachon saqlanmaydi.",
+    "otpSentTo": "Tasdiqlash kodi {phone} raqamiga yuborildi",
+    "enterOtp": "6 raqamli kodni kiriting",
+    "otpExpiresIn": "Kod {seconds} soniyadan keyin amal qilmaydi",
+    "errors": {
+      "addFailed": "Kartani qo'shib bo'lmadi. Ma'lumotlarni tekshiring va qaytadan urinib ko'ring.",
+      "verifyFailed": "Tasdiqlash xatosi. Kodni tekshiring va qaytadan urinib ko'ring.",
+      "removeFailed": "Kartani o'chirib bo'lmadi.",
+      "defaultFailed": "Asosiy kartani o'rnatib bo'lmadi."
+    }
   },
   "landing": {
     "hero": "Har bir hissa o'zgarish yaratadi",

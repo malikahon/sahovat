@@ -270,6 +270,22 @@ export interface DonationReceipt {
 }
 
 // ============================================================
+// SAVED CARDS
+// ============================================================
+
+export interface SavedCard {
+  id: string;
+  user_id: string;
+  card_number_masked: string;
+  card_expire: string;
+  card_type: 'uzcard' | 'humo' | 'unknown';
+  is_default: boolean;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================
 // GENERIC API WRAPPERS
 // ============================================================
 
@@ -398,6 +414,7 @@ export interface InitiateDonationDto {
   is_anonymous?: boolean;
   donor_display_name?: string;
   note?: string;
+  saved_card_id?: string;
 }
 
 export interface ConfirmDonationDto {

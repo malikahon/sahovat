@@ -52,7 +52,7 @@ export default function CampaignManagePage() {
   const { data: donationsData, isLoading: loadingDonations } = useQuery({
     queryKey: ['campaign-donations', campaignId],
     queryFn: async () => {
-      const result = await donationsApi.list({ campaign_id: campaignId, limit: 50 });
+      const result = await donationsApi.listByCampaign(campaignId, { limit: 50 });
       if (!result.success) throw new Error(result.error);
       return result.data!;
     },
@@ -96,7 +96,7 @@ export default function CampaignManagePage() {
     );
   }
 
-  const donations = donationsData?.donations || [];
+  const donations = donationsData || [];
   const withdrawals = withdrawalsData?.withdrawals || [];
   const totalRaised = campaign.current_amount || 0;
   const goalAmount = campaign.goal_amount || 1;

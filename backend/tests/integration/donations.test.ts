@@ -142,18 +142,38 @@ describe('POST /api/donations/webhook/payme', () => {
     expect(balanceAfter).toBe(balanceBefore);
   });
 
-  it('rejects webhook for already-processed donation', async () => {
+  it('handles duplicate webhook idempotently for same status', async () => {
     const user = await createTestUser({ phone_number: '+998901240009' });
     const creator = await createTestUser({ phone_number: '+998901240010' });
     const campaign = await createTestCampaign(creator.id, { status: 'active' });
     const donation = await createTestDonation(campaign.id, user.id, { status: 'completed' });
 
+    // same status as existing — idempotent, returns 200
     const res = await request(app)
       .post('/api/donations/webhook/payme')
       .send({
         donation_id: donation.id,
         transaction_id: 'TXN-DOUBLE',
         status: 'completed',
+        amount: donation.amount,
+      });
+
+    expect(res.status).toBe(200);
+  });
+
+  it('rejects webhook with conflicting status for already-processed donation', async () => {
+    const user = await createTestUser({ phone_number: '+998901240011' });
+    const creator = await createTestUser({ phone_number: '+998901240012' });
+    const campaign = await createTestCampaign(creator.id, { status: 'active' });
+    const donation = await createTestDonation(campaign.id, user.id, { status: 'completed' });
+
+    // conflicting status (failed vs completed) — should reject
+    const res = await request(app)
+      .post('/api/donations/webhook/payme')
+      .send({
+        donation_id: donation.id,
+        transaction_id: 'TXN-CONFLICT',
+        status: 'failed',
         amount: donation.amount,
       });
 

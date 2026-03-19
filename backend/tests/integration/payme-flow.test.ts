@@ -210,7 +210,7 @@ describe('PayMe sandbox payment flow', () => {
     expect(res.status).toBe(400);
   });
 
-  it('7. Duplicate webhook for same donation is rejected', async () => {
+  it('7. Duplicate webhook for same donation is handled idempotently', async () => {
     const donor = await createTestUser({ phone_number: '+998901300013' });
     const creator = await createTestUser({ phone_number: '+998901300014' });
     const campaign = await createTestCampaign(creator.id, { status: 'active' });
@@ -224,17 +224,17 @@ describe('PayMe sandbox payment flow', () => {
     const donationId = (initiateRes.body.data.donation as { id: string }).id;
     const amount = (initiateRes.body.data.donation as { amount: number }).amount;
 
-    // First webhook — should succeed
+    // first webhook — should succeed
     await request(app)
       .post('/api/donations/webhook/payme')
       .send({ donation_id: donationId, transaction_id: 'MOCK-TXN-DUP', status: 'completed', amount });
 
-    // Second webhook for same donation — should fail
+    // second webhook with same status — idempotent, returns 200
     const res = await request(app)
       .post('/api/donations/webhook/payme')
       .send({ donation_id: donationId, transaction_id: 'MOCK-TXN-DUP-2', status: 'completed', amount });
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
   });
 
   it('8. Webhook for non-existent donation returns 404', async () => {

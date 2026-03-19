@@ -18,6 +18,8 @@ import { adminRouter } from './modules/admin/admin.routes.js';
 import { eventsRouter } from './modules/events/events.routes.js';
 import { feedRouter } from './modules/feed/feed.routes.js';
 import { recurringRouter } from './modules/recurring/recurring.routes.js';
+import { paymeRouter } from './modules/payme/payme.routes.js';
+import { savedCardsRouter } from './modules/saved-cards/saved-cards.routes.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -82,6 +84,8 @@ export function createApp(): express.Express {
   app.use('/api/events', eventsRouter);
   app.use('/api/feed', feedRouter);
   app.use('/api/recurring-donations', requireAuth, recurringRouter);
+  app.use('/api/payme', paymeRouter);
+  app.use('/api/saved-cards', requireAuth, savedCardsRouter);
   app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
 
   // Global error handler (must be last)

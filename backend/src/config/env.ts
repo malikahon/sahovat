@@ -40,6 +40,7 @@ const envSchema = z.object({
     .enum(['true', 'false', '1', '0'])
     .default('true')
     .transform((v) => v === 'true' || v === '1'),
+  PAYME_SUBSCRIBE_URL: z.string().default('https://checkout.test.paycom.uz/api'),
 
   PUBLIC_STORAGE_PATH: z.string().default('./storage/public'),
   PRIVATE_STORAGE_PATH: z.string().default('./storage/private'),

@@ -29,6 +29,7 @@ export const initiateDonationSchema = {
     is_anonymous: z.boolean().default(false).optional(),
     donor_display_name: z.string().max(100, 'Display name must be at most 100 characters').optional(),
     note: z.string().max(500, 'Note must be at most 500 characters').optional(),
+    saved_card_id: z.string().uuid('Invalid card ID').optional(),
   }),
 };
 

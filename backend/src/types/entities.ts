@@ -270,3 +270,41 @@ export interface DonationReceipt {
   file_url: string;
   generated_at: string;
 }
+
+// ============================================================
+// PAYME INTEGRATION
+// ============================================================
+
+/** Merchant API transaction states (PayMe → us). */
+export enum PaymeTransactionState {
+  PENDING = 1,
+  COMPLETED = 2,
+  CANCELLED_PENDING = -1,
+  CANCELLED_COMPLETED = -2,
+}
+
+export interface PaymeTransaction {
+  id: string;
+  payme_id: string;
+  donation_id: string;
+  state: PaymeTransactionState;
+  amount: number;       // tiyin
+  reason: number | null;
+  create_time: number;  // Unix ms
+  perform_time: number;
+  cancel_time: number;
+  created_at: string;
+}
+
+export interface SavedCard {
+  id: string;
+  user_id: string;
+  card_token: string;
+  card_number_masked: string;
+  card_expire: string;
+  card_type: 'uzcard' | 'humo' | 'unknown';
+  is_default: boolean;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}

@@ -563,6 +563,82 @@ export const donationsApi = {
 };
 
 // ============================================================
+// SAVED CARDS API
+// ============================================================
+
+export const savedCardsApi = {
+  /**
+   * Initiate adding a new card (tokenize + request OTP).
+   */
+  async create(
+    card_number: string,
+    card_expire: string,
+  ): Promise<{
+    success: boolean;
+    data?: { card_id: string; phone_masked: string; wait: number };
+    error?: string;
+  }> {
+    const res = await fetchWithRetry('/api/saved-cards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card_number, card_expire }),
+    });
+    return safeJson(res);
+  },
+
+  /**
+   * Verify card OTP.
+   */
+  async verify(
+    card_id: string,
+    code: string,
+  ): Promise<{
+    success: boolean;
+    data?: import('./types').SavedCard;
+    error?: string;
+  }> {
+    const res = await fetchWithRetry('/api/saved-cards/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card_id, code }),
+    });
+    return safeJson(res);
+  },
+
+  /**
+   * List the current user's saved cards.
+   */
+  async list(): Promise<{
+    success: boolean;
+    data?: import('./types').SavedCard[];
+    error?: string;
+  }> {
+    const res = await fetchWithRetry('/api/saved-cards');
+    return safeJson(res);
+  },
+
+  /**
+   * Remove a saved card.
+   */
+  async remove(id: string): Promise<{ success: boolean; error?: string }> {
+    const res = await fetchWithRetry(`/api/saved-cards/${id}`, {
+      method: 'DELETE',
+    });
+    return safeJson(res);
+  },
+
+  /**
+   * Set a card as default.
+   */
+  async setDefault(id: string): Promise<{ success: boolean; error?: string }> {
+    const res = await fetchWithRetry(`/api/saved-cards/${id}/default`, {
+      method: 'PUT',
+    });
+    return safeJson(res);
+  },
+};
+
+// ============================================================
 // WITHDRAWALS API (organizer — via BFF proxy routes)
 // ============================================================
 
