@@ -169,13 +169,19 @@ export async function initiateDonation(
 
   // Calculate fees
   const feePercentage = await ledgerService.getPlatformFeePercentage();
+  const feeIncluded = data.fee_included ?? false;
   const platform_fee = Math.round(data.amount * feePercentage / 100);
-  const net_amount = data.amount - platform_fee;
+
+  // feeIncluded = true: fee carved out of the entered amount (user pays data.amount)
+  // feeIncluded = false (default): fee added on top (user pays data.amount + fee, campaign gets data.amount)
+  const charge_amount = feeIncluded ? data.amount : data.amount + platform_fee;
+  const net_amount = feeIncluded ? data.amount - platform_fee : data.amount;
 
   // Determine display name
   const donor_display_name = data.is_anonymous ? null : (data.donor_display_name ?? null);
 
   // Insert pending donation
+  // `amount` column stores the total charge to the user (includes fee when fee is on top)
   const insertResult = await query(
     `INSERT INTO donations (
        campaign_id, donor_id, amount, platform_fee, net_amount,
@@ -186,7 +192,7 @@ export async function initiateDonation(
     [
       data.campaign_id,
       userId,
-      data.amount,
+      charge_amount,
       platform_fee,
       net_amount,
       data.payment_provider,
@@ -205,7 +211,7 @@ export async function initiateDonation(
     const savedCard = await getCardWithToken(data.saved_card_id, userId);
 
     const chargeResult = await paymentService.chargeCard({
-      amount: data.amount,
+      amount: charge_amount,
       donation_id: donation.id,
       card_token: savedCard.card_token,
     });
@@ -216,7 +222,7 @@ export async function initiateDonation(
         donation.id,
         chargeResult.transaction_id,
         'completed',
-        data.amount,
+        charge_amount,
       );
 
       return {
@@ -239,7 +245,7 @@ export async function initiateDonation(
 
   // No saved card — create a checkout session for redirect-based payment
   const paymentResult = await paymentService.createPayment({
-    amount: data.amount,
+    amount: charge_amount,
     donation_id: donation.id,
     provider: data.payment_provider,
     return_url: undefined,

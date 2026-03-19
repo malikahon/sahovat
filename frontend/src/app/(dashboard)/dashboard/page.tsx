@@ -3,17 +3,27 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { TrendingUp, Wallet, Clock, ArrowUpRight, Plus, Sparkles } from 'lucide-react';
-import { withdrawalsApi, feedApi } from '@/lib/api';
+import {
+  TrendingUp,
+  Wallet,
+  Clock,
+  ArrowUpRight,
+  Plus,
+  Sparkles,
+  Heart,
+  HandCoins,
+} from 'lucide-react';
+import { withdrawalsApi, feedApi, donationsApi } from '@/lib/api';
 import { formatUZS } from '@/lib/formatters';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
 import CampaignCard from '@/components/campaign/CampaignCard';
 import { ImpactBadge } from '@/components/donation/ImpactBadge';
-import type { CampaignWithBalance, CampaignWithStats } from '@/lib/types';
+import type { CampaignWithBalance, CampaignWithStats, DonationWithCampaign } from '@/lib/types';
 
 // ============================================================
 // STATUS BADGE
@@ -37,7 +47,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // ============================================================
-// CAMPAIGN CARD
+// ORGANIZER CAMPAIGN CARD
 // ============================================================
 
 function OrganizerCampaignCard({ campaign }: { campaign: CampaignWithBalance }) {
@@ -148,22 +158,58 @@ function StatCard({
 }
 
 // ============================================================
+// RECENT DONATION ROW
+// ============================================================
+
+function RecentDonationRow({ donation }: { donation: DonationWithCampaign }) {
+  return (
+    <div className="flex items-center justify-between py-2">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-foreground truncate">
+          {donation.campaign_title}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {new Date(donation.created_at).toLocaleDateString()}
+        </p>
+      </div>
+      <span className="text-sm font-semibold text-foreground shrink-0 ml-4">
+        {formatUZS(donation.amount)}
+      </span>
+    </div>
+  );
+}
+
+// ============================================================
 // MAIN PAGE
 // ============================================================
 
 export default function DashboardPage() {
   const t = useTranslations('dashboard');
 
-  const { data, isLoading } = useQuery({
+  // Donor data: recent donations
+  const { data: donorData, isLoading: donorLoading } = useQuery({
+    queryKey: ['my-donations-dashboard'],
+    queryFn: async () => {
+      const res = await donationsApi.listMy({ page: 1, limit: 5 });
+      if (!res.success) return { donations: [], total: 0, totalDonated: 0 };
+      const donations = res.data ?? [];
+      const total = res.pagination?.total ?? 0;
+      const totalDonated = donations.reduce((sum, d) => sum + d.amount, 0);
+      return { donations, total, totalDonated };
+    },
+  });
+
+  // Organizer data: campaigns + balances
+  const { data: organizerData, isLoading: organizerLoading } = useQuery({
     queryKey: ['organizer-dashboard'],
     queryFn: async () => {
       const res = await withdrawalsApi.getDashboard();
-      if (!res.success || !res.data) throw new Error(res.error ?? 'Failed to load');
+      if (!res.success || !res.data) return null;
       return res.data;
     },
   });
 
-  // Personalized feed (Week 11)
+  // Personalized feed
   const { data: feedData, isLoading: feedLoading } = useQuery({
     queryKey: ['personalized-feed'],
     queryFn: async () => {
@@ -173,6 +219,11 @@ export default function DashboardPage() {
     },
   });
 
+  const isLoading = donorLoading && organizerLoading;
+  const hasCampaigns = (organizerData?.campaigns?.length ?? 0) > 0;
+  const donations = donorData?.donations ?? [];
+  const totalDonations = donorData?.total ?? 0;
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -180,101 +231,138 @@ export default function DashboardPage() {
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-4 w-72" />
         </div>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-20" />
           ))}
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-52" />
-          ))}
-        </div>
+        <Skeleton className="h-48" />
       </div>
     );
   }
 
-  const totals = data?.totals ?? {
-    total_raised: 0,
-    total_withdrawn: 0,
-    total_available: 0,
-    total_pending_withdrawals: 0,
-  };
-  const campaigns = data?.campaigns ?? [];
-
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('title')}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{t('subtitle')}</p>
-        </div>
-        <Link href="/create-campaign">
-          <Button size="sm">
-            <Plus className="size-4 mr-1.5" />
-            {t('createCampaign')}
-          </Button>
-        </Link>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">{t('title')}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{t('subtitle')}</p>
       </div>
 
-      {/* Summary stat cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      {/* === DONOR SECTION (always shown) === */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <StatCard
-          title={t('totalRaised')}
-          value={formatUZS(totals.total_raised)}
+          title={t('donorTotalDonated')}
+          value={formatUZS(donorData?.totalDonated ?? 0)}
+          icon={Heart}
+          colorClass="bg-rose-50 text-rose-600"
+        />
+        <StatCard
+          title={t('donorCampaignsSupported')}
+          value={String(totalDonations)}
+          icon={HandCoins}
+          colorClass="bg-emerald-50 text-emerald-600"
+        />
+        <StatCard
+          title={t('donorTotalDonated')}
+          value={donations.length > 0 ? formatUZS(donations[0].amount) : '—'}
           icon={TrendingUp}
           colorClass="bg-blue-50 text-blue-600"
         />
-        <StatCard
-          title={t('availableBalance')}
-          value={formatUZS(totals.total_available)}
-          icon={Wallet}
-          colorClass="bg-green-50 text-green-600"
-        />
-        <StatCard
-          title={t('totalWithdrawn')}
-          value={formatUZS(totals.total_withdrawn)}
-          icon={ArrowUpRight}
-          colorClass="bg-purple-50 text-purple-600"
-        />
-        <StatCard
-          title={t('pendingWithdrawals')}
-          value={formatUZS(totals.total_pending_withdrawals)}
-          icon={Clock}
-          colorClass="bg-yellow-50 text-yellow-600"
-        />
       </div>
 
-      {/* Campaign cards */}
-      {campaigns.length === 0 ? (
+      {/* Recent donations */}
+      {donations.length > 0 ? (
         <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground mb-4">{t('noCampaigns')}</p>
-            <p className="text-sm text-muted-foreground mb-6">{t('noCampaignsDesc')}</p>
-            <Link href="/create-campaign">
-              <Button>
-                <Plus className="size-4 mr-1.5" />
-                {t('createCampaign')}
-              </Button>
-            </Link>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-foreground">{t('donorRecentDonations')}</h2>
+              <Link href="/my-donations">
+                <Button variant="ghost" size="sm" className="text-xs h-7">
+                  {t('donorViewAll')}
+                </Button>
+              </Link>
+            </div>
+            <div className="divide-y divide-border">
+              {donations.map((d) => (
+                <RecentDonationRow key={d.id} donation={d} />
+              ))}
+            </div>
           </CardContent>
         </Card>
       ) : (
-        <div>
-          <h2 className="text-sm font-semibold text-foreground mb-3">{t('campaignStats')}</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {campaigns.map((campaign) => (
-              <OrganizerCampaignCard key={campaign.id} campaign={campaign} />
-            ))}
-          </div>
-        </div>
+        <Card>
+          <CardContent className="py-8 text-center">
+            <Heart className="size-8 mx-auto text-muted-foreground mb-3" />
+            <p className="text-sm text-muted-foreground mb-4">{t('donorEmpty')}</p>
+            <Link href="/campaigns">
+              <Button variant="outline" size="sm">{t('donorBrowse')}</Button>
+            </Link>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Impact Badge (Week 12) */}
+      {/* Impact Badge */}
       <ImpactBadge />
 
-      {/* Personalized Feed — "For You" section (Week 11) */}
+      {/* === ORGANIZER SECTION (shown only if user has campaigns) === */}
+      {hasCampaigns && organizerData && (
+        <>
+          <Separator />
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground">{t('organizerSection')}</h2>
+              <Link href="/create-campaign">
+                <Button size="sm" variant="outline">
+                  <Plus className="size-4 mr-1.5" />
+                  {t('createCampaign')}
+                </Button>
+              </Link>
+            </div>
+
+            {/* Organizer stat cards */}
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <StatCard
+                title={t('totalRaised')}
+                value={formatUZS(organizerData.totals.total_raised)}
+                icon={TrendingUp}
+                colorClass="bg-blue-50 text-blue-600"
+              />
+              <StatCard
+                title={t('availableBalance')}
+                value={formatUZS(organizerData.totals.total_available)}
+                icon={Wallet}
+                colorClass="bg-green-50 text-green-600"
+              />
+              <StatCard
+                title={t('totalWithdrawn')}
+                value={formatUZS(organizerData.totals.total_withdrawn)}
+                icon={ArrowUpRight}
+                colorClass="bg-purple-50 text-purple-600"
+              />
+              <StatCard
+                title={t('pendingWithdrawals')}
+                value={formatUZS(organizerData.totals.total_pending_withdrawals)}
+                icon={Clock}
+                colorClass="bg-yellow-50 text-yellow-600"
+              />
+            </div>
+
+            {/* Campaign cards */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3">{t('campaignStats')}</h3>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {organizerData.campaigns.map((campaign: CampaignWithBalance) => (
+                  <OrganizerCampaignCard key={campaign.id} campaign={campaign} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Personalized Feed — "For You" section */}
       <div>
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="size-4 text-primary" />

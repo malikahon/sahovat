@@ -108,6 +108,10 @@ export default function LoginPage() {
               </>
             )}
           </Button>
+
+          <p className="text-center text-xs text-muted-foreground">
+            {t('newUserHint')}
+          </p>
         </form>
       </CardContent>
     </Card>

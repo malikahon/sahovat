@@ -37,8 +37,8 @@ const BCRYPT_SALT_ROUNDS = 12;
  * Strips password_hash from a user row to produce a safe response object.
  */
 function toSafeUser(row: UserRow): SafeUser {
-  const { password_hash: _, ...safe } = row;
-  return safe;
+  const { password_hash, ...safe } = row;
+  return { ...safe, has_password: !!password_hash };
 }
 
 /**
@@ -307,6 +307,51 @@ export async function adminLogin(
 }
 
 // ============================================================
+// ADMIN VERIFY PASSWORD (after OTP-based login)
+// ============================================================
+
+/**
+ * Verifies the password for an already-authenticated admin user.
+ * Used after the normal OTP login flow when the user is an admin.
+ * Returns the safe user on success.
+ */
+export async function verifyAdminPassword(
+  userId: string,
+  password: string,
+): Promise<SafeUser> {
+  const result = await query(
+    `SELECT id, phone_number, display_name, password_hash,
+            date_of_birth, gender, preferred_categories,
+            is_verified, is_admin, is_banned, verification_status,
+            oneid_id, oneid_verified_at, language_preference,
+            created_at, updated_at
+     FROM users WHERE id = $1`,
+    [userId],
+  );
+
+  if (result.rows.length === 0) {
+    throw new NotFoundError('User not found');
+  }
+
+  const user = result.rows[0] as UserRow;
+
+  if (!user.is_admin) {
+    throw new ForbiddenError('Not an admin user');
+  }
+
+  if (!user.password_hash) {
+    throw new UnauthorizedError('Admin password not configured', 'NO_PASSWORD');
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+  if (!isPasswordValid) {
+    throw new UnauthorizedError('Invalid password', 'INVALID_PASSWORD');
+  }
+
+  return toSafeUser(user);
+}
+
+// ============================================================
 // REFRESH TOKENS
 // ============================================================
 
@@ -382,6 +427,46 @@ export async function getUserById(userId: string): Promise<SafeUser | null> {
   if (result.rows.length === 0) {
     return null;
   }
+
+  return toSafeUser(result.rows[0] as UserRow);
+}
+
+// ============================================================
+// SET PASSWORD (for campaign creators)
+// ============================================================
+
+/**
+ * Sets a password for a regular user (used before campaign creation).
+ * Rejects if user already has a password (use a separate change-password flow for that).
+ */
+export async function setPassword(userId: string, password: string): Promise<SafeUser> {
+  // Check if user already has a password
+  const existing = await query(
+    `SELECT id, password_hash FROM users WHERE id = $1`,
+    [userId],
+  );
+
+  if (existing.rows.length === 0) {
+    throw new NotFoundError('User not found');
+  }
+
+  if (existing.rows[0].password_hash) {
+    throw new ValidationError('Password already set. Use change-password instead.', 'PASSWORD_ALREADY_SET');
+  }
+
+  const password_hash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+
+  const result = await query(
+    `UPDATE users
+     SET password_hash = $1, updated_at = NOW()
+     WHERE id = $2
+     RETURNING id, phone_number, display_name, password_hash,
+               date_of_birth, gender, preferred_categories,
+               is_verified, is_admin, is_banned, verification_status,
+               oneid_id, oneid_verified_at, language_preference,
+               created_at, updated_at`,
+    [password_hash, userId],
+  );
 
   return toSafeUser(result.rows[0] as UserRow);
 }

@@ -187,6 +187,14 @@ export async function getEscrowSummary(_req: Request, res: Response): Promise<vo
 }
 
 /**
+ * GET /api/admin/stats/money-flow
+ */
+export async function getMoneyFlow(_req: Request, res: Response): Promise<void> {
+  const data = await adminService.getMoneyFlowStats();
+  res.status(200).json({ success: true, data });
+}
+
+/**
  * PATCH /api/admin/settings
  */
 export async function updateSettings(req: Request, res: Response): Promise<void> {

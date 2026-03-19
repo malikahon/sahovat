@@ -156,7 +156,7 @@ export default function AdminUsersPage() {
           <SelectContent>
             <SelectItem value="_all">All verification</SelectItem>
             {Object.values(VerificationStatus).map((s) => (
-              <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+              <SelectItem key={s} value={s} label={s.charAt(0).toUpperCase() + s.slice(1)} className="capitalize">{s}</SelectItem>
             ))}
           </SelectContent>
         </Select>

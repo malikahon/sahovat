@@ -20,6 +20,9 @@ adminRouter.get('/stats/donations-over-time', adminController.getDonationsOverTi
 // GET /api/admin/stats/donations-by-category
 adminRouter.get('/stats/donations-by-category', adminController.getDonationsByCategory);
 
+// GET /api/admin/stats/money-flow
+adminRouter.get('/stats/money-flow', adminController.getMoneyFlow);
+
 // ============================================================
 // 9.6 — ESCROW SUMMARY
 // ============================================================

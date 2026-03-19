@@ -14,11 +14,11 @@ import {
   LogOut,
   Menu,
   X,
-  ShieldCheck,
   ArrowDownToLine,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute';
+import { Logo } from '@/components/shared/Logo';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -53,12 +53,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       {/* Logo / App name */}
-      <div className="flex items-center gap-2 px-4 py-5">
-        <ShieldCheck className="size-5 text-primary" />
-        <div>
-          <h2 className="text-sm font-semibold text-foreground leading-tight">Sahovat</h2>
-          <p className="text-xs text-muted-foreground">Admin Panel</p>
-        </div>
+      <div className="px-4 py-5">
+        <Logo size="sm" subtitle="Admin Panel" href="/admin" />
       </div>
 
       {/* Navigation links */}
@@ -165,10 +161,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           >
             <Menu className="size-5" />
           </Button>
-          <div className="ml-3 flex items-center gap-2">
-            <ShieldCheck className="size-4 text-primary" />
-            <span className="text-sm font-semibold text-foreground">Admin Panel</span>
-          </div>
+          <Logo size="sm" subtitle="Admin Panel" href="/admin" className="ml-3" />
         </header>
 
         {/* Page content */}

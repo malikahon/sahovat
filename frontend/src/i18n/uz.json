@@ -55,7 +55,29 @@
     "notAuthorized": "Sizga bu sahifaga kirishga ruxsat yo'q",
     "loginRequired": "Davom etish uchun tizimga kiring",
     "adminRequired": "Admin huquqi talab qilinadi",
-    "verificationRequired": "Hisobni tasdiqlash talab qilinadi"
+    "verificationRequired": "Hisobni tasdiqlash talab qilinadi",
+    "newUserHint": "Sahovatda yangimisiz? Boshlash uchun telefon raqamingizni kiriting.",
+    "adminVerifyTitle": "Admin tasdiqlash",
+    "adminVerifySubtitle": "Admin paneliga kirish uchun parolingizni kiriting",
+    "adminPassword": "Admin paroli",
+    "adminPasswordPlaceholder": "Admin parolini kiriting",
+    "adminPasswordMinLength": "Parol kamida 8 belgidan iborat bo'lishi kerak",
+    "adminPasswordInvalid": "Noto'g'ri parol. Qaytadan urinib ko'ring.",
+    "adminVerifyButton": "Tasdiqlash va davom etish",
+    "adminSkipToDashboard": "Oddiy foydalanuvchi sifatida davom etish",
+    "setPassword": {
+      "title": "Parolingizni o'rnating",
+      "description": "Kampaniya yaratish uchun hisob xavfsizligi maqsadida parol o'rnatishingiz kerak.",
+      "password": "Parol",
+      "passwordPlaceholder": "Parol kiriting (kamida 8 belgi)",
+      "confirmPassword": "Parolni tasdiqlang",
+      "confirmPasswordPlaceholder": "Parolni qayta kiriting",
+      "minLength": "Parol kamida 8 belgidan iborat bo'lishi kerak",
+      "mismatch": "Parollar mos kelmaydi",
+      "submit": "Parolni o'rnatish va davom etish",
+      "setting": "Parol o'rnatilmoqda...",
+      "failed": "Parolni o'rnatib bo'lmadi. Qaytadan urinib ko'ring."
+    }
   },
   "campaigns": {
     "title": "Kampaniyalar",
@@ -118,7 +140,10 @@
       "sortUrgency": "Shoshilinchlik bo'yicha",
       "noCampaigns": "Kampaniyalar topilmadi",
       "noCampaignsDescription": "Filtrlarni o'zgartirib ko'ring yoki keyinroq tekshiring.",
-      "viewCampaign": "Ko'rish"
+      "viewCampaign": "Ko'rish",
+      "previous": "Oldingi",
+      "next": "Keyingi",
+      "pageOf": "{totalPages} dan {page}-sahifa"
     },
     "detail": {
       "by": "tomonidan",
@@ -306,7 +331,10 @@
     "recurringNextCharge": "Keyingi to'lov: {date}",
     "manageRecurring": "Doimiy xayriyalarni boshqarish",
     "selectPaymentMethod": "To'lov usulini tanlang",
-    "savedCard": "saqlangan karta"
+    "savedCard": "saqlangan karta",
+    "feeIncludedLabel": "1% komissiyani xayriyamga kiritish",
+    "feeIncludedHint": "Belgilansa, komissiya miqdoringizdan ushlanadi. Aks holda ustiga qo'shiladi va 100% kampaniyaga o'tadi.",
+    "totalCharged": "Sizdan olinadi"
   },
   "savedCards": {
     "title": "To'lov usullari",
@@ -381,8 +409,15 @@
      "sidebar": {
        "title": "Boshqaruv paneli"
      },
-     "title": "Tashkilotchi paneli",
-     "subtitle": "Kampaniyalaringizni kuzating va to'lovlarni boshqaring",
+     "title": "Boshqaruv paneli",
+     "subtitle": "Faoliyatingiz va ta'siringiz",
+     "donorTotalDonated": "Jami xayriya",
+     "donorCampaignsSupported": "Xayriyalar soni",
+     "donorRecentDonations": "So'nggi xayriyalar",
+     "donorViewAll": "Hammasi",
+     "donorEmpty": "Siz hali xayriya qilmagansiz. Qo'llab-quvvatlash uchun kampaniyalarni toping!",
+     "donorBrowse": "Kampaniyalarni ko'rish",
+     "organizerSection": "Sizning kampaniyalaringiz",
      "totalRaised": "Jami yig'ilgan",
      "totalWithdrawn": "Jami yechilgan",
      "availableBalance": "Yechish mumkin",
@@ -514,7 +549,33 @@
       "recentActions": "So'nggi admin harakatlari",
       "last30Days": "So'nggi 30 kun",
       "amount": "Miqdor",
-      "count": "Soni"
+      "count": "Soni",
+      "moneyFlow": "Pul oqimi",
+      "moneyFlowDescription": "Platforma daromadi va mablag' harakati bo'yicha to'liq moliyaviy ko'rinish",
+      "grossDonations": "Yalpi xayriyalar",
+      "platformFeesCollected": "Platforma to'lovlari",
+      "fromDonations": "Xayriyalardan",
+      "fromWithdrawals": "Pul yechishdan",
+      "netToCampaigns": "Kampaniyalarga sof summa",
+      "monthlyComparison": "Oylik taqqoslash",
+      "thisMonth": "Bu oy",
+      "lastMonth": "O'tgan oy",
+      "vsLastMonth": "o'tgan oyga nisbatan",
+      "feesThisMonth": "Bu oydagi to'lovlar",
+      "escrowBalance": "Eskrou balansi",
+      "totalWithdrawn": "Jami yechilgan",
+      "disbursed": "taqsimlangan",
+      "noDonationsYet": "Hali xayriyalar yo'q",
+      "withdrawalPipeline": "Pul yechish jadvali",
+      "pending": "Kutilmoqda",
+      "approved": "Tasdiqlangan",
+      "completed": "Bajarilgan",
+      "weeklyRevenueTrend": "Haftalik daromad tendensiyasi (8 hafta)",
+      "donations": "Xayriyalar",
+      "fees": "To'lovlar",
+      "noData": "Moliyaviy ma'lumotlar hali mavjud emas.",
+      "noRecentActions": "So'nggi harakatlar yo'q.",
+      "viewFullAuditLog": "To'liq audit jurnalini ko'rish"
     },
     "campaigns": {
       "title": "Kampaniyalarni boshqarish",

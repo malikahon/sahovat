@@ -24,6 +24,6 @@ export interface UserRow {
 }
 
 /**
- * User data returned in API responses (excludes password_hash).
+ * User data returned in API responses (excludes password_hash, adds has_password).
  */
-export type SafeUser = Omit<UserRow, 'password_hash'>;
+export type SafeUser = Omit<UserRow, 'password_hash'> & { has_password: boolean };

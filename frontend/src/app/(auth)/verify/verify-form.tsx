@@ -64,6 +64,8 @@ export function VerifyForm() {
         const result = await verifyOtp(phone, code);
         if (result.is_new_user) {
           router.push('/register');
+        } else if (result.user.is_admin) {
+          router.push('/admin-verify');
         } else {
           router.push('/dashboard');
         }

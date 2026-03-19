@@ -67,6 +67,22 @@ export async function adminLogin(req: Request, res: Response): Promise<void> {
 }
 
 /**
+ * POST /api/auth/admin/verify-password
+ * Verifies admin password after OTP-based login. Requires authentication.
+ */
+export async function adminVerifyPassword(req: Request, res: Response): Promise<void> {
+  const authReq = req as AuthenticatedRequest;
+  const { password } = req.body as { password: string };
+
+  const user = await authService.verifyAdminPassword(authReq.user.id, password);
+
+  res.status(200).json({
+    success: true,
+    data: { user },
+  });
+}
+
+/**
  * POST /api/auth/refresh
  * Refreshes the access/refresh token pair.
  */
@@ -93,6 +109,22 @@ export async function logout(req: Request, res: Response): Promise<void> {
   res.status(200).json({
     success: true,
     message: 'Logged out successfully',
+  });
+}
+
+/**
+ * POST /api/auth/set-password
+ * Sets a password for the current user (required before creating campaigns).
+ */
+export async function setPassword(req: Request, res: Response): Promise<void> {
+  const authReq = req as AuthenticatedRequest;
+  const { password } = req.body as { password: string };
+
+  const user = await authService.setPassword(authReq.user.id, password);
+
+  res.status(200).json({
+    success: true,
+    data: { user },
   });
 }
 

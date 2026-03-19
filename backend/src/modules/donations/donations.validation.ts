@@ -25,6 +25,7 @@ export const initiateDonationSchema = {
   body: z.object({
     campaign_id: z.string().uuid('Invalid campaign ID'),
     amount: z.number().int('Amount must be a whole number').positive('Amount must be positive').min(1000, 'Minimum donation is 1000 UZS').max(10_000_000_000, 'Amount too large'),
+    fee_included: z.boolean().default(false).optional(),
     payment_provider: z.nativeEnum(PaymentProvider, { message: 'Invalid payment provider' }),
     is_anonymous: z.boolean().default(false).optional(),
     donor_display_name: z.string().max(100, 'Display name must be at most 100 characters').optional(),

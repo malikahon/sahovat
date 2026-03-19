@@ -55,7 +55,29 @@
     "notAuthorized": "У вас нет доступа к этой странице",
     "loginRequired": "Пожалуйста, войдите для продолжения",
     "adminRequired": "Требуется доступ администратора",
-    "verificationRequired": "Требуется верификация аккаунта"
+    "verificationRequired": "Требуется верификация аккаунта",
+    "newUserHint": "Впервые в Sahovat? Просто введите номер телефона, чтобы начать.",
+    "adminVerifyTitle": "Проверка администратора",
+    "adminVerifySubtitle": "Введите пароль для доступа к панели администратора",
+    "adminPassword": "Пароль администратора",
+    "adminPasswordPlaceholder": "Введите пароль администратора",
+    "adminPasswordMinLength": "Пароль должен быть не менее 8 символов",
+    "adminPasswordInvalid": "Неверный пароль. Попробуйте снова.",
+    "adminVerifyButton": "Подтвердить и продолжить",
+    "adminSkipToDashboard": "Продолжить как обычный пользователь",
+    "setPassword": {
+      "title": "Установите пароль",
+      "description": "Для создания кампании необходимо установить пароль для безопасности аккаунта.",
+      "password": "Пароль",
+      "passwordPlaceholder": "Введите пароль (мин. 8 символов)",
+      "confirmPassword": "Подтвердите пароль",
+      "confirmPasswordPlaceholder": "Повторите пароль",
+      "minLength": "Пароль должен быть не менее 8 символов",
+      "mismatch": "Пароли не совпадают",
+      "submit": "Установить пароль и продолжить",
+      "setting": "Установка пароля...",
+      "failed": "Не удалось установить пароль. Попробуйте снова."
+    }
   },
   "campaigns": {
     "title": "Кампании",
@@ -118,7 +140,10 @@
       "sortUrgency": "По срочности",
       "noCampaigns": "Кампании не найдены",
       "noCampaignsDescription": "Попробуйте изменить фильтры или зайдите позже.",
-      "viewCampaign": "Посмотреть"
+      "viewCampaign": "Посмотреть",
+      "previous": "Назад",
+      "next": "Вперёд",
+      "pageOf": "Страница {page} из {totalPages}"
     },
     "detail": {
       "by": "от",
@@ -306,7 +331,10 @@
     "recurringNextCharge": "Следующее списание: {date}",
     "manageRecurring": "Управление регулярными",
     "selectPaymentMethod": "Выберите способ оплаты",
-    "savedCard": "сохранённая карта"
+    "savedCard": "сохранённая карта",
+    "feeIncludedLabel": "Включить 1% комиссию в мое пожертвование",
+    "feeIncludedHint": "Если отмечено, комиссия вычитается из вашей суммы. Иначе она добавляется сверху, и 100% идёт в кампанию.",
+    "totalCharged": "С вас будет списано"
   },
   "savedCards": {
     "title": "Способы оплаты",
@@ -381,8 +409,15 @@
      "sidebar": {
        "title": "Панель управления"
      },
-     "title": "Панель организатора",
-     "subtitle": "Отслеживайте кампании и управляйте выплатами",
+     "title": "Панель управления",
+     "subtitle": "Ваша активность и влияние",
+     "donorTotalDonated": "Всего пожертвовано",
+     "donorCampaignsSupported": "Пожертвований",
+     "donorRecentDonations": "Последние пожертвования",
+     "donorViewAll": "Все",
+     "donorEmpty": "Вы ещё не делали пожертвований. Найдите кампании для поддержки!",
+     "donorBrowse": "Просмотреть кампании",
+     "organizerSection": "Ваши кампании",
      "totalRaised": "Всего собрано",
      "totalWithdrawn": "Всего выведено",
      "availableBalance": "Доступно для вывода",
@@ -514,7 +549,33 @@
       "recentActions": "Последние действия администратора",
       "last30Days": "Последние 30 дней",
       "amount": "Сумма",
-      "count": "Количество"
+      "count": "Количество",
+      "moneyFlow": "Движение средств",
+      "moneyFlowDescription": "Полный финансовый обзор доходов платформы и движения средств",
+      "grossDonations": "Валовые пожертвования",
+      "platformFeesCollected": "Комиссия платформы",
+      "fromDonations": "С пожертвований",
+      "fromWithdrawals": "С выводов",
+      "netToCampaigns": "Нетто кампаниям",
+      "monthlyComparison": "Сравнение по месяцам",
+      "thisMonth": "Этот месяц",
+      "lastMonth": "Прошлый месяц",
+      "vsLastMonth": "к прошлому месяцу",
+      "feesThisMonth": "Комиссия за этот месяц",
+      "escrowBalance": "Баланс эскроу",
+      "totalWithdrawn": "Всего выведено",
+      "disbursed": "выплачено",
+      "noDonationsYet": "Пожертвований пока нет",
+      "withdrawalPipeline": "Очередь выводов",
+      "pending": "Ожидание",
+      "approved": "Одобрено",
+      "completed": "Завершено",
+      "weeklyRevenueTrend": "Еженедельный тренд доходов (8 недель)",
+      "donations": "Пожертвования",
+      "fees": "Комиссии",
+      "noData": "Финансовые данные пока недоступны.",
+      "noRecentActions": "Нет недавних действий.",
+      "viewFullAuditLog": "Посмотреть полный журнал аудита"
     },
     "campaigns": {
       "title": "Управление кампаниями",

@@ -54,6 +54,13 @@ export async function POST(request: NextRequest) {
     });
 
     const data = await res.json();
+    // Normalize: backend returns { success, data: <campaign> } but frontend expects { success, data: { campaign } }
+    if (data.success && data.data && !data.data.campaign) {
+      return NextResponse.json(
+        { success: true, data: { campaign: data.data } },
+        { status: res.status },
+      );
+    }
     return NextResponse.json(data, { status: res.status });
   } catch {
     return NextResponse.json(

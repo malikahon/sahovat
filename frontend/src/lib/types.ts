@@ -108,6 +108,7 @@ export interface User {
   id: string;
   phone_number: string;
   display_name: string | null;
+  has_password: boolean;
   date_of_birth: string | null;
   gender: 'male' | 'female' | null;
   preferred_categories: CampaignCategory[];
@@ -410,6 +411,7 @@ export interface CampaignWithStats extends Campaign {
 export interface InitiateDonationDto {
   campaign_id: string;
   amount: number;
+  fee_included?: boolean;
   payment_provider: PaymentProvider;
   is_anonymous?: boolean;
   donor_display_name?: string;
@@ -652,6 +654,42 @@ export interface EscrowSummary {
   total_platform_revenue: number;
   total_withdrawn: number;
   campaign_balances: CampaignEscrowBalance[];
+}
+
+export interface MoneyFlowStats {
+  gross_donations: number;
+  total_platform_fees: number;
+  fee_breakdown: {
+    from_donations: number;
+    from_withdrawals: number;
+  };
+  net_to_campaigns: number;
+  total_withdrawn: number;
+  escrow_balance: number;
+  this_month: {
+    donations: number;
+    fees: number;
+    count: number;
+  };
+  last_month: {
+    donations: number;
+    fees: number;
+    count: number;
+  };
+  withdrawals: {
+    pending_amount: number;
+    pending_count: number;
+    approved_amount: number;
+    approved_count: number;
+    completed_amount: number;
+    completed_count: number;
+  };
+  weekly_trend: {
+    week_start: string;
+    count: number;
+    amount: number;
+    fees: number;
+  }[];
 }
 
 // ============================================================

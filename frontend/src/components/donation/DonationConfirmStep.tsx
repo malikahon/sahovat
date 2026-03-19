@@ -36,7 +36,15 @@ export function DonationConfirmStep({
 
   const feePct = platformFeePct ?? DEFAULT_PLATFORM_FEE_PCT;
   const platformFee = Math.round(formData.amount * feePct / 100);
-  const netAmount = formData.amount - platformFee;
+
+  // feeIncluded = true: fee taken from the entered amount (campaign gets less)
+  // feeIncluded = false (default): fee added on top (campaign gets full amount)
+  const netAmount = formData.feeIncluded
+    ? formData.amount - platformFee
+    : formData.amount;
+  const totalCharge = formData.feeIncluded
+    ? formData.amount
+    : formData.amount + platformFee;
 
   const handleConfirmAndPay = async () => {
     setIsLoading(true);
@@ -45,6 +53,7 @@ export function DonationConfirmStep({
       const res = await donationsApi.initiate({
         campaign_id: campaignId,
         amount: formData.amount,
+        fee_included: formData.feeIncluded,
         payment_provider: 'payme' as import('@/lib/types').PaymentProvider,
         is_anonymous: formData.isAnonymous,
         donor_display_name: formData.isAnonymous ? undefined : formData.displayName || undefined,
@@ -67,7 +76,7 @@ export function DonationConfirmStep({
         window.location.href = checkout_url;
       } else if (IS_DEV && !savedCardId) {
         // Dev mode without saved card: simulate payment via webhook
-        const simRes = await donationsApi.simulatePayment(donation.id, formData.amount);
+        const simRes = await donationsApi.simulatePayment(donation.id, totalCharge);
         if (simRes.success) {
           onSuccess(donation.id);
         } else {
@@ -100,7 +109,9 @@ export function DonationConfirmStep({
 
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">{t('platformFee')}</span>
-            <span className="text-muted-foreground">− {formatUZS(platformFee)}</span>
+            <span className="text-muted-foreground">
+              {formData.feeIncluded ? '−' : '+'} {formatUZS(platformFee)}
+            </span>
           </div>
 
           <Separator />
@@ -108,6 +119,11 @@ export function DonationConfirmStep({
           <div className="flex justify-between font-semibold">
             <span className="text-foreground">{t('netAmount')}</span>
             <span className="text-foreground">{formatUZS(netAmount)}</span>
+          </div>
+
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">{t('totalCharged')}</span>
+            <span className="font-medium text-foreground">{formatUZS(totalCharge)}</span>
           </div>
         </div>
 

@@ -84,6 +84,30 @@ export const adminLoginSchema = {
 };
 
 // ============================================================
+// ADMIN VERIFY PASSWORD (after OTP login)
+// ============================================================
+
+export const adminVerifyPasswordSchema = {
+  body: z.object({
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters'),
+  }),
+};
+
+// ============================================================
+// SET PASSWORD (for campaign creators)
+// ============================================================
+
+export const setPasswordSchema = {
+  body: z.object({
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters'),
+  }),
+};
+
+// ============================================================
 // REFRESH TOKEN
 // ============================================================
 

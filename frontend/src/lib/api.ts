@@ -162,6 +162,43 @@ export const authApi = {
     }
     return res.json();
   },
+
+  /**
+   * Verify admin password after OTP-based login.
+   * Used when an admin user logs in via the normal OTP flow.
+   */
+  async verifyAdminPassword(
+    password: string,
+  ): Promise<{
+    success: boolean;
+    data?: { user: import('./types').User };
+    error?: string;
+  }> {
+    const res = await fetch('/api/auth/admin-verify-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    return res.json();
+  },
+
+  /**
+   * Set a password for the current user (required before campaign creation).
+   */
+  async setPassword(
+    password: string,
+  ): Promise<{
+    success: boolean;
+    data?: { user: import('./types').User };
+    error?: string;
+  }> {
+    const res = await fetch('/api/auth/set-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    return res.json();
+  },
 };
 
 // ============================================================
@@ -745,6 +782,15 @@ export const adminApi = {
     error?: string;
   }> {
     const res = await fetchWithRetry('/api/admin/stats/donations-by-category');
+    return safeJson(res);
+  },
+
+  async getMoneyFlow(): Promise<{
+    success: boolean;
+    data?: import('./types').MoneyFlowStats;
+    error?: string;
+  }> {
+    const res = await fetchWithRetry('/api/admin/stats/money-flow');
     return safeJson(res);
   },
 

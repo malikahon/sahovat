@@ -24,8 +24,8 @@ const USER_COLUMNS = `id, phone_number, display_name, password_hash,
  * Strips password_hash from a user row to produce a safe response object.
  */
 function toSafeUser(row: UserRow): SafeUser {
-  const { password_hash: _, ...safe } = row;
-  return safe;
+  const { password_hash, ...safe } = row;
+  return { ...safe, has_password: !!password_hash };
 }
 
 // ============================================================

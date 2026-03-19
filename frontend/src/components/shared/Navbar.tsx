@@ -4,9 +4,10 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Menu, X, HeartHandshake, Heart, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { Menu, X, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
+import { Logo } from '@/components/shared/Logo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -53,15 +54,7 @@ export function Navbar() {
       <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="group flex items-center gap-2.5">
-          <div className="relative">
-            <HeartHandshake className="size-7 text-primary transition-transform duration-300 group-hover:scale-110" />
-            <div className="absolute inset-0 animate-sage-pulse rounded-full bg-primary/20 blur-md" />
-          </div>
-          <span className="text-lg font-bold tracking-tight text-foreground">
-            SAHOVAT
-          </span>
-        </Link>
+        <Logo size="md" />
 
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((link) => (

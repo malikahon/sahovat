@@ -17,6 +17,7 @@ import { formatUZS } from '@/lib/formatters';
 
 export interface DonationFormData {
   amount: number;
+  feeIncluded: boolean;
   isAnonymous: boolean;
   displayName: string;
   note: string;
@@ -47,6 +48,7 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, onNext }: P
 
   const [selectedPreset, setSelectedPreset] = useState<number | null>(50_000);
   const [customAmount, setCustomAmount] = useState('');
+  const [feeIncluded, setFeeIncluded] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [displayName, setDisplayName] = useState(userDisplayName ?? '');
   const [note, setNote] = useState('');
@@ -79,6 +81,7 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, onNext }: P
     }
     onNext({
       amount,
+      feeIncluded,
       isAnonymous,
       displayName: displayName.trim(),
       note: note.trim(),
@@ -145,6 +148,22 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, onNext }: P
           {t('otpDescription')}
         </div>
       )}
+
+      {/* Fee inclusion toggle */}
+      <div className="flex items-start gap-3">
+        <Checkbox
+          id="fee-included"
+          checked={feeIncluded}
+          onCheckedChange={(checked) => setFeeIncluded(checked === true)}
+          className="mt-0.5"
+        />
+        <div>
+          <Label htmlFor="fee-included" className="cursor-pointer text-sm font-medium">
+            {t('feeIncludedLabel')}
+          </Label>
+          <p className="text-xs text-muted-foreground">{t('feeIncludedHint')}</p>
+        </div>
+      </div>
 
       {/* Anonymous toggle */}
       <div className="flex items-start gap-3">

@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { HeartHandshake, Globe, Mail, Share2 } from 'lucide-react';
+import { Globe, Mail, Share2 } from 'lucide-react';
+import { Logo } from '@/components/shared/Logo';
 
 export function Footer() {
   const t = useTranslations('footer');
@@ -17,10 +18,7 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Branding */}
           <div>
-            <div className="flex items-center gap-2">
-              <HeartHandshake className="size-6 text-primary" />
-              <span className="text-lg font-bold text-foreground">SAHOVAT</span>
-            </div>
+            <Logo size="md" asStatic />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
               {t('tagline')}
             </p>

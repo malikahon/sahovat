@@ -55,7 +55,29 @@
     "notAuthorized": "You are not authorized to access this page",
     "loginRequired": "Please log in to continue",
     "adminRequired": "Admin access required",
-    "verificationRequired": "Account verification required"
+    "verificationRequired": "Account verification required",
+    "newUserHint": "New to Sahovat? Just enter your phone number to get started.",
+    "adminVerifyTitle": "Admin Verification",
+    "adminVerifySubtitle": "Enter your admin password to access the admin panel",
+    "adminPassword": "Admin Password",
+    "adminPasswordPlaceholder": "Enter your admin password",
+    "adminPasswordMinLength": "Password must be at least 8 characters",
+    "adminPasswordInvalid": "Invalid password. Please try again.",
+    "adminVerifyButton": "Verify & Continue",
+    "adminSkipToDashboard": "Continue as regular user",
+    "setPassword": {
+      "title": "Set Your Password",
+      "description": "To create a campaign, you need to set a password for account security.",
+      "password": "Password",
+      "passwordPlaceholder": "Enter a password (min 8 characters)",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter your password",
+      "minLength": "Password must be at least 8 characters",
+      "mismatch": "Passwords do not match",
+      "submit": "Set Password & Continue",
+      "setting": "Setting password...",
+      "failed": "Failed to set password. Please try again."
+    }
   },
   "campaigns": {
     "title": "Campaigns",
@@ -118,7 +140,10 @@
       "sortUrgency": "Urgency",
       "noCampaigns": "No campaigns found",
       "noCampaignsDescription": "Try adjusting your filters or check back later.",
-      "viewCampaign": "View Campaign"
+      "viewCampaign": "View Campaign",
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {totalPages}"
     },
     "detail": {
       "by": "by",
@@ -233,8 +258,15 @@
     "sidebar": {
       "title": "Dashboard"
     },
-    "title": "Organizer Dashboard",
-    "subtitle": "Track your campaigns and manage payouts",
+    "title": "Dashboard",
+    "subtitle": "Your activity and impact at a glance",
+    "donorTotalDonated": "Total Donated",
+    "donorCampaignsSupported": "Donations Made",
+    "donorRecentDonations": "Recent Donations",
+    "donorViewAll": "View All",
+    "donorEmpty": "You haven't made any donations yet. Discover campaigns to support!",
+    "donorBrowse": "Browse Campaigns",
+    "organizerSection": "Your Campaigns",
     "totalRaised": "Total Raised",
     "totalWithdrawn": "Total Withdrawn",
     "availableBalance": "Available for Withdrawal",
@@ -401,7 +433,10 @@
     "recurringNextCharge": "Next charge: {date}",
     "manageRecurring": "Manage Recurring",
     "selectPaymentMethod": "Select Payment Method",
-    "savedCard": "saved card"
+    "savedCard": "saved card",
+    "feeIncludedLabel": "Include the 1% fee in my donation",
+    "feeIncludedHint": "If checked, the fee is deducted from your amount. Otherwise, it is added on top so 100% goes to the campaign.",
+    "totalCharged": "You will be charged"
   },
   "savedCards": {
     "title": "Payment Methods",
@@ -515,7 +550,33 @@
       "recentActions": "Recent Admin Actions",
       "last30Days": "Last 30 days",
       "amount": "Amount",
-      "count": "Count"
+      "count": "Count",
+      "moneyFlow": "Money Flow",
+      "moneyFlowDescription": "Complete financial overview of platform revenue and fund movement",
+      "grossDonations": "Gross Donations",
+      "platformFeesCollected": "Platform Fees",
+      "fromDonations": "Donations",
+      "fromWithdrawals": "Withdrawals",
+      "netToCampaigns": "Net to Campaigns",
+      "monthlyComparison": "Monthly Comparison",
+      "thisMonth": "This Month",
+      "lastMonth": "Last Month",
+      "vsLastMonth": "vs last month",
+      "feesThisMonth": "Fees this month",
+      "escrowBalance": "Escrow Balance",
+      "totalWithdrawn": "Total Withdrawn",
+      "disbursed": "disbursed",
+      "noDonationsYet": "No donations yet",
+      "withdrawalPipeline": "Withdrawal Pipeline",
+      "pending": "Pending",
+      "approved": "Approved",
+      "completed": "Completed",
+      "weeklyRevenueTrend": "Weekly Revenue Trend (8 weeks)",
+      "donations": "Donations",
+      "fees": "Fees",
+      "noData": "No financial data available yet.",
+      "noRecentActions": "No recent actions.",
+      "viewFullAuditLog": "View full audit log"
     },
     "campaigns": {
       "title": "Campaign Management",

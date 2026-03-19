@@ -9,6 +9,8 @@ import {
   verifyOtpSchema,
   registerSchema,
   adminLoginSchema,
+  adminVerifyPasswordSchema,
+  setPasswordSchema,
   refreshTokenSchema,
 } from './auth.validation.js';
 import * as authController from './auth.controller.js';
@@ -39,12 +41,28 @@ authRouter.post(
   authController.register,
 );
 
+// POST /api/auth/set-password — Set password for campaign creators (authenticated)
+authRouter.post(
+  '/set-password',
+  requireAuth,
+  validate(setPasswordSchema),
+  authController.setPassword,
+);
+
 // POST /api/auth/admin/login — Admin password login
 authRouter.post(
   '/admin/login',
   authLimiter,
   validate(adminLoginSchema),
   authController.adminLogin,
+);
+
+// POST /api/auth/admin/verify-password — Verify admin password after OTP login
+authRouter.post(
+  '/admin/verify-password',
+  requireAuth,
+  validate(adminVerifyPasswordSchema),
+  authController.adminVerifyPassword,
 );
 
 // POST /api/auth/refresh — Refresh token pair

@@ -140,6 +140,7 @@ export interface CampaignWithStats extends Campaign {
 export interface InitiateDonationDto {
   campaign_id: string;
   amount: number;
+  fee_included?: boolean;
   payment_provider: PaymentProvider;
   is_anonymous?: boolean;
   donor_display_name?: string;

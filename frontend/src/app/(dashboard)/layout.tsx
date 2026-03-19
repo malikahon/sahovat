@@ -12,13 +12,14 @@ import {
   Repeat,
   CreditCard,
   ArrowDownToLine,
+  Landmark,
   LogOut,
   Menu,
   X,
-  HeartHandshake,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute';
+import { Logo } from '@/components/shared/Logo';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -26,17 +27,18 @@ interface NavItem {
   href: string;
   labelKey: string;
   icon: React.ReactNode;
+  organizerOnly?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', labelKey: 'dashboard', icon: <LayoutDashboard className="size-5" /> },
   { href: '/profile', labelKey: 'profile', icon: <UserCircle className="size-5" /> },
-  { href: '/my-campaigns', labelKey: 'myCampaigns', icon: <FolderHeart className="size-5" /> },
   { href: '/my-donations', labelKey: 'myDonations', icon: <Heart className="size-5" /> },
   { href: '/recurring', labelKey: 'recurringDonations', icon: <Repeat className="size-5" /> },
   { href: '/payment-methods', labelKey: 'paymentMethods', icon: <CreditCard className="size-5" /> },
-  { href: '/withdrawal-accounts', labelKey: 'withdrawalAccounts', icon: <CreditCard className="size-5" /> },
-  { href: '/withdrawals', labelKey: 'withdrawals', icon: <ArrowDownToLine className="size-5" /> },
+  { href: '/my-campaigns', labelKey: 'myCampaigns', icon: <FolderHeart className="size-5" />, organizerOnly: true },
+  { href: '/withdrawal-accounts', labelKey: 'withdrawalAccounts', icon: <Landmark className="size-5" />, organizerOnly: true },
+  { href: '/withdrawals', labelKey: 'withdrawals', icon: <ArrowDownToLine className="size-5" />, organizerOnly: true },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
@@ -55,38 +57,32 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex h-full flex-col">
       {/* Logo / App name */}
       <div className="px-4 py-5">
-        <Link href="/campaigns" className="flex items-center gap-2.5 group">
-          <div className="relative">
-            <HeartHandshake className="size-6 text-primary transition-transform duration-300 group-hover:scale-110" />
-            <div className="absolute inset-0 rounded-full bg-primary/20 blur-md" />
-          </div>
-          <span className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
-            Sahovat
-          </span>
-        </Link>
+        <Logo size="md" />
       </div>
 
       {/* Navigation links */}
       <nav className="flex-1 space-y-1 px-3">
-        {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
-              className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-            >
-              {item.icon}
-              {t(item.labelKey)}
-            </Link>
-          );
-        })}
+        {NAV_ITEMS
+          .filter((item) => !item.organizerOnly || user?.has_password)
+          .map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onNavigate}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
+              >
+                {item.icon}
+                {t(item.labelKey)}
+              </Link>
+            );
+          })}
       </nav>
 
       {/* User info + logout */}
@@ -168,12 +164,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           >
             <Menu className="size-5" />
           </Button>
-          <Link href="/campaigns" className="ml-3 flex items-center gap-2 group">
-            <HeartHandshake className="size-5 text-primary" />
-            <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-              Sahovat
-            </span>
-          </Link>
+          <Logo size="sm" className="ml-3" />
         </header>
 
         {/* Page content */}

@@ -748,6 +748,144 @@ export async function getEscrowSummary() {
   };
 }
 
+// ============================================================
+// MONEY FLOW STATS
+// ============================================================
+
+/**
+ * GET /api/admin/stats/money-flow
+ * Returns comprehensive money flow statistics for the admin dashboard.
+ */
+export async function getMoneyFlowStats() {
+  const [escrow, fees, monthlyResult, weeklyResult, pendingResult] = await Promise.all([
+    getTotalEscrow(),
+    getPlatformRevenue(),
+    // Monthly comparison: this month vs last month
+    query(`
+      SELECT
+        COALESCE(SUM(CASE
+          WHEN completed_at >= DATE_TRUNC('month', NOW()) THEN amount
+          ELSE 0
+        END), 0)::text AS donations_this_month,
+        COALESCE(SUM(CASE
+          WHEN completed_at >= DATE_TRUNC('month', NOW()) THEN platform_fee
+          ELSE 0
+        END), 0)::text AS fees_this_month,
+        COALESCE(SUM(CASE
+          WHEN completed_at >= DATE_TRUNC('month', NOW() - INTERVAL '1 month')
+            AND completed_at < DATE_TRUNC('month', NOW()) THEN amount
+          ELSE 0
+        END), 0)::text AS donations_last_month,
+        COALESCE(SUM(CASE
+          WHEN completed_at >= DATE_TRUNC('month', NOW() - INTERVAL '1 month')
+            AND completed_at < DATE_TRUNC('month', NOW()) THEN platform_fee
+          ELSE 0
+        END), 0)::text AS fees_last_month,
+        COUNT(CASE
+          WHEN completed_at >= DATE_TRUNC('month', NOW()) THEN 1
+        END)::int AS donation_count_this_month,
+        COUNT(CASE
+          WHEN completed_at >= DATE_TRUNC('month', NOW() - INTERVAL '1 month')
+            AND completed_at < DATE_TRUNC('month', NOW()) THEN 1
+        END)::int AS donation_count_last_month
+      FROM donations
+      WHERE status = 'completed'
+    `),
+    // Weekly donation volume (last 8 weeks)
+    query(`
+      SELECT
+        DATE_TRUNC('week', completed_at)::date::text AS week_start,
+        COUNT(*)::int AS count,
+        COALESCE(SUM(amount), 0)::text AS amount,
+        COALESCE(SUM(platform_fee), 0)::text AS fees
+      FROM donations
+      WHERE status = 'completed'
+        AND completed_at >= NOW() - INTERVAL '8 weeks'
+      GROUP BY DATE_TRUNC('week', completed_at)
+      ORDER BY DATE_TRUNC('week', completed_at) ASC
+    `),
+    // Pending and approved withdrawal amounts
+    query(`
+      SELECT
+        COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0)::text AS pending_amount,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END)::int AS pending_count,
+        COALESCE(SUM(CASE WHEN status = 'approved' THEN amount ELSE 0 END), 0)::text AS approved_amount,
+        COUNT(CASE WHEN status = 'approved' THEN 1 END)::int AS approved_count,
+        COALESCE(SUM(CASE WHEN status = 'completed' THEN net_amount ELSE 0 END), 0)::text AS completed_amount,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END)::int AS completed_count
+      FROM withdrawals
+    `),
+  ]);
+
+  const monthly = monthlyResult.rows[0] as {
+    donations_this_month: string;
+    fees_this_month: string;
+    donations_last_month: string;
+    fees_last_month: string;
+    donation_count_this_month: number;
+    donation_count_last_month: number;
+  };
+
+  const pending = pendingResult.rows[0] as {
+    pending_amount: string;
+    pending_count: number;
+    approved_amount: string;
+    approved_count: number;
+    completed_amount: string;
+    completed_count: number;
+  };
+
+  const weeklyTrend = (weeklyResult.rows as {
+    week_start: string;
+    count: number;
+    amount: string;
+    fees: string;
+  }[]).map((r) => ({
+    week_start: r.week_start,
+    count: r.count,
+    amount: Number(r.amount),
+    fees: Number(r.fees),
+  }));
+
+  return {
+    // Overall totals
+    gross_donations: escrow.total_donated + fees.from_donations,
+    total_platform_fees: fees.total,
+    fee_breakdown: {
+      from_donations: fees.from_donations,
+      from_withdrawals: fees.from_withdrawals,
+    },
+    net_to_campaigns: escrow.total_donated,
+    total_withdrawn: escrow.total_withdrawn,
+    escrow_balance: escrow.total_escrow,
+
+    // Monthly comparison
+    this_month: {
+      donations: Number(monthly.donations_this_month),
+      fees: Number(monthly.fees_this_month),
+      count: monthly.donation_count_this_month,
+    },
+    last_month: {
+      donations: Number(monthly.donations_last_month),
+      fees: Number(monthly.fees_last_month),
+      count: monthly.donation_count_last_month,
+    },
+
+    // Withdrawal breakdown
+    withdrawals: {
+      pending_amount: Number(pending.pending_amount),
+      pending_count: pending.pending_count,
+      approved_amount: Number(pending.approved_amount),
+      approved_count: pending.approved_count,
+      completed_amount: Number(pending.completed_amount),
+      completed_count: pending.completed_count,
+    },
+
+    // Weekly trend (last 8 weeks)
+    weekly_trend: weeklyTrend,
+  };
+}
+
 export async function updateSettings(adminId: string, dto: UpdateSettingsDto): Promise<void> {
   const existing = await query('SELECT id FROM admin_settings ORDER BY updated_at DESC LIMIT 1');
 

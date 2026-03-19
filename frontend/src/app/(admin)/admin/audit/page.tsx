@@ -118,11 +118,14 @@ export default function AdminAuditPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="_all">{t('allActions')}</SelectItem>
-            {ACTION_TYPES.map((a) => (
-              <SelectItem key={a} value={a}>
-                <span className="text-xs">{a.replace(/_/g, ' ')}</span>
-              </SelectItem>
-            ))}
+            {ACTION_TYPES.map((a) => {
+              const label = a.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+              return (
+                <SelectItem key={a} value={a} label={label}>
+                  <span className="text-xs">{a.replace(/_/g, ' ')}</span>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
 
@@ -136,7 +139,7 @@ export default function AdminAuditPage() {
           <SelectContent>
             <SelectItem value="_all">{t('allTargets')}</SelectItem>
             {TARGET_TYPES.map((tgt) => (
-              <SelectItem key={tgt} value={tgt} className="capitalize">{tgt}</SelectItem>
+              <SelectItem key={tgt} value={tgt} label={tgt.charAt(0).toUpperCase() + tgt.slice(1)} className="capitalize">{tgt}</SelectItem>
             ))}
           </SelectContent>
         </Select>
