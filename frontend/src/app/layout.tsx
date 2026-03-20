@@ -12,9 +12,6 @@ const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 export const metadata: Metadata = {
   title: 'Sahovat — Crowdfunding Platform',
   description: "Uzbekistan's crowdfunding platform for those in need",
-  icons: {
-    icon: '/favicon.svg',
-  },
 };
 
 export default async function RootLayout({
