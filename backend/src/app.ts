@@ -24,6 +24,11 @@ import { savedCardsRouter } from './modules/saved-cards/saved-cards.routes.js';
 export function createApp(): express.Express {
   const app = express();
 
+  // Trust first proxy (Nginx) — required for correct IP detection behind reverse proxy.
+  // Without this, express-rate-limit sees the Docker-internal Nginx IP for every request
+  // instead of the real client IP, breaking per-IP rate limiting.
+  app.set('trust proxy', 1);
+
   // Security headers
   app.use(helmet());
 
