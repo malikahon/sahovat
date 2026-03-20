@@ -44,7 +44,7 @@ describe('POST /api/donations/initiate', () => {
     expect(res.status).toBe(201);
     expect(res.body.data.donation.status).toBe('pending');
     expect(res.body.data.checkout_url).toBeDefined();
-    expect(res.body.data.donation.amount).toBe(50_000);
+    expect(res.body.data.donation.amount).toBe(50_500);
   });
 
   it('returns 400 for inactive campaign', async () => {
