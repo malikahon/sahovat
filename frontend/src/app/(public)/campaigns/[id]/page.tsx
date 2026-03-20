@@ -475,6 +475,7 @@ export default function CampaignDetailPage() {
             refetchCampaign();
           }}
           userDisplayName={user?.display_name ?? null}
+          verificationStatus={user?.verification_status ?? null}
         />
       )}
     </div>

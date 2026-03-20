@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { validate } from '../../middleware/validate.js';
-import { requireAuth } from '../../middleware/auth.js';
+import { requireAuth, optionalAuth } from '../../middleware/auth.js';
 import { authLimiter, otpLimiter } from '../../middleware/rateLimiter.js';
 import { env } from '../../config/env.js';
 import { redis } from '../../config/redis.js';
@@ -33,10 +33,10 @@ authRouter.post(
   authController.verifyOtp,
 );
 
-// POST /api/auth/register — Complete profile (authenticated)
+// POST /api/auth/register — Complete profile (authenticated OR with registration_token)
 authRouter.post(
   '/register',
-  requireAuth,
+  optionalAuth,
   validate(registerSchema),
   authController.register,
 );

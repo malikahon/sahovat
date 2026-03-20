@@ -723,7 +723,7 @@ export async function getImpactStats(userId: string): Promise<ImpactStats> {
   // Total donated and campaigns supported
   const donationStatsResult = await query(
     `SELECT
-       COALESCE(SUM(amount), 0) AS total_donated,
+       COALESCE(SUM(net_amount), 0) AS total_donated,
        COUNT(DISTINCT campaign_id) AS campaigns_supported,
        COUNT(*) AS total_donations_count
      FROM donations

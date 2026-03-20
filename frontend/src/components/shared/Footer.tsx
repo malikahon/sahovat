@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Globe, Mail, Share2 } from 'lucide-react';
 import { Logo } from '@/components/shared/Logo';
@@ -33,12 +32,11 @@ export function Footer() {
               {['aboutUs', 'howItWorks', 'trustSafety', 'transparency'].map(
                 (key) => (
                   <li key={key}>
-                    <Link
-                      href="#"
-                      className="text-sm text-muted-foreground transition-colors duration-200 hover:text-primary"
+                    <span
+                      className="text-sm text-muted-foreground transition-colors duration-200 hover:text-primary cursor-default"
                     >
                       {t(key)}
-                    </Link>
+                    </span>
                   </li>
                 ),
               )}
@@ -54,12 +52,11 @@ export function Footer() {
               {['helpCenter', 'organizerGuidelines', 'impactStories', 'contact'].map(
                 (key) => (
                   <li key={key}>
-                    <Link
-                      href="#"
-                      className="text-sm text-muted-foreground transition-colors duration-200 hover:text-primary"
+                    <span
+                      className="text-sm text-muted-foreground transition-colors duration-200 hover:text-primary cursor-default"
                     >
                       {t(key)}
-                    </Link>
+                    </span>
                   </li>
                 ),
               )}
@@ -74,17 +71,16 @@ export function Footer() {
           </p>
           <div className="flex items-center gap-2">
             {[
-              { icon: Globe, href: '#' },
-              { icon: Mail, href: '#' },
-              { icon: Share2, href: '#' },
-            ].map(({ icon: Icon, href }, i) => (
-              <Link
-                key={i}
-                href={href}
-                className="inline-flex size-9 items-center justify-center rounded-full border border-border/50 text-muted-foreground transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+              { icon: Globe, label: 'Website' },
+              { icon: Mail, label: 'Email' },
+              { icon: Share2, label: 'Share' },
+            ].map(({ icon: Icon, label }) => (
+              <span
+                key={label}
+                className="inline-flex size-9 items-center justify-center rounded-full border border-border/50 text-muted-foreground transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-default"
               >
                 <Icon className="size-4" />
-              </Link>
+              </span>
             ))}
           </div>
         </div>

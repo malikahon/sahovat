@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,6 +36,14 @@ const step1Schema = z.object({
 type Step1FormData = z.infer<typeof step1Schema>;
 
 export default function Step1Page() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="size-8 animate-spin text-muted-foreground" /></div>}>
+      <Step1Content />
+    </Suspense>
+  );
+}
+
+function Step1Content() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const campaignId = searchParams.get('id');
@@ -83,19 +91,23 @@ export default function Step1Page() {
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: (data: Step1FormData) => {
+    mutationFn: async (data: Step1FormData) => {
       const region = data.region || undefined;
-      return campaignsApi.create({
+      const result = await campaignsApi.create({
         title: data.title,
-        description: ' ',
+        description: 'To be added in the next step.',
         category: data.category,
         goal_amount: data.goal_amount,
         region: region as UzbekRegion | undefined,
         end_date: data.end_date || undefined,
       });
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create campaign');
+      }
+      return result;
     },
     onSuccess: (result) => {
-      if (result.success && result.data) {
+      if (result.data) {
         router.push(`/create-campaign/step-2?id=${result.data.campaign.id}`);
       }
     },
@@ -103,20 +115,22 @@ export default function Step1Page() {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (data: Step1FormData) => {
+    mutationFn: async (data: Step1FormData) => {
       const region = data.region || undefined;
-      return campaignsApi.update(campaignId!, {
+      const result = await campaignsApi.update(campaignId!, {
         title: data.title,
         category: data.category,
         goal_amount: data.goal_amount,
         region: region as UzbekRegion | undefined,
         end_date: data.end_date || undefined,
       });
-    },
-    onSuccess: (result) => {
-      if (result.success) {
-        router.push(`/create-campaign/step-2?id=${campaignId}`);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update campaign');
       }
+      return result;
+    },
+    onSuccess: () => {
+      router.push(`/create-campaign/step-2?id=${campaignId}`);
     },
   });
 

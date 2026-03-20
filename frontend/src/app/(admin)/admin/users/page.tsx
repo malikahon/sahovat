@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { Search, MoreHorizontal, ShieldCheck, ShieldOff, Ban, UserCheck } from 'lucide-react';
+import { Search, MoreHorizontal, ShieldCheck, ShieldOff, Ban, UserCheck, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminApi } from '@/lib/api';
 import { formatUZS } from '@/lib/formatters';
@@ -52,6 +54,7 @@ const PAGE_SIZE = 20;
 export default function AdminUsersPage() {
   const t = useTranslations('admin.users');
   const queryClient = useQueryClient();
+  const router = useRouter();
   const { user: currentUser } = useAuth();
 
   const [search, setSearch] = useState('');
@@ -220,7 +223,12 @@ export default function AdminUsersPage() {
                     className={u.is_banned ? 'opacity-60' : ''}
                   >
                     <TableCell className="font-medium">
-                      {u.display_name || '—'}
+                      <Link
+                        href={`/admin/users/${u.id}`}
+                        className="hover:underline text-foreground"
+                      >
+                        {u.display_name || '—'}
+                      </Link>
                     </TableCell>
                     <TableCell className="text-sm font-mono text-muted-foreground">
                       {u.phone_number}
@@ -266,7 +274,14 @@ export default function AdminUsersPage() {
                         >
                           <MoreHorizontal className="size-4" />
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => router.push(`/admin/users/${u.id}`)}
+                          >
+                            <Pencil className="size-4 mr-2" />
+                            Edit User
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           {u.is_admin ? (
                             <DropdownMenuItem
                               onClick={() =>

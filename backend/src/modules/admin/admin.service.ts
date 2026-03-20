@@ -18,6 +18,7 @@ import type {
   VerifyCampaignDto,
   CampaignStatusDto,
   UpdateSettingsDto,
+  AdminUpdateUserDto,
 } from './admin.validation.js';
 
 // ============================================================
@@ -303,6 +304,75 @@ export async function toggleBan(
     targetUserId,
     { is_banned: dto.is_banned, reason: dto.reason },
   );
+}
+
+/**
+ * Admin full-update of any user field.
+ * Builds a dynamic SET clause from provided fields.
+ * Ensures phone_number uniqueness, handles verification_status ↔ is_verified sync.
+ */
+export async function adminUpdateUser(
+  adminId: string,
+  targetUserId: string,
+  dto: AdminUpdateUserDto,
+): Promise<void> {
+  // Confirm user exists
+  const existing = await query(`SELECT id, phone_number FROM users WHERE id = $1`, [targetUserId]);
+  if (existing.rows.length === 0) throw new NotFoundError('User', targetUserId);
+
+  // If changing phone, confirm uniqueness
+  if (dto.phone_number) {
+    const conflict = await query(
+      `SELECT id FROM users WHERE phone_number = $1 AND id != $2`,
+      [dto.phone_number, targetUserId],
+    );
+    if (conflict.rows.length > 0) {
+      throw new ValidationError('Phone number is already in use by another account', 'PHONE_CONFLICT');
+    }
+  }
+
+  // Sync is_verified with verification_status when either is explicitly set
+  let is_verified = dto.is_verified;
+  let verification_status = dto.verification_status;
+
+  if (verification_status === 'approved' && is_verified === undefined) is_verified = true;
+  if (verification_status !== 'approved' && verification_status !== undefined && is_verified === undefined) {
+    is_verified = false;
+  }
+  if (is_verified === true && verification_status === undefined) verification_status = 'approved';
+  if (is_verified === false && verification_status === undefined) verification_status = 'none';
+
+  // Build dynamic SET clause
+  const fields: string[] = [];
+  const params: unknown[] = [];
+  let idx = 1;
+
+  const addField = (col: string, val: unknown) => {
+    fields.push(`${col} = $${idx++}`);
+    params.push(val);
+  };
+
+  if (dto.display_name !== undefined) addField('display_name', dto.display_name);
+  if (dto.phone_number !== undefined) addField('phone_number', dto.phone_number);
+  if (dto.date_of_birth !== undefined) addField('date_of_birth', dto.date_of_birth);
+  if (dto.gender !== undefined) addField('gender', dto.gender);
+  if (dto.language_preference !== undefined) addField('language_preference', dto.language_preference);
+  if (is_verified !== undefined) addField('is_verified', is_verified);
+  if (verification_status !== undefined) addField('verification_status', verification_status);
+  if (dto.is_admin !== undefined) addField('is_admin', dto.is_admin);
+  if (dto.is_banned !== undefined) addField('is_banned', dto.is_banned);
+  if (dto.bio !== undefined) addField('bio', dto.bio);
+
+  fields.push(`updated_at = NOW()`);
+
+  params.push(targetUserId);
+
+  await query(
+    `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx}`,
+    params,
+  );
+
+  await logAdminAction(adminId, 'update_user', 'user', targetUserId, dto as Record<string, unknown>);
 }
 
 // ============================================================
@@ -949,4 +1019,163 @@ export async function updateSettings(adminId: string, dto: UpdateSettingsDto): P
     : 'unknown';
 
   await logAdminAction(adminId, 'update_settings', 'settings', settingsId, changes);
+}
+
+// ============================================================
+// VERIFICATION DOCUMENT REVIEW
+// ============================================================
+
+/**
+ * Lists all pending verification documents for admin review.
+ */
+export async function listVerificationDocuments(status?: string): Promise<Array<{
+  id: string;
+  user_id: string;
+  user_display_name: string | null;
+  user_phone: string;
+  document_type: string;
+  original_filename: string | null;
+  legal_first_name: string | null;
+  legal_last_name: string | null;
+  status: string;
+  uploaded_at: string;
+  reviewed_at: string | null;
+  reviewer_notes: string | null;
+  ai_status: string | null;
+  ai_confidence: number | null;
+  ai_extracted_text: string | null;
+}>> {
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+
+  if (status) {
+    conditions.push(`vd.status = $${params.length + 1}`);
+    params.push(status);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const result = await query(
+    `SELECT
+       vd.id, vd.user_id, vd.document_type, vd.original_filename,
+       vd.legal_first_name, vd.legal_last_name,
+       vd.status, vd.uploaded_at, vd.reviewed_at, vd.reviewer_notes,
+       vd.ai_status, vd.ai_confidence, vd.ai_extracted_text,
+       u.display_name AS user_display_name,
+       u.phone_number AS user_phone
+     FROM verification_documents vd
+     JOIN users u ON u.id = vd.user_id
+     ${whereClause}
+     ORDER BY vd.uploaded_at ASC`,
+    params,
+  );
+
+  return result.rows as Array<{
+    id: string;
+    user_id: string;
+    user_display_name: string | null;
+    user_phone: string;
+    document_type: string;
+    original_filename: string | null;
+    legal_first_name: string | null;
+    legal_last_name: string | null;
+    status: string;
+    uploaded_at: string;
+    reviewed_at: string | null;
+    reviewer_notes: string | null;
+    ai_status: string | null;
+    ai_confidence: number | null;
+    ai_extracted_text: string | null;
+  }>;
+}
+
+/**
+ * Retrieves the private file buffer + mime type for a verification document.
+ * Used by the admin panel to preview the uploaded document.
+ */
+export async function getVerificationDocumentFile(documentId: string): Promise<{
+  buffer: Buffer;
+  originalFilename: string | null;
+  fileUrl: string;
+}> {
+  const result = await query(
+    `SELECT file_url, original_filename FROM verification_documents WHERE id = $1`,
+    [documentId],
+  );
+
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Verification document not found');
+  }
+
+  const row = result.rows[0] as { file_url: string; original_filename: string | null };
+
+  const { storageService } = await import('../../services/storage.service.js');
+  const buffer = await storageService.getPrivate(row.file_url);
+
+  return {
+    buffer,
+    originalFilename: row.original_filename,
+    fileUrl: row.file_url,
+  };
+}
+
+/**
+ * Reviews a verification document — approve or reject.
+ * If approved, also marks the user as is_verified = true and verification_status = 'approved'.
+ * If rejected, marks the user's verification_status = 'rejected'.
+ */
+export async function reviewVerificationDocument(
+  adminId: string,
+  documentId: string,
+  decision: 'approved' | 'rejected',
+  reviewer_notes?: string,
+): Promise<void> {
+  // Find the document
+  const docResult = await query(
+    `SELECT id, user_id, status FROM verification_documents WHERE id = $1`,
+    [documentId],
+  );
+
+  if (docResult.rows.length === 0) {
+    throw new NotFoundError('Verification document not found');
+  }
+
+  const doc = docResult.rows[0] as { id: string; user_id: string; status: string };
+
+  if (doc.status !== 'pending') {
+    throw new ValidationError('Document has already been reviewed', 'ALREADY_REVIEWED');
+  }
+
+  // Update the document
+  await query(
+    `UPDATE verification_documents
+     SET status = $1, reviewer_id = $2, reviewer_notes = $3, reviewed_at = NOW()
+     WHERE id = $4`,
+    [decision, adminId, reviewer_notes ?? null, documentId],
+  );
+
+  // Update user's verification status accordingly
+  if (decision === 'approved') {
+    await query(
+      `UPDATE users
+       SET verification_status = 'approved', is_verified = true, updated_at = NOW()
+       WHERE id = $1`,
+      [doc.user_id],
+    );
+  } else {
+    await query(
+      `UPDATE users
+       SET verification_status = 'rejected', updated_at = NOW()
+       WHERE id = $1`,
+      [doc.user_id],
+    );
+  }
+
+  await logAdminAction(
+    adminId,
+    `review_verification_document_${decision}`,
+    'verification_document',
+    documentId,
+    { decision, reviewer_notes },
+  );
 }

@@ -64,6 +64,27 @@ export const updateSettingsSchema = z.object({
   { message: 'At least one field must be provided' },
 );
 
+/**
+ * Admin update-user DTO.
+ * Every field is optional — admin can patch any subset.
+ * phone_number requires uniqueness (enforced at service level).
+ */
+export const adminUpdateUserSchema = z.object({
+  display_name:        z.string().min(1).max(100).nullable().optional(),
+  phone_number:        z.string().regex(/^\+?[0-9]{7,15}$/, 'Invalid phone number').optional(),
+  date_of_birth:       z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD').nullable().optional(),
+  gender:              z.enum(['male', 'female']).nullable().optional(),
+  language_preference: z.enum(['uz', 'ru', 'en']).optional(),
+  is_verified:         z.boolean().optional(),
+  verification_status: z.enum(['none', 'pending', 'approved', 'rejected']).optional(),
+  is_admin:            z.boolean().optional(),
+  is_banned:           z.boolean().optional(),
+  bio:                 z.string().max(500).nullable().optional(),
+}).refine(
+  (data) => Object.values(data).some((v) => v !== undefined),
+  { message: 'At least one field must be provided' },
+);
+
 // ============================================================
 // INFERRED TYPES
 // ============================================================
@@ -76,3 +97,4 @@ export type ToggleBanDto = z.infer<typeof toggleBanSchema>;
 export type VerifyCampaignDto = z.infer<typeof verifyCampaignSchema>;
 export type CampaignStatusDto = z.infer<typeof campaignStatusSchema>;
 export type UpdateSettingsDto = z.infer<typeof updateSettingsSchema>;
+export type AdminUpdateUserDto = z.infer<typeof adminUpdateUserSchema>;

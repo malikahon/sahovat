@@ -4,6 +4,7 @@ import { createApp } from './app.js';
 import { pool } from './config/database.js';
 import { redis } from './config/redis.js';
 import { startScheduler, stopScheduler } from './services/scheduler.service.js';
+import { warmUpOcr } from './services/ocr.service.js';
 
 const app = createApp();
 
@@ -13,6 +14,10 @@ const server = app.listen(env.PORT, () => {
 
   // Start cron scheduler for recurring donations
   startScheduler();
+
+  // Pre-initialize Tesseract OCR worker in the background so the first
+  // document upload isn't slow waiting for worker init + language data download.
+  warmUpOcr();
 });
 
 // Graceful shutdown
@@ -53,11 +58,14 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
 process.on('unhandledRejection', (reason) => {
-  console.error('[Sahovat] Unhandled promise rejection:', reason);
-  shutdown('unhandledRejection');
+  // Log but do NOT shut down — some third-party libraries (e.g. Tesseract.js
+  // worker threads) can emit unhandled rejections that are non-fatal.
+  // Fatal application errors should throw synchronously or be handled explicitly.
+  console.error('[Sahovat] Unhandled promise rejection (non-fatal):', reason);
 });
 
 process.on('uncaughtException', (err) => {
+  // uncaughtException is genuinely fatal — the process state may be corrupt.
   console.error('[Sahovat] Uncaught exception:', err);
   shutdown('uncaughtException');
 });

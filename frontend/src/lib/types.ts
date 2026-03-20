@@ -331,6 +331,7 @@ export interface RegisterDto {
   gender?: 'male' | 'female';
   preferred_categories?: CampaignCategory[];
   language_preference?: 'uz' | 'ru' | 'en';
+  registration_token?: string;
 }
 
 export interface AdminLoginDto {
@@ -344,7 +345,7 @@ export interface AuthTokens {
 }
 
 export interface AuthResponse {
-  user: Omit<User, 'password_hash'>;
+  user: Omit<User, 'password_hash'> | null;
   tokens: AuthTokens;
   is_new_user: boolean;
 }
@@ -564,7 +565,22 @@ export interface AdminUserDetail extends AdminUserListItem {
   preferred_categories: CampaignCategory[];
   oneid_id: string | null;
   oneid_verified_at: string | null;
+  bio: string | null;
   updated_at: string;
+  donation_count: number;
+}
+
+export interface AdminUpdateUserPayload {
+  display_name?: string | null;
+  phone_number?: string;
+  date_of_birth?: string | null;
+  gender?: 'male' | 'female' | null;
+  language_preference?: 'uz' | 'ru' | 'en';
+  is_verified?: boolean;
+  verification_status?: VerificationStatus;
+  is_admin?: boolean;
+  is_banned?: boolean;
+  bio?: string | null;
 }
 
 export interface AdminCampaignListItem {

@@ -40,6 +40,9 @@ adminRouter.get('/users', adminController.listUsers);
 // GET /api/admin/users/:id
 adminRouter.get('/users/:id', adminController.getUserDetails);
 
+// PATCH /api/admin/users/:id — full user edit (any field)
+adminRouter.patch('/users/:id', adminController.updateUser);
+
 // PATCH /api/admin/users/:id/admin — grant or revoke admin
 adminRouter.patch('/users/:id/admin', adminController.toggleAdmin);
 
@@ -94,3 +97,16 @@ adminRouter.patch('/withdrawals/:id/review', withdrawalsController.reviewWithdra
 
 // PATCH /api/admin/withdrawals/:id/complete — mark as completed with tx ref
 adminRouter.patch('/withdrawals/:id/complete', withdrawalsController.completeWithdrawal);
+
+// ============================================================
+// VERIFICATION DOCUMENT REVIEW
+// ============================================================
+
+// GET /api/admin/verification-documents — list all docs (filter by ?status=pending)
+adminRouter.get('/verification-documents', adminController.listVerificationDocuments);
+
+// GET /api/admin/verification-documents/:id/file — stream the private document for admin preview
+adminRouter.get('/verification-documents/:id/file', adminController.getVerificationDocumentFile);
+
+// PATCH /api/admin/verification-documents/:id/review — approve or reject
+adminRouter.patch('/verification-documents/:id/review', adminController.reviewVerificationDocument);

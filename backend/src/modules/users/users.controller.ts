@@ -73,6 +73,11 @@ export async function handleOneIdCallback(req: Request, res: Response): Promise<
 /**
  * POST /api/users/verification/document
  * Uploads a KYC verification document.
+ * Expects multipart/form-data with fields:
+ *   - document       (file, required)
+ *   - document_type  (string: passport | national_id | drivers_license, required)
+ *   - legal_first_name (string, required)
+ *   - legal_last_name  (string, required)
  */
 export async function uploadVerificationDocument(req: Request, res: Response): Promise<void> {
   const authReq = req as AuthenticatedRequest;
@@ -81,10 +86,56 @@ export async function uploadVerificationDocument(req: Request, res: Response): P
     throw new ValidationError('No document file provided');
   }
 
-  const result = await usersService.uploadVerificationDocument(authReq.user.id, req.file);
+  const { document_type, legal_first_name, legal_last_name } = req.body as {
+    document_type?: string;
+    legal_first_name?: string;
+    legal_last_name?: string;
+  };
+
+  const validDocTypes = ['passport', 'national_id', 'drivers_license'];
+  if (!document_type || !validDocTypes.includes(document_type)) {
+    throw new ValidationError(
+      `document_type must be one of: ${validDocTypes.join(', ')}`,
+      'INVALID_DOCUMENT_TYPE',
+    );
+  }
+
+  if (!legal_first_name?.trim()) {
+    throw new ValidationError('legal_first_name is required', 'MISSING_LEGAL_NAME');
+  }
+  if (!legal_last_name?.trim()) {
+    throw new ValidationError('legal_last_name is required', 'MISSING_LEGAL_NAME');
+  }
+
+  const result = await usersService.uploadVerificationDocument(
+    authReq.user.id,
+    req.file,
+    document_type,
+    legal_first_name.trim(),
+    legal_last_name.trim(),
+  );
 
   res.status(200).json({
     success: true,
-    data: { file_url: result.file_url },
+    data: {
+      file_url: result.file_url,
+      document_id: result.document_id,
+      ai_status: result.ai_status,
+    },
+  });
+}
+
+/**
+ * GET /api/users/verification/documents
+ * Lists the authenticated user's verification documents.
+ */
+export async function getVerificationDocuments(req: Request, res: Response): Promise<void> {
+  const authReq = req as AuthenticatedRequest;
+
+  const documents = await usersService.getMyVerificationDocuments(authReq.user.id);
+
+  res.status(200).json({
+    success: true,
+    data: { documents },
   });
 }

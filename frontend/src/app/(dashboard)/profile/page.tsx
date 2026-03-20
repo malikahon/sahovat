@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OneIdSection } from './oneid-section';
+import { DocumentUploadSection } from './document-upload-section';
 
 const CATEGORIES = Object.values(CampaignCategory);
 
@@ -244,8 +245,15 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      {/* OneID Verification Section */}
-      <OneIdSection />
+      {/* Identity Verification Section */}
+      <div id="verification" className="space-y-4">
+        <Suspense fallback={null}>
+          <OneIdSection />
+        </Suspense>
+        <Suspense fallback={null}>
+          <DocumentUploadSection />
+        </Suspense>
+      </div>
     </div>
   );
 }

@@ -12,8 +12,9 @@ import {
   Sparkles,
   Heart,
   HandCoins,
+  Flame,
 } from 'lucide-react';
-import { withdrawalsApi, feedApi, donationsApi } from '@/lib/api';
+import { withdrawalsApi, feedApi, donationsApi, recurringApi } from '@/lib/api';
 import { formatUZS } from '@/lib/formatters';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +23,6 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import CampaignCard from '@/components/campaign/CampaignCard';
-import { ImpactBadge } from '@/components/donation/ImpactBadge';
 import type { CampaignWithBalance, CampaignWithStats, DonationWithCampaign } from '@/lib/types';
 
 // ============================================================
@@ -191,12 +191,22 @@ export default function DashboardPage() {
     queryKey: ['my-donations-dashboard'],
     queryFn: async () => {
       const res = await donationsApi.listMy({ page: 1, limit: 5 });
-      if (!res.success) return { donations: [], total: 0, totalDonated: 0 };
+      if (!res.success) return { donations: [], total: 0 };
       const donations = res.data ?? [];
       const total = res.pagination?.total ?? 0;
-      const totalDonated = donations.reduce((sum, d) => sum + d.amount, 0);
-      return { donations, total, totalDonated };
+      return { donations, total };
     },
+  });
+
+  // Impact stats: accurate total donated, campaigns supported, streak, recurring
+  const { data: impactData, isLoading: impactLoading } = useQuery({
+    queryKey: ['impact-stats'],
+    queryFn: async () => {
+      const res = await recurringApi.getImpact();
+      if (!res.success || !res.data) return null;
+      return res.data;
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Organizer data: campaigns + balances
@@ -219,7 +229,7 @@ export default function DashboardPage() {
     },
   });
 
-  const isLoading = donorLoading && organizerLoading;
+  const isLoading = donorLoading && organizerLoading && impactLoading;
   const hasCampaigns = (organizerData?.campaigns?.length ?? 0) > 0;
   const donations = donorData?.donations ?? [];
   const totalDonations = donorData?.total ?? 0;
@@ -250,21 +260,27 @@ export default function DashboardPage() {
       </div>
 
       {/* === DONOR SECTION (always shown) === */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard
           title={t('donorTotalDonated')}
-          value={formatUZS(donorData?.totalDonated ?? 0)}
+          value={impactData ? formatUZS(impactData.total_donated) : '—'}
           icon={Heart}
           colorClass="bg-rose-50 text-rose-600"
         />
         <StatCard
           title={t('donorCampaignsSupported')}
-          value={String(totalDonations)}
+          value={impactData ? String(impactData.campaigns_supported) : String(totalDonations)}
           icon={HandCoins}
           colorClass="bg-emerald-50 text-emerald-600"
         />
         <StatCard
-          title={t('donorTotalDonated')}
+          title={t('donorStreak')}
+          value={impactData && impactData.streak_weeks > 0 ? `${impactData.streak_weeks}w` : '—'}
+          icon={Flame}
+          colorClass="bg-orange-50 text-orange-600"
+        />
+        <StatCard
+          title={t('donorLatestDonation')}
           value={donations.length > 0 ? formatUZS(donations[0].amount) : '—'}
           icon={TrendingUp}
           colorClass="bg-blue-50 text-blue-600"
@@ -301,9 +317,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* Impact Badge */}
-      <ImpactBadge />
 
       {/* === ORGANIZER SECTION (shown only if user has campaigns) === */}
       {hasCampaigns && organizerData && (

@@ -99,7 +99,7 @@ export const authApi = {
     otp: string,
   ): Promise<{
     success: boolean;
-    data?: { user: import('./types').User; is_new_user: boolean };
+    data?: { user: import('./types').User | null; is_new_user: boolean; registration_token?: string };
     error?: string;
   }> {
     const res = await fetch('/api/auth/verify-otp', {
@@ -236,6 +236,51 @@ export const usersApi = {
     error?: string;
   }> {
     const res = await fetchWithRetry('/api/users/oneid/initiate');
+    return safeJson(res);
+  },
+
+  async uploadVerificationDocument(
+    file: File,
+    documentType: string,
+    legalFirstName: string,
+    legalLastName: string,
+  ): Promise<{
+    success: boolean;
+    data?: { file_url: string; document_id: string; ai_status: string };
+    error?: string;
+  }> {
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('document_type', documentType);
+    formData.append('legal_first_name', legalFirstName);
+    formData.append('legal_last_name', legalLastName);
+    const res = await fetchWithRetry('/api/users/verification/document', {
+      method: 'POST',
+      body: formData,
+    });
+    return safeJson(res);
+  },
+
+  async getVerificationDocuments(): Promise<{
+    success: boolean;
+    data?: {
+      documents: Array<{
+        id: string;
+        document_type: string;
+        status: string;
+        original_filename: string | null;
+        legal_first_name: string | null;
+        legal_last_name: string | null;
+        ai_status: string | null;
+        ai_confidence: number | null;
+        uploaded_at: string;
+        reviewed_at: string | null;
+        reviewer_notes: string | null;
+      }>;
+    };
+    error?: string;
+  }> {
+    const res = await fetchWithRetry('/api/users/verification/documents');
     return safeJson(res);
   },
 };
@@ -828,6 +873,18 @@ export const adminApi = {
     return safeJson(res);
   },
 
+  async updateUser(
+    id: string,
+    payload: import('./types').AdminUpdateUserPayload,
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    const res = await fetchWithRetry(`/api/admin/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return safeJson(res);
+  },
+
   async toggleAdmin(id: string, is_admin: boolean): Promise<{
     success: boolean;
     message?: string;
@@ -1033,6 +1090,52 @@ export const adminApi = {
       body: JSON.stringify({ transaction_reference, admin_notes }),
     });
     return safeJson(res);
+  },
+
+  async listVerificationDocuments(status?: string): Promise<{
+    success: boolean;
+    data?: {
+      documents: Array<{
+        id: string;
+        user_id: string;
+        user_display_name: string | null;
+        user_phone: string;
+        document_type: string;
+        original_filename: string | null;
+        legal_first_name: string | null;
+        legal_last_name: string | null;
+        status: string;
+        uploaded_at: string;
+        reviewed_at: string | null;
+        reviewer_notes: string | null;
+        ai_status: string | null;
+        ai_confidence: number | null;
+        ai_extracted_text: string | null;
+      }>;
+    };
+    error?: string;
+  }> {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : '';
+    const res = await fetchWithRetry(`/api/admin/verification-documents${qs}`);
+    return safeJson(res);
+  },
+
+  async reviewVerificationDocument(
+    id: string,
+    decision: 'approved' | 'rejected',
+    reviewer_notes?: string,
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    const res = await fetchWithRetry(`/api/admin/verification-documents/${id}/review`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision, reviewer_notes }),
+    });
+    return safeJson(res);
+  },
+
+  /** Returns a URL for streaming the private document file through the BFF. */
+  getVerificationDocumentFileUrl(id: string): string {
+    return `/api/admin/verification-documents/${id}/file`;
   },
 };
 

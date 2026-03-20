@@ -154,8 +154,22 @@ export async function initiateDonation(
     throw new ValidationError('Campaign is not active', 'CAMPAIGN_NOT_ACTIVE');
   }
 
-  // OTP check for large donations — verify state stored in Redis
+  // Identity and OTP check for large donations
   if (data.amount > 100000) {
+    // Check account-level identity verification first
+    const userResult = await query(
+      `SELECT verification_status FROM users WHERE id = $1`,
+      [userId],
+    );
+    const user = userResult.rows[0] as { verification_status: string } | undefined;
+    if (!user || user.verification_status !== 'approved') {
+      throw new ValidationError(
+        'Identity verification required for donations over 100,000 UZS',
+        'IDENTITY_VERIFICATION_REQUIRED',
+      );
+    }
+
+    // Then check OTP verification state stored in Redis
     const otpKey = `${DONATION_OTP_VERIFIED_PREFIX}${userId}`;
     const otpVerified = await redis.get(otpKey);
 

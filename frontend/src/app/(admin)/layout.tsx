@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   ArrowDownToLine,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute';
@@ -34,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/users', labelKey: 'users', icon: <Users className="size-5" /> },
   { href: '/admin/escrow', labelKey: 'escrow', icon: <Vault className="size-5" /> },
   { href: '/admin/withdrawals', labelKey: 'withdrawals', icon: <ArrowDownToLine className="size-5" /> },
+  { href: '/admin/verifications', labelKey: 'verifications', icon: <ShieldCheck className="size-5" /> },
   { href: '/admin/settings', labelKey: 'settings', icon: <Settings className="size-5" /> },
   { href: '/admin/audit', labelKey: 'auditLog', icon: <ClipboardList className="size-5" /> },
 ];

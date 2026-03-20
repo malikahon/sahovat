@@ -42,3 +42,10 @@ usersRouter.post(
   uploadKycDocument,
   usersController.uploadVerificationDocument,
 );
+
+// GET /api/users/verification/documents — List user's verification documents
+usersRouter.get(
+  '/verification/documents',
+  requireAuth,
+  usersController.getVerificationDocuments,
+);

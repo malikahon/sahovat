@@ -37,17 +37,24 @@ export async function verifyOtp(req: Request, res: Response): Promise<void> {
 
 /**
  * POST /api/auth/register
- * Completes user registration (profile setup). Requires authentication.
+ * Completes user registration (profile setup).
+ * Accepts either an authenticated user OR a registration_token in the body.
  */
 export async function register(req: Request, res: Response): Promise<void> {
   const authReq = req as AuthenticatedRequest;
   const data = req.body as RegisterData;
 
-  const user = await authService.register(authReq.user.id, data);
+  // userId may be null if not authenticated (new user with registration_token)
+  const userId = authReq.user?.id ?? null;
+
+  const result = await authService.register(userId, data);
 
   res.status(200).json({
     success: true,
-    data: { user },
+    data: {
+      user: result.user,
+      tokens: result.tokens,
+    },
   });
 }
 

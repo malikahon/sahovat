@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,6 +22,14 @@ const step2Schema = z.object({
 type Step2FormData = z.infer<typeof step2Schema>;
 
 export default function Step2Page() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="size-8 animate-spin text-muted-foreground" /></div>}>
+      <Step2Content />
+    </Suspense>
+  );
+}
+
+function Step2Content() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const campaignId = searchParams.get('id');
@@ -65,12 +73,15 @@ export default function Step2Page() {
   }, [campaign, reset]);
 
   const updateMutation = useMutation({
-    mutationFn: (data: Step2FormData) =>
-      campaignsApi.update(campaignId!, { description: data.description }),
-    onSuccess: (result) => {
-      if (result.success) {
-        router.push(`/create-campaign/step-3?id=${campaignId}`);
+    mutationFn: async (data: Step2FormData) => {
+      const result = await campaignsApi.update(campaignId!, { description: data.description });
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update campaign');
       }
+      return result;
+    },
+    onSuccess: () => {
+      router.push(`/create-campaign/step-3?id=${campaignId}`);
     },
   });
 

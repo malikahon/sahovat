@@ -4,8 +4,9 @@ import { setAuthCookies } from '@/lib/auth-cookies';
 
 /**
  * POST /api/auth/verify-otp
- * Proxies to Express backend. On success, stores tokens in httpOnly cookies
- * and returns user + is_new_user to the client (tokens are NOT sent to client).
+ * Proxies to Express backend. On success:
+ * - For existing users: stores JWT tokens in httpOnly cookies, returns user + is_new_user
+ * - For new users: returns is_new_user + registration_token (no JWT tokens yet)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -23,14 +24,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(data, { status: res.status });
     }
 
-    // Extract tokens and store in httpOnly cookies
-    const { user, tokens, is_new_user } = data.data;
-    await setAuthCookies(tokens.access_token, tokens.refresh_token);
+    const { user, tokens, is_new_user, registration_token } = data.data;
 
-    // Return user data without tokens
+    // Store JWT tokens in httpOnly cookies (if provided)
+    if (tokens?.access_token && tokens?.refresh_token) {
+      await setAuthCookies(tokens.access_token, tokens.refresh_token);
+    }
+
+    // Return user data without tokens, but include registration_token for new users
+    const responseData: Record<string, unknown> = { user, is_new_user };
+    if (registration_token) {
+      responseData.registration_token = registration_token;
+    }
+
     return NextResponse.json({
       success: true,
-      data: { user, is_new_user },
+      data: responseData,
     });
   } catch {
     return NextResponse.json(

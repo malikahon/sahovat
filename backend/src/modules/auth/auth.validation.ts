@@ -65,6 +65,9 @@ export const registerSchema = {
     language_preference: z
       .enum(['uz', 'ru', 'en'])
       .optional(),
+    registration_token: z
+      .string()
+      .optional(),
   }),
 };
 

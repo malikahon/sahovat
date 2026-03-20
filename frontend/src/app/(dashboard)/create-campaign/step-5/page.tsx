@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Loader2, CheckCircle2, ImageIcon } from 'lucide-react';
 
+import Image from 'next/image';
 import { campaignsApi, withdrawalAccountsApi } from '@/lib/api';
 import type { SafeWithdrawalAccount } from '@/lib/types';
 import { formatUZS, formatDate } from '@/lib/formatters';
@@ -17,6 +18,14 @@ import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Step5Page() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="size-8 animate-spin text-muted-foreground" /></div>}>
+      <Step5Content />
+    </Suspense>
+  );
+}
+
+function Step5Content() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const campaignId = searchParams.get('id');
@@ -224,10 +233,13 @@ export default function Step5Page() {
               {t('wizard.coverImage')}
             </p>
             {campaign.cover_image_url ? (
-              <img
+              <Image
                 src={campaign.cover_image_url}
                 alt="Cover"
+                width={300}
+                height={128}
                 className="h-32 rounded-lg object-cover"
+                unoptimized
               />
             ) : (
               <div className="flex h-20 items-center gap-2 text-muted-foreground/50">

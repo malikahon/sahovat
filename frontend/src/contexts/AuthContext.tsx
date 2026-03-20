@@ -82,7 +82,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error(result.error || 'Failed to verify OTP');
       }
 
-      setUser(result.data.user);
+      // For new users, store the registration token for use during registration
+      if (result.data.is_new_user && result.data.registration_token) {
+        sessionStorage.setItem('registration_token', result.data.registration_token);
+      }
+
+      // Set user if available (existing incomplete users have a user object)
+      if (result.data.user) {
+        setUser(result.data.user);
+      }
 
       // Return shape matching AuthResponse (minus tokens, which are in cookies)
       return {
@@ -96,13 +104,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   /**
    * Step 3 (if new user): complete registration.
+   * Includes registration_token from sessionStorage if available.
    */
   const register = useCallback(async (data: RegisterDto) => {
-    const result = await authApi.register(data);
+    // Include registration_token if available (for truly new users)
+    const registrationToken = typeof window !== 'undefined'
+      ? sessionStorage.getItem('registration_token')
+      : null;
+
+    const payload = registrationToken
+      ? { ...data, registration_token: registrationToken }
+      : data;
+
+    const result = await authApi.register(payload);
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to register');
     }
     setUser(result.data.user);
+
+    // Clean up
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('registration_token');
+    }
   }, []);
 
   /**

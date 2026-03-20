@@ -1,5 +1,7 @@
+import { randomBytes } from 'node:crypto';
 import bcrypt from 'bcrypt';
 import { query } from '../../config/database.js';
+import { redis } from '../../config/redis.js';
 import {
   generateOtp,
   storeOtp,
@@ -28,6 +30,8 @@ import type { AuthResponse, AuthTokens } from '../../types/api.js';
 import type { UserRow, SafeUser } from './auth.types.js';
 
 const BCRYPT_SALT_ROUNDS = 12;
+const REG_TOKEN_PREFIX = 'reg_token:';
+const REG_TOKEN_TTL_SECONDS = 30 * 60; // 30 minutes
 
 // ============================================================
 // HELPERS
@@ -58,8 +62,8 @@ async function generateTokenPair(userId: string, isAdmin: boolean): Promise<Auth
 
 /**
  * Initiates the OTP flow for a phone number.
- * If the phone doesn't exist in the database, creates a minimal user record.
  * Generates and sends OTP via SMS.
+ * Does NOT create a user record — that only happens during registration.
  */
 export async function requestOtp(phoneNumber: string): Promise<void> {
   const phone = formatPhone(phoneNumber);
@@ -74,17 +78,13 @@ export async function requestOtp(phoneNumber: string): Promise<void> {
     throw new RateLimitError('Too many OTP attempts. Please try again later.', 'OTP_RATE_LIMIT');
   }
 
-  // Upsert: find existing user or create minimal record
+  // Check if user is banned (if they exist)
   const existingResult = await query(
-    'SELECT id FROM users WHERE phone_number = $1',
+    'SELECT is_banned FROM users WHERE phone_number = $1',
     [phone],
   );
-
-  if (existingResult.rows.length === 0) {
-    await query(
-      'INSERT INTO users (phone_number) VALUES ($1)',
-      [phone],
-    );
+  if (existingResult.rows.length > 0 && (existingResult.rows[0] as { is_banned: boolean }).is_banned) {
+    throw new ForbiddenError('Account is banned');
   }
 
   // Generate and store OTP
@@ -101,12 +101,13 @@ export async function requestOtp(phoneNumber: string): Promise<void> {
 
 /**
  * Verifies an OTP for a phone number.
- * Returns the user with tokens, and flags whether the user is new (needs registration).
+ * If user exists and has completed registration: returns user + JWT tokens.
+ * If user doesn't exist or hasn't completed registration: returns is_new_user + registration_token.
  */
 export async function verifyOtpAndLogin(
   phoneNumber: string,
   otp: string,
-): Promise<AuthResponse> {
+): Promise<AuthResponse & { registration_token?: string }> {
   const phone = formatPhone(phoneNumber);
 
   // Check lockout
@@ -132,28 +133,71 @@ export async function verifyOtpAndLogin(
     [phone],
   );
 
-  if (result.rows.length === 0) {
-    throw new NotFoundError('User not found');
+  // No user record exists OR user hasn't completed registration (no display_name)
+  const userRow = result.rows.length > 0 ? (result.rows[0] as UserRow) : null;
+  const isNewUser = !userRow || userRow.display_name === null;
+
+  if (isNewUser) {
+    // Block banned users
+    if (userRow?.is_banned) {
+      throw new ForbiddenError('Account is banned');
+    }
+
+    // Generate a temporary registration token and store it in Redis
+    const registrationToken = randomBytes(32).toString('hex');
+    await redis.set(
+      `${REG_TOKEN_PREFIX}${registrationToken}`,
+      phone,
+      'EX',
+      REG_TOKEN_TTL_SECONDS,
+    );
+
+    // For users that exist but haven't completed registration, also return tokens
+    // so they can access the register page as an authenticated user
+    if (userRow) {
+      const tokens = await generateTokenPair(userRow.id, userRow.is_admin);
+      return {
+        user: toSafeUser(userRow),
+        tokens,
+        is_new_user: true,
+        registration_token: registrationToken,
+      };
+    }
+
+    // Truly new user — no user record, no tokens
+    return {
+      user: null as unknown as ReturnType<typeof toSafeUser>,
+      tokens: { access_token: '', refresh_token: '' },
+      is_new_user: true,
+      registration_token: registrationToken,
+    };
   }
 
-  const user = result.rows[0] as UserRow;
-
-  // Block banned users from logging in
-  if (user.is_banned) {
+  // Existing registered user
+  if (userRow.is_banned) {
     throw new ForbiddenError('Account is banned');
   }
 
-  // Determine if the user is new (hasn't completed registration)
-  const isNewUser = user.display_name === null;
-
-  // Generate tokens
-  const tokens = await generateTokenPair(user.id, user.is_admin);
+  const tokens = await generateTokenPair(userRow.id, userRow.is_admin);
 
   return {
-    user: toSafeUser(user),
+    user: toSafeUser(userRow),
     tokens,
-    is_new_user: isNewUser,
+    is_new_user: false,
   };
+}
+
+/**
+ * Validates a registration token from Redis.
+ * Returns the phone number if valid, null otherwise.
+ * Consumes (deletes) the token on successful validation.
+ */
+export async function validateRegistrationToken(token: string): Promise<string | null> {
+  const key = `${REG_TOKEN_PREFIX}${token}`;
+  const phone = await redis.get(key);
+  if (!phone) return null;
+  await redis.del(key);
+  return phone;
 }
 
 // ============================================================
@@ -166,31 +210,101 @@ export interface RegisterData {
   gender?: 'male' | 'female';
   preferred_categories?: CampaignCategory[];
   language_preference?: 'uz' | 'ru' | 'en';
+  registration_token?: string;
 }
 
 /**
- * Completes registration for an authenticated user.
- * Updates the user's profile with display name, DOB, gender, preferences.
+ * Completes registration for a user.
+ * Accepts either:
+ * - An authenticated user (userId) who has an incomplete profile
+ * - A registration_token for truly new users (no DB record yet)
+ *
+ * Returns user + tokens so the frontend can set auth cookies.
  */
 export async function register(
-  userId: string,
+  userId: string | null,
   data: RegisterData,
-): Promise<SafeUser> {
-  // Verify user exists
-  const existingResult = await query(
-    'SELECT display_name FROM users WHERE id = $1',
-    [userId],
-  );
+): Promise<{ user: SafeUser; tokens: AuthTokens }> {
+  let phone: string | null = null;
 
-  if (existingResult.rows.length === 0) {
-    throw new NotFoundError('User not found');
+  // If a registration token is provided, validate it to get the phone
+  if (data.registration_token) {
+    phone = await validateRegistrationToken(data.registration_token);
+    if (!phone) {
+      throw new UnauthorizedError('Invalid or expired registration token', 'INVALID_REG_TOKEN');
+    }
   }
 
-  if ((existingResult.rows[0] as { display_name: string | null }).display_name !== null) {
-    throw new ValidationError('User already registered');
-  }
+  // Determine the target user
+  if (userId) {
+    // Authenticated user completing registration
+    const existingResult = await query(
+      'SELECT id, display_name, phone_number FROM users WHERE id = $1',
+      [userId],
+    );
 
-  // Build SET clause dynamically
+    if (existingResult.rows.length === 0) {
+      throw new NotFoundError('User not found');
+    }
+
+    const existing = existingResult.rows[0] as { id: string; display_name: string | null; phone_number: string };
+    if (existing.display_name !== null) {
+      throw new ValidationError('User already registered');
+    }
+
+    // Update the existing user's profile
+    const user = await updateUserProfile(existing.id, data);
+    const tokens = await generateTokenPair(user.id, user.is_admin);
+    return { user, tokens };
+  } else if (phone) {
+    // New user via registration token — check if a partial record exists
+    const existingResult = await query(
+      'SELECT id, display_name FROM users WHERE phone_number = $1',
+      [phone],
+    );
+
+    if (existingResult.rows.length > 0) {
+      const existing = existingResult.rows[0] as { id: string; display_name: string | null };
+      if (existing.display_name !== null) {
+        throw new ValidationError('User already registered');
+      }
+      // Update the existing incomplete user
+      const user = await updateUserProfile(existing.id, data);
+      const tokens = await generateTokenPair(user.id, user.is_admin);
+      return { user, tokens };
+    }
+
+    // Create a brand new user with profile data in one step
+    const insertResult = await query(
+      `INSERT INTO users (phone_number, display_name, date_of_birth, gender, preferred_categories, language_preference)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, phone_number, display_name, password_hash,
+                 date_of_birth, gender, preferred_categories,
+                 is_verified, is_admin, is_banned, verification_status,
+                 oneid_id, oneid_verified_at, language_preference,
+                 created_at, updated_at`,
+      [
+        phone,
+        data.display_name,
+        data.date_of_birth || null,
+        data.gender || null,
+        data.preferred_categories || [],
+        data.language_preference || 'uz',
+      ],
+    );
+
+    const user = toSafeUser(insertResult.rows[0] as UserRow);
+    const tokens = await generateTokenPair(user.id, user.is_admin);
+    return { user, tokens };
+  } else {
+    throw new UnauthorizedError('Authentication or registration token required');
+  }
+}
+
+/**
+ * Helper: Updates an existing user's profile fields.
+ */
+async function updateUserProfile(userId: string, data: RegisterData): Promise<SafeUser> {
   const setClauses: string[] = ['display_name = $1'];
   const params: unknown[] = [data.display_name];
   let paramIndex = 2;
@@ -219,10 +333,7 @@ export async function register(
     paramIndex++;
   }
 
-  // Always update the timestamp
   setClauses.push('updated_at = NOW()');
-
-  // Add userId as last parameter for WHERE clause
   params.push(userId);
 
   const result = await query(
@@ -231,7 +342,7 @@ export async function register(
      WHERE id = $${paramIndex}
      RETURNING id, phone_number, display_name, password_hash,
                date_of_birth, gender, preferred_categories,
-               is_verified, is_admin, verification_status,
+               is_verified, is_admin, is_banned, verification_status,
                oneid_id, oneid_verified_at, language_preference,
                created_at, updated_at`,
     params,

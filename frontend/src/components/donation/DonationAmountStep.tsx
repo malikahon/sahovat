@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { ShieldAlert, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +11,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { formatUZS } from '@/lib/formatters';
+import type { VerificationStatus } from '@/lib/types';
 
 // ============================================================
 // Types
@@ -28,6 +39,7 @@ export interface DonationFormData {
 interface Props {
   campaignTitle: string;
   userDisplayName: string | null;
+  verificationStatus?: VerificationStatus | null;
   onNext: (data: DonationFormData) => void;
 }
 
@@ -43,8 +55,9 @@ const MIN_AMOUNT = 1_000;
 // Component
 // ============================================================
 
-export function DonationAmountStep({ campaignTitle, userDisplayName, onNext }: Props) {
+export function DonationAmountStep({ campaignTitle, userDisplayName, verificationStatus, onNext }: Props) {
   const t = useTranslations('donations');
+  const router = useRouter();
 
   const [selectedPreset, setSelectedPreset] = useState<number | null>(50_000);
   const [customAmount, setCustomAmount] = useState('');
@@ -55,6 +68,7 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, onNext }: P
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringFrequency, setRecurringFrequency] = useState<'weekly' | 'monthly'>('monthly');
   const [error, setError] = useState('');
+  const [verificationDialog, setVerificationDialog] = useState<'required' | 'pending' | null>(null);
 
   const amount = customAmount
     ? parseInt(customAmount.replace(/\D/g, ''), 10) || 0
@@ -79,6 +93,20 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, onNext }: P
       setError(t('minimumAmount'));
       return;
     }
+
+    // For donations over 100K, check account-level identity verification
+    if (amount > OTP_THRESHOLD) {
+      if (verificationStatus === 'pending') {
+        setVerificationDialog('pending');
+        return;
+      }
+      if (!verificationStatus || verificationStatus === 'none' || verificationStatus === 'rejected') {
+        setVerificationDialog('required');
+        return;
+      }
+      // verificationStatus === 'approved' — proceed normally
+    }
+
     onNext({
       amount,
       feeIncluded,
@@ -93,6 +121,45 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, onNext }: P
   const needsOtp = amount > OTP_THRESHOLD;
 
   return (
+    <>
+    {/* Verification Required Dialog */}
+    <Dialog open={verificationDialog !== null} onOpenChange={(open) => { if (!open) setVerificationDialog(null); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {verificationDialog === 'pending' ? (
+              <Clock className="size-5 text-yellow-500" />
+            ) : (
+              <ShieldAlert className="size-5 text-destructive" />
+            )}
+            {verificationDialog === 'pending'
+              ? t('verificationPendingTitle')
+              : t('verificationRequiredTitle')}
+          </DialogTitle>
+          <DialogDescription>
+            {verificationDialog === 'pending'
+              ? t('verificationPendingDescription')
+              : t('verificationRequiredDescription')}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="flex-col gap-2 sm:flex-row">
+          {verificationDialog === 'required' && (
+            <Button
+              onClick={() => {
+                setVerificationDialog(null);
+                router.push('/profile#verification');
+              }}
+            >
+              {t('goToVerification')}
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => setVerificationDialog(null)}>
+            {t('waitForVerification')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <div className="space-y-5">
       {/* Campaign name reminder */}
       <p className="text-sm text-muted-foreground">
@@ -264,5 +331,6 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, onNext }: P
         {t('continue')}
       </Button>
     </div>
+    </>
   );
 }

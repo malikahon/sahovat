@@ -14,6 +14,7 @@ import { DonationConfirmStep } from './DonationConfirmStep';
 import { DonationSuccessStep } from './DonationSuccessStep';
 import { SavedCardSelect } from '@/components/payment/SavedCardSelect';
 import { recurringApi } from '@/lib/api';
+import type { VerificationStatus } from '@/lib/types';
 
 // ============================================================
 // Types
@@ -27,6 +28,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   userDisplayName: string | null;
+  verificationStatus?: VerificationStatus | null;
   platformFeePct?: number; // From admin settings; defaults to 1%
 }
 
@@ -42,6 +44,7 @@ export function DonationBottomSheet({
   isOpen,
   onClose,
   userDisplayName,
+  verificationStatus,
   platformFeePct,
 }: Props) {
   const t = useTranslations('donations');
@@ -130,6 +133,7 @@ export function DonationBottomSheet({
           <DonationAmountStep
             campaignTitle={campaignTitle}
             userDisplayName={userDisplayName}
+            verificationStatus={verificationStatus}
             onNext={handleAmountNext}
           />
         )}

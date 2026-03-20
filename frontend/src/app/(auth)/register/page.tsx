@@ -61,12 +61,16 @@ export default function RegisterPage() {
   const { isAuthenticated, isLoading, user, register: authRegister } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
-  // Redirect to login if not authenticated
+  const hasRegistrationToken = typeof window !== 'undefined'
+    ? !!sessionStorage.getItem('registration_token')
+    : false;
+
+  // Redirect to login if not authenticated AND no registration token
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !hasRegistrationToken) {
       router.replace('/login');
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, hasRegistrationToken, router]);
 
   // Redirect to dashboard if already registered (has display_name)
   useEffect(() => {
@@ -113,7 +117,7 @@ export default function RegisterPage() {
     );
   }
 
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated && !hasRegistrationToken) return null;
 
   return (
     <Card className="w-full max-w-lg">

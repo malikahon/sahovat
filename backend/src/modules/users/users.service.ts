@@ -4,6 +4,7 @@ import { redis } from '../../config/redis.js';
 import { env } from '../../config/env.js';
 import { NotFoundError, ValidationError, UnauthorizedError } from '../../lib/errors.js';
 import { storageService } from '../../services/storage.service.js';
+import { verifyDocumentName } from '../../services/ocr.service.js';
 import type { UpdateProfileDto } from '../../types/api.js';
 import type { UserRow, SafeUser } from './users.types.js';
 
@@ -241,12 +242,16 @@ export async function handleOneIdCallback(
 
 /**
  * Saves a KYC verification document to private storage.
- * Updates user's verification_status to 'pending' if currently 'none'.
+ * Records the document in verification_documents table.
+ * Sets user's verification_status to 'pending' if currently 'none' or 'rejected'.
  */
 export async function uploadVerificationDocument(
   userId: string,
   file: Express.Multer.File,
-): Promise<{ file_url: string }> {
+  documentType: string,
+  legalFirstName: string,
+  legalLastName: string,
+): Promise<{ file_url: string; document_id: string; ai_status: string }> {
   // Verify user exists
   const userResult = await query(
     'SELECT id, verification_status FROM users WHERE id = $1',
@@ -257,6 +262,13 @@ export async function uploadVerificationDocument(
     throw new NotFoundError('User not found');
   }
 
+  const user = userResult.rows[0] as { id: string; verification_status: string };
+
+  // Cannot re-upload if already approved
+  if (user.verification_status === 'approved') {
+    throw new ValidationError('Your identity is already verified', 'ALREADY_VERIFIED');
+  }
+
   // Save file to private storage
   const file_url = await storageService.savePrivate(
     file.buffer,
@@ -264,9 +276,20 @@ export async function uploadVerificationDocument(
     file.mimetype,
   );
 
-  // Update verification_status to 'pending' if currently 'none'
-  const user = userResult.rows[0] as { id: string; verification_status: string };
-  if (user.verification_status === 'none') {
+  // Record document in verification_documents table (ai_status starts as 'pending')
+  const docResult = await query(
+    `INSERT INTO verification_documents
+       (user_id, document_type, file_url, original_filename, status,
+        legal_first_name, legal_last_name, ai_status)
+     VALUES ($1, $2, $3, $4, 'pending', $5, $6, 'pending')
+     RETURNING id`,
+    [userId, documentType, file_url, file.originalname, legalFirstName, legalLastName],
+  );
+
+  const document_id = (docResult.rows[0] as { id: string }).id;
+
+  // Set verification_status to 'pending' if currently 'none' or 'rejected'
+  if (user.verification_status === 'none' || user.verification_status === 'rejected') {
     await query(
       `UPDATE users
        SET verification_status = 'pending', updated_at = NOW()
@@ -275,5 +298,126 @@ export async function uploadVerificationDocument(
     );
   }
 
-  return { file_url };
+  // Run OCR asynchronously — don't block the upload response.
+  // Results are written back to the DB; auto_approved also marks user verified.
+  runOcrAsync(document_id, userId, file.buffer, file.mimetype, legalFirstName, legalLastName);
+
+  return { file_url, document_id, ai_status: 'pending' };
+}
+
+/**
+ * Runs OCR on the uploaded document buffer in the background.
+ * Writes the result back to verification_documents.
+ * If auto_approved, also marks the user as verified.
+ *
+ * All errors — including unhandled worker-level rejections — are caught here
+ * so they never reach the process-level unhandledRejection handler (which
+ * would shut the server down).
+ */
+function runOcrAsync(
+  documentId: string,
+  userId: string,
+  buffer: Buffer,
+  mimetype: string,
+  legalFirst: string,
+  legalLast: string,
+): void {
+  console.log(`[OCR] Starting async verification for document ${documentId}`);
+
+  // Wrap everything in a self-contained async IIFE with a top-level catch
+  // so no rejection can escape to the process event loop.
+  (async () => {
+    let result;
+    try {
+      result = await verifyDocumentName(buffer, legalFirst, legalLast, mimetype);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[OCR] verifyDocumentName threw for document ${documentId}:`, msg);
+      result = {
+        decision: 'needs_review' as const,
+        confidence: 0,
+        extractedText: '',
+        error: msg,
+      };
+    }
+
+    console.log(`[OCR] Document ${documentId} — decision: ${result.decision}, confidence: ${result.confidence.toFixed(2)}${result.error ? `, note: ${result.error}` : ''}`);
+
+    try {
+      await query(
+        `UPDATE verification_documents
+         SET ai_status = $1,
+             ai_confidence = $2,
+             ai_extracted_text = $3,
+             ai_processed_at = NOW()
+         WHERE id = $4`,
+        [result.decision, result.confidence, result.extractedText, documentId],
+      );
+
+      // Auto-approved: mark document + user as verified
+      if (result.decision === 'auto_approved') {
+        await query(
+          `UPDATE verification_documents
+           SET status = 'approved', reviewed_at = NOW()
+           WHERE id = $1`,
+          [documentId],
+        );
+        await query(
+          `UPDATE users
+           SET verification_status = 'approved', is_verified = true, updated_at = NOW()
+           WHERE id = $1`,
+          [userId],
+        );
+        console.log(`[OCR] User ${userId} auto-approved via AI`);
+      }
+      // auto_rejected: leave document status = 'pending' for admin to confirm
+    } catch (dbErr: unknown) {
+      const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+      console.error(`[OCR] DB write failed for document ${documentId}:`, msg);
+    }
+  })();
+  // Intentionally no .catch() here — the IIFE has its own try/catch throughout.
+  // This pattern prevents any rejected promise from leaking to the process.
+}
+
+/**
+ * Lists all verification documents submitted by a user.
+ */
+export async function getMyVerificationDocuments(userId: string): Promise<Array<{
+  id: string;
+  document_type: string;
+  status: string;
+  original_filename: string | null;
+  legal_first_name: string | null;
+  legal_last_name: string | null;
+  ai_status: string | null;
+  ai_confidence: number | null;
+  uploaded_at: string;
+  reviewed_at: string | null;
+  reviewer_notes: string | null;
+}>> {
+  const result = await query(
+    `SELECT id, document_type, status, original_filename,
+            legal_first_name, legal_last_name,
+            ai_status, ai_confidence,
+            uploaded_at, reviewed_at, reviewer_notes
+     FROM verification_documents
+     WHERE user_id = $1
+     ORDER BY uploaded_at DESC`,
+    [userId],
+  );
+
+  return result.rows as Array<{
+    id: string;
+    document_type: string;
+    status: string;
+    original_filename: string | null;
+    legal_first_name: string | null;
+    legal_last_name: string | null;
+    ai_status: string | null;
+    ai_confidence: number | null;
+    uploaded_at: string;
+    reviewed_at: string | null;
+    reviewer_notes: string | null;
+  }>;
 }

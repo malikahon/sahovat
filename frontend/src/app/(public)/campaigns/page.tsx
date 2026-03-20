@@ -150,12 +150,16 @@ export default function CampaignsPage() {
           onValueChange={(val) => setCategory(val ?? '')}
         >
           <SelectTrigger className="w-full sm:w-44">
-            <SelectValue placeholder={t('browse.allCategories')} />
+            <SelectValue placeholder={t('browse.allCategories')}>
+              {category
+                ? t(`categories.${category as CampaignCategory}`)
+                : t('browse.allCategories')}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">{t('browse.allCategories')}</SelectItem>
             {Object.values(CampaignCategory).map((cat) => (
-              <SelectItem key={cat} value={cat} label={t(`categories.${cat}`)}>
+              <SelectItem key={cat} value={cat}>
                 {t(`categories.${cat}`)}
               </SelectItem>
             ))}

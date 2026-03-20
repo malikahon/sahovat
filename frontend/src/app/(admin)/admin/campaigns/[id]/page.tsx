@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import NextImage from 'next/image';
 import {
   ArrowLeft,
   FileText,
@@ -198,14 +199,17 @@ export default function AdminCampaignReviewPage({
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               {campaign.cover_image_url && (
-                <img
+                <NextImage
                   src={
                     campaign.cover_image_url.startsWith('http')
                       ? campaign.cover_image_url
                       : `${BACKEND_STORAGE}${campaign.cover_image_url}`
                   }
                   alt={campaign.title}
+                  width={600}
+                  height={160}
                   className="w-full h-40 object-cover rounded-md"
+                  unoptimized
                 />
               )}
               <div className="grid grid-cols-2 gap-2">

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Loader2, Upload, ImageIcon } from 'lucide-react';
 
+import Image from 'next/image';
 import { campaignsApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,6 +15,14 @@ const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
 export default function Step3Page() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="size-8 animate-spin text-muted-foreground" /></div>}>
+      <Step3Content />
+    </Suspense>
+  );
+}
+
+function Step3Content() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const campaignId = searchParams.get('id');
@@ -52,11 +61,15 @@ export default function Step3Page() {
   }, [previewUrl]);
 
   const uploadMutation = useMutation({
-    mutationFn: (file: File) => campaignsApi.uploadCoverImage(campaignId!, file),
-    onSuccess: (result) => {
-      if (result.success) {
-        router.push(`/create-campaign/step-4?id=${campaignId}`);
+    mutationFn: async (file: File) => {
+      const result = await campaignsApi.uploadCoverImage(campaignId!, file);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to upload cover image');
       }
+      return result;
+    },
+    onSuccess: () => {
+      router.push(`/create-campaign/step-4?id=${campaignId}`);
     },
   });
 
@@ -119,10 +132,13 @@ export default function Step3Page() {
         >
           {currentImageUrl ? (
             <div className="space-y-3 text-center">
-              <img
+              <Image
                 src={currentImageUrl}
                 alt="Cover preview"
+                width={400}
+                height={256}
                 className="mx-auto max-h-64 rounded-lg object-cover"
+                unoptimized
               />
               <p className="text-xs text-muted-foreground">
                 {t('wizard.coverImageReplace')}
