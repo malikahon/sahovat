@@ -54,13 +54,13 @@ class EskizSmsService implements SmsService {
    * Performs the actual authentication request to Eskiz.uz.
    */
   private async _doAuth(): Promise<string> {
+    const formData = new FormData();
+    formData.append('email', env.SMS_API_EMAIL);
+    formData.append('password', env.SMS_API_PASSWORD);
+
     const response = await fetch(`${this.baseUrl}/api/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: env.SMS_API_EMAIL,
-        password: env.SMS_API_PASSWORD,
-      }),
+      body: formData,
     });
 
     if (!response.ok) {
@@ -90,17 +90,17 @@ class EskizSmsService implements SmsService {
     const normalizedPhone = phone.startsWith('+') ? phone.slice(1) : phone;
 
     const send = async (bearerToken: string): Promise<Response> => {
+      const formData = new FormData();
+      formData.append('mobile_phone', normalizedPhone);
+      formData.append('message', message);
+      formData.append('from', '4546'); // Eskiz default sender ID
+
       return fetch(`${this.baseUrl}/api/message/sms/send`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          mobile_phone: normalizedPhone,
-          message,
-          from: '4546', // Eskiz default sender ID
-        }),
+        body: formData,
       });
     };
 
