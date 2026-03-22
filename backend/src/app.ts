@@ -20,6 +20,7 @@ import { feedRouter } from './modules/feed/feed.routes.js';
 import { recurringRouter } from './modules/recurring/recurring.routes.js';
 import { paymeRouter } from './modules/payme/payme.routes.js';
 import { savedCardsRouter } from './modules/saved-cards/saved-cards.routes.js';
+import { setupSwagger } from './docs/swagger.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -49,6 +50,9 @@ export function createApp(): express.Express {
 
   // Static file serving for public storage
   app.use('/storage', express.static(storagePaths.publicPath));
+
+  // API documentation (Swagger UI)
+  setupSwagger(app);
 
   // Health check — verifies DB + Redis connectivity
   app.get('/api/health', async (_req, res) => {
