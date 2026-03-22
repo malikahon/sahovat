@@ -72,6 +72,7 @@ services:
         condition: service_healthy
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      BACKEND_URL: http://backend:3001/api
     networks:
       - internal
 

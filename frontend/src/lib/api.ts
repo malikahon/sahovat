@@ -379,7 +379,14 @@ export const campaignsApi = {
     error?: string;
   }> {
     const res = await fetchWithRetry(`/api/campaigns/${id}`);
-    return safeJson(res);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = await safeJson<any>(res);
+    // Normalize: backend returns { data: CampaignObj } directly,
+    // but frontend expects { data: { campaign: CampaignObj } }.
+    if (json.success && json.data && !json.data.campaign && json.data.id) {
+      return { ...json, data: { campaign: json.data } };
+    }
+    return json;
   },
 
   async create(
@@ -394,7 +401,12 @@ export const campaignsApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return safeJson(res);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = await safeJson<any>(res);
+    if (json.success && json.data && !json.data.campaign && json.data.id) {
+      return { ...json, data: { campaign: json.data } };
+    }
+    return json;
   },
 
   async update(
@@ -410,7 +422,12 @@ export const campaignsApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return safeJson(res);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = await safeJson<any>(res);
+    if (json.success && json.data && !json.data.campaign && json.data.id) {
+      return { ...json, data: { campaign: json.data } };
+    }
+    return json;
   },
 
   async delete(id: string): Promise<{
@@ -431,7 +448,12 @@ export const campaignsApi = {
     const res = await fetchWithRetry(`/api/campaigns/${id}/submit`, {
       method: 'PUT',
     });
-    return safeJson(res);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = await safeJson<any>(res);
+    if (json.success && json.data && !json.data.campaign && json.data.id) {
+      return { ...json, data: { campaign: json.data } };
+    }
+    return json;
   },
 
   async uploadCoverImage(
@@ -448,7 +470,12 @@ export const campaignsApi = {
       method: 'POST',
       body: formData,
     });
-    return safeJson(res);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = await safeJson<any>(res);
+    if (json.success && json.data && !json.data.campaign && json.data.id) {
+      return { ...json, data: { campaign: json.data } };
+    }
+    return json;
   },
 
   async listDocuments(id: string): Promise<{
@@ -457,7 +484,14 @@ export const campaignsApi = {
     error?: string;
   }> {
     const res = await fetchWithRetry(`/api/campaigns/${id}/documents`);
-    return safeJson(res);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = await safeJson<any>(res);
+    // Normalize: backend returns { data: Document[] } (array),
+    // but frontend expects { data: { documents: Document[] } }.
+    if (json.success && Array.isArray(json.data)) {
+      return { ...json, data: { documents: json.data } };
+    }
+    return json;
   },
 
   async uploadDocument(
