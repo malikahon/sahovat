@@ -7,6 +7,7 @@ import { query as dbQuery } from '../../config/database.js';
 import { paymentService } from '../../services/payment.service.js';
 import * as donationsService from './donations.service.js';
 import * as ledgerService from './ledger.service.js';
+import { env } from '../../config/env.js';
 
 // ============================================================
 // PUBLIC: Fee info
@@ -36,11 +37,12 @@ export async function requestOtp(req: Request, res: Response): Promise<void> {
   const phone = authReq.user.phone_number;
   const { campaign_id, amount } = req.body as { campaign_id: string; amount: number };
 
-  await donationsService.requestDonationOtp(authReq.user.id, phone, campaign_id, amount);
+  const otp = await donationsService.requestDonationOtp(authReq.user.id, phone, campaign_id, amount);
 
   res.status(200).json({
     success: true,
     message: 'OTP sent successfully',
+    ...(env.NODE_ENV !== 'production' && { dev_otp: otp }),
   });
 }
 

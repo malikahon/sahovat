@@ -65,7 +65,7 @@ async function generateTokenPair(userId: string, isAdmin: boolean): Promise<Auth
  * Generates and sends OTP via SMS.
  * Does NOT create a user record — that only happens during registration.
  */
-export async function requestOtp(phoneNumber: string): Promise<void> {
+export async function requestOtp(phoneNumber: string): Promise<string> {
   const phone = formatPhone(phoneNumber);
 
   if (!validateUzbekPhone(phone)) {
@@ -93,6 +93,8 @@ export async function requestOtp(phoneNumber: string): Promise<void> {
 
   // Send OTP via SMS
   await smsService.sendOtp(phone, otp);
+
+  return otp;
 }
 
 // ============================================================

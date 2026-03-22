@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { savedCardsApi } from '@/lib/api';
 import type { SavedCard } from '@/lib/types';
 import { CardForm } from '@/components/payment/CardForm';
-import { CardOtpVerify } from '@/components/payment/CardOtpVerify';
+import { OtpDialog } from '@/components/shared/OtpDialog';
 
 type PageStep = 'list' | 'add_card' | 'verify_otp';
 
@@ -22,7 +22,18 @@ export default function PaymentMethodsPage() {
   // OTP state
   const [pendingCardId, setPendingCardId] = useState('');
   const [phoneMasked, setPhoneMasked] = useState('');
-  const [waitMs, setWaitMs] = useState(60000);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpSubmitting, setOtpSubmitting] = useState(false);
+  const [otpCountdown, setOtpCountdown] = useState(60);
+
+  // Countdown timer
+  useEffect(() => {
+    if (step !== 'verify_otp' || otpCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setOtpCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [step, otpCountdown]);
 
   const loadCards = useCallback(async () => {
     setIsLoading(true);
@@ -84,14 +95,32 @@ export default function PaymentMethodsPage() {
   const handleCardCreated = (cardId: string, phone: string, wait: number) => {
     setPendingCardId(cardId);
     setPhoneMasked(phone);
-    setWaitMs(wait);
+    setOtpError(null);
+    setOtpCountdown(Math.floor(wait / 1000));
     setStep('verify_otp');
   };
 
-  const handleCardVerified = (card: SavedCard) => {
-    setCards((prev) => [...prev, card]);
+  const handleOtpSubmit = useCallback(async (code: string) => {
+    setOtpSubmitting(true);
+    setOtpError(null);
+    try {
+      const res = await savedCardsApi.verify(pendingCardId, code);
+      if (res.success && res.data) {
+        setCards((prev) => [...prev, res.data!]);
+        setStep('list');
+      } else {
+        setOtpError(res.error || t('errors.verifyFailed'));
+      }
+    } catch {
+      setOtpError(t('errors.verifyFailed'));
+    } finally {
+      setOtpSubmitting(false);
+    }
+  }, [pendingCardId, t]);
+
+  const handleOtpClose = useCallback(() => {
     setStep('list');
-  };
+  }, []);
 
   if (isLoading) {
     return (
@@ -130,20 +159,6 @@ export default function PaymentMethodsPage() {
           <h2 className="text-sm font-semibold mb-4">{t('addNewCard')}</h2>
           <CardForm
             onCardCreated={handleCardCreated}
-            onCancel={() => setStep('list')}
-          />
-        </div>
-      )}
-
-      {/* Verify OTP */}
-      {step === 'verify_otp' && (
-        <div className="rounded-xl border border-border bg-card p-6 mb-6">
-          <h2 className="text-sm font-semibold mb-4">{t('verifyCard')}</h2>
-          <CardOtpVerify
-            cardId={pendingCardId}
-            phoneMasked={phoneMasked}
-            waitMs={waitMs}
-            onVerified={handleCardVerified}
             onCancel={() => setStep('list')}
           />
         </div>
@@ -208,6 +223,20 @@ export default function PaymentMethodsPage() {
           ))}
         </div>
       )}
+
+      {/* OTP Dialog for card verification */}
+      <OtpDialog
+        isOpen={step === 'verify_otp'}
+        onClose={handleOtpClose}
+        onSubmit={handleOtpSubmit}
+        title={t('verifyCard')}
+        description={t('otpSentTo', { phone: phoneMasked })}
+        error={otpError}
+        isSubmitting={otpSubmitting}
+        countdown={otpCountdown}
+        onResend={handleOtpClose} // No resend API for card OTP; go back
+        isResending={false}
+      />
     </div>
   );
 }

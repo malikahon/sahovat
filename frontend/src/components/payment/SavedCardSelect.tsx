@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { savedCardsApi } from '@/lib/api';
 import type { SavedCard } from '@/lib/types';
 import { CardForm } from './CardForm';
-import { CardOtpVerify } from './CardOtpVerify';
+import { OtpDialog } from '@/components/shared/OtpDialog';
 
 type CardStep = 'select' | 'add_card' | 'verify_otp';
 
@@ -15,6 +15,8 @@ interface Props {
   onCardSelected: (cardId: string) => void;
   onBack?: () => void;
 }
+
+const RESEND_COOLDOWN = 60;
 
 /**
  * Card selection step in the donation flow.
@@ -31,7 +33,18 @@ export function SavedCardSelect({ onCardSelected, onBack }: Props) {
   // OTP state
   const [pendingCardId, setPendingCardId] = useState('');
   const [phoneMasked, setPhoneMasked] = useState('');
-  const [waitMs, setWaitMs] = useState(60000);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpSubmitting, setOtpSubmitting] = useState(false);
+  const [otpCountdown, setOtpCountdown] = useState(RESEND_COOLDOWN);
+
+  // Countdown timer
+  useEffect(() => {
+    if (step !== 'verify_otp' || otpCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setOtpCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [step, otpCountdown]);
 
   const loadCards = useCallback(async () => {
     setIsLoading(true);
@@ -61,17 +74,35 @@ export function SavedCardSelect({ onCardSelected, onBack }: Props) {
   const handleCardCreated = (cardId: string, phone: string, wait: number) => {
     setPendingCardId(cardId);
     setPhoneMasked(phone);
-    setWaitMs(wait);
+    setOtpError(null);
+    setOtpCountdown(Math.floor(wait / 1000));
     setStep('verify_otp');
   };
 
-  const handleCardVerified = (card: SavedCard) => {
-    setCards((prev) => [...prev, card]);
-    setSelectedId(card.id);
-    setStep('select');
-    // Auto-proceed with the newly verified card
-    onCardSelected(card.id);
-  };
+  const handleOtpSubmit = useCallback(async (code: string) => {
+    setOtpSubmitting(true);
+    setOtpError(null);
+    try {
+      const res = await savedCardsApi.verify(pendingCardId, code);
+      if (res.success && res.data) {
+        setCards((prev) => [...prev, res.data!]);
+        setSelectedId(res.data.id);
+        setStep('select');
+        // Auto-proceed with the newly verified card
+        onCardSelected(res.data.id);
+      } else {
+        setOtpError(res.error || t('errors.verifyFailed'));
+      }
+    } catch {
+      setOtpError(t('errors.verifyFailed'));
+    } finally {
+      setOtpSubmitting(false);
+    }
+  }, [pendingCardId, onCardSelected, t]);
+
+  const handleOtpClose = useCallback(() => {
+    setStep('add_card');
+  }, []);
 
   const handleConfirm = () => {
     if (selectedId) {
@@ -97,16 +128,28 @@ export function SavedCardSelect({ onCardSelected, onBack }: Props) {
     );
   }
 
-  // Step: Verify OTP
+  // Step: Verify OTP (dialog renders on top)
   if (step === 'verify_otp') {
     return (
-      <CardOtpVerify
-        cardId={pendingCardId}
-        phoneMasked={phoneMasked}
-        waitMs={waitMs}
-        onVerified={handleCardVerified}
-        onCancel={() => setStep('add_card')}
-      />
+      <>
+        <div className="flex items-center justify-center py-8">
+          <p className="text-sm text-muted-foreground">
+            {t('otpSentTo', { phone: phoneMasked })}
+          </p>
+        </div>
+        <OtpDialog
+          isOpen
+          onClose={handleOtpClose}
+          onSubmit={handleOtpSubmit}
+          title={t('verifyCard')}
+          description={t('otpSentTo', { phone: phoneMasked })}
+          error={otpError}
+          isSubmitting={otpSubmitting}
+          countdown={otpCountdown}
+          onResend={handleOtpClose} // No resend API for card OTP; go back to re-add
+          isResending={false}
+        />
+      </>
     );
   }
 

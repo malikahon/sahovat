@@ -3,6 +3,7 @@ import type { AuthenticatedRequest } from '../../types/middleware.js';
 import type { RequestOtpDto, VerifyOtpDto, AdminLoginDto, RefreshTokenDto } from '../../types/api.js';
 import * as authService from './auth.service.js';
 import type { RegisterData } from './auth.service.js';
+import { env } from '../../config/env.js';
 
 /**
  * POST /api/auth/request-otp
@@ -11,11 +12,12 @@ import type { RegisterData } from './auth.service.js';
 export async function requestOtp(req: Request, res: Response): Promise<void> {
   const { phone_number } = req.body as RequestOtpDto;
 
-  await authService.requestOtp(phone_number);
+  const otp = await authService.requestOtp(phone_number);
 
   res.status(200).json({
     success: true,
     message: 'OTP sent successfully',
+    ...(env.NODE_ENV !== 'production' && { dev_otp: otp }),
   });
 }
 

@@ -59,7 +59,7 @@ export async function requestDonationOtp(
   phone: string,
   campaignId: string,
   amount: number,
-): Promise<void> {
+): Promise<string> {
   // Verify campaign exists and is active
   const campaignResult = await query(
     `SELECT id, status FROM campaigns WHERE id = $1`,
@@ -98,6 +98,8 @@ export async function requestDonationOtp(
 
   const maskedPhone = phone.slice(0, 4) + '****' + phone.slice(-4);
   console.log(`[Sahovat] Donation OTP sent to ${maskedPhone} for ${amount} UZS`);
+
+  return otp;
 }
 
 /**

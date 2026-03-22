@@ -64,11 +64,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   /**
    * Step 1 of auth: request OTP for phone number.
    */
-  const login = useCallback(async (phone: string) => {
+  const login = useCallback(async (phone: string): Promise<string | undefined> => {
     const result = await authApi.requestOtp(phone);
     if (!result.success) {
       throw new Error(result.message || 'Failed to send OTP');
     }
+    return result.dev_otp;
   }, []);
 
   /**

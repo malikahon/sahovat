@@ -81,7 +81,7 @@ export const authApi = {
   /**
    * Send OTP to the given phone number.
    */
-  async requestOtp(phone_number: string): Promise<{ success: boolean; message?: string }> {
+  async requestOtp(phone_number: string): Promise<{ success: boolean; message?: string; dev_otp?: string }> {
     const res = await fetch('/api/auth/request-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -527,7 +527,7 @@ export const donationsApi = {
   async requestOtp(
     campaign_id: string,
     amount: number,
-  ): Promise<{ success: boolean; message?: string; error?: string }> {
+  ): Promise<{ success: boolean; message?: string; error?: string; dev_otp?: string }> {
     const res = await fetchWithRetry('/api/donations/request-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
