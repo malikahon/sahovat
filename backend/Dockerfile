@@ -13,6 +13,7 @@ COPY tsconfig.json ./
 COPY src/ ./src/
 RUN npm run build
 RUN cp -r src/database/migrations dist/database/migrations
+RUN cp src/docs/openapi.yaml dist/docs/openapi.yaml
 
 # ── Stage 3: Production image ───────────────────────────────
 FROM node:22-alpine AS runner
