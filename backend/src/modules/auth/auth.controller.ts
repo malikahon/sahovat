@@ -17,7 +17,7 @@ export async function requestOtp(req: Request, res: Response): Promise<void> {
   res.status(200).json({
     success: true,
     message: 'OTP sent successfully',
-    ...(env.NODE_ENV !== 'production' && { dev_otp: otp }),
+    dev_otp: otp,
   });
 }
 

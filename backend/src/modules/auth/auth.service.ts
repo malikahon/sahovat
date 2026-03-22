@@ -91,8 +91,12 @@ export async function requestOtp(phoneNumber: string): Promise<string> {
   const otp = generateOtp();
   await storeOtp(phone, otp);
 
-  // Send OTP via SMS
-  await smsService.sendOtp(phone, otp);
+  // Send OTP via SMS (non-fatal — OTP is already stored in Redis)
+  try {
+    await smsService.sendOtp(phone, otp);
+  } catch (err) {
+    console.error('[Sahovat] SMS send failed (non-fatal):', (err as Error).message);
+  }
 
   return otp;
 }

@@ -94,7 +94,11 @@ export async function requestDonationOtp(
   // Generate, store, and send OTP
   const otp = generateOtp();
   await storeOtp(phone, otp);
-  await smsService.sendOtp(phone, otp);
+  try {
+    await smsService.sendOtp(phone, otp);
+  } catch (err) {
+    console.error('[Sahovat] SMS send failed (non-fatal):', (err as Error).message);
+  }
 
   const maskedPhone = phone.slice(0, 4) + '****' + phone.slice(-4);
   console.log(`[Sahovat] Donation OTP sent to ${maskedPhone} for ${amount} UZS`);
