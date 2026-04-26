@@ -5,19 +5,31 @@ import { pool } from './config/database.js';
 import { redis } from './config/redis.js';
 import { startScheduler, stopScheduler } from './services/scheduler.service.js';
 import { warmUpOcr } from './services/ocr.service.js';
+import { runMigrations } from './database/migrate.js';
 
-const app = createApp();
+async function start() {
+  await runMigrations(false);
 
-const server = app.listen(env.PORT, () => {
-  console.log(`[Sahovat] Server running on port ${env.PORT}`);
-  console.log(`[Sahovat] Environment: ${env.NODE_ENV}`);
+  const app = createApp();
 
-  // Start cron scheduler for recurring donations
-  startScheduler();
+  server = app.listen(env.PORT, () => {
+    console.log(`[Sahovat] Server running on port ${env.PORT}`);
+    console.log(`[Sahovat] Environment: ${env.NODE_ENV}`);
 
-  // Pre-initialize Tesseract OCR worker in the background so the first
-  // document upload isn't slow waiting for worker init + language data download.
-  warmUpOcr();
+    // Start cron scheduler for recurring donations
+    startScheduler();
+
+    // Pre-initialize Tesseract OCR worker in the background so the first
+    // document upload isn't slow waiting for worker init + language data download.
+    warmUpOcr();
+  });
+}
+
+let server: ReturnType<import('express').Express['listen']>;
+
+start().catch((err) => {
+  console.error('[Sahovat] Failed to start:', err);
+  process.exit(1);
 });
 
 // Graceful shutdown

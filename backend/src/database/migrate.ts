@@ -29,7 +29,7 @@ async function getMigrationFiles(): Promise<string[]> {
   return files;
 }
 
-async function runMigrations(): Promise<void> {
+export async function runMigrations(closePool = true): Promise<void> {
   console.log('[Sahovat] Starting database migrations...');
 
   await ensureMigrationsTable();
@@ -41,7 +41,7 @@ async function runMigrations(): Promise<void> {
 
   if (pending.length === 0) {
     console.log('[Sahovat] No pending migrations.');
-    await pool.end();
+    if (closePool) await pool.end();
     return;
   }
 
@@ -72,11 +72,15 @@ async function runMigrations(): Promise<void> {
     console.log('[Sahovat] All migrations completed successfully.');
   } finally {
     client.release();
-    await pool.end();
+    if (closePool) await pool.end();
   }
 }
 
-runMigrations().catch((err) => {
-  console.error('[Sahovat] Migration failed:', err);
-  process.exit(1);
-});
+const isMainModule = process.argv[1]?.endsWith('migrate.js') || process.argv[1]?.endsWith('migrate.ts');
+
+if (isMainModule) {
+  runMigrations(true).catch((err) => {
+    console.error('[Sahovat] Migration failed:', err);
+    process.exit(1);
+  });
+}
