@@ -814,7 +814,7 @@ export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login(phone: string): Promise<string | undefined>;
+  login(phone: string): Promise<void>;
   verifyOtp(phone: string, otp: string): Promise<AuthResponse>;
   register(data: RegisterDto): Promise<void>;
   logout(): Promise<void>;

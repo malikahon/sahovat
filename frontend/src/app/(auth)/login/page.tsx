@@ -43,7 +43,6 @@ export default function LoginPage() {
   const [otpSubmitting, setOtpSubmitting] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(RESEND_COOLDOWN);
   const [otpResending, setOtpResending] = useState(false);
-  const [devOtp, setDevOtp] = useState<string | undefined>(undefined);
 
   const {
     register,
@@ -67,11 +66,10 @@ export default function LoginPage() {
     setError(null);
     try {
       const fullPhone = `+998${data.phone}`;
-      const devCode = await login(fullPhone);
+      await login(fullPhone);
       setOtpPhone(fullPhone);
       setOtpError(null);
       setOtpCountdown(RESEND_COOLDOWN);
-      setDevOtp(devCode);
       setShowOtp(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('otpInvalid'));
@@ -107,9 +105,8 @@ export default function LoginPage() {
     setOtpResending(true);
     setOtpError(null);
     try {
-      const devCode = await login(otpPhone);
+      await login(otpPhone);
       setOtpCountdown(RESEND_COOLDOWN);
-      setDevOtp(devCode);
     } catch (err) {
       setOtpError(err instanceof Error ? err.message : 'Failed to resend code');
     } finally {
@@ -196,7 +193,6 @@ export default function LoginPage() {
         countdown={otpCountdown}
         onResend={handleOtpResend}
         isResending={otpResending}
-        devOtp={devOtp}
       />
     </>
   );
