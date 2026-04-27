@@ -45,9 +45,24 @@ jobs:
     needs: guard
     steps:
       # ----------------------------------------------------------------
-      # 1. Pre-deploy: snapshot DB, tag current images, record state.
+      # 1. Pre-deploy: capture rollback target, pull new code, take
+      #    snapshot, tag :previous, write in-progress state file.
+      #
+      # IMPORTANT ordering:
+      #   a. Capture ROLLBACK_SHA from PRIOR successful deploy's state
+      #      (or git HEAD if no state yet) BEFORE we git-reset.
+      #   b. Capture image-id of running containers and tag :previous
+      #      BEFORE we build (so we always have a recoverable image).
+      #   c. ONLY THEN `git reset --hard $TARGET_SHA` — needed so that
+      #      `scripts/pre-deploy-snapshot.sh` (added in this PR) is on
+      #      disk before we try to run it.
+      #   d. Take snapshot.
+      #   e. Write `.last-deploy-state.in-progress` (NOT the final
+      #      state file — that's promoted only by post-deploy success).
       # ----------------------------------------------------------------
-      - name: pre-deploy — snapshot, tag, record state
+      - name: pre-deploy — capture state, pull code, snapshot, tag images
+        id: pre_deploy
+        continue-on-error: true
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -58,8 +73,7 @@ jobs:
             set -euo pipefail
             cd ${{ secrets.VPS_DEPLOY_PATH }}
 
-            # Disk-space gate. The build allocates a fresh image set;
-            # below 2 GB free we abort up-front rather than fail mid-build.
+            # --- a. Disk-space gate ---
             FREE_KB=$(df --output=avail -k / | tail -1)
             FREE_GB=$((FREE_KB / 1024 / 1024))
             echo "free disk: ${FREE_GB} GB"
@@ -68,50 +82,80 @@ jobs:
               exit 1
             fi
 
-            # Capture the currently-deployed SHA — this is the rollback target.
-            ROLLBACK_SHA=$(git rev-parse HEAD)
-            echo "rollback target SHA: $ROLLBACK_SHA"
+            # --- b. Determine ROLLBACK_SHA from prior successful deploy ---
+            # Priority:
+            #   1. .last-deploy-state (written by previous SUCCESSFUL deploy
+            #      — DEPLOY_TARGET_SHA is what's currently running).
+            #   2. git rev-parse HEAD as fallback for first deploy on the
+            #      new pipeline.
+            if [ -f .last-deploy-state ]; then
+              PRIOR_TARGET=$(grep '^DEPLOY_TARGET_SHA=' .last-deploy-state | cut -d= -f2 || true)
+              if [ -n "$PRIOR_TARGET" ]; then
+                ROLLBACK_SHA="$PRIOR_TARGET"
+                echo "rollback target SHA from prior state: $ROLLBACK_SHA"
+              else
+                ROLLBACK_SHA=$(git rev-parse HEAD)
+                echo "rollback target SHA from git HEAD (state malformed): $ROLLBACK_SHA"
+              fi
+            else
+              ROLLBACK_SHA=$(git rev-parse HEAD)
+              echo "rollback target SHA from git HEAD (no prior state): $ROLLBACK_SHA"
+            fi
 
-            # Take a pre-deploy snapshot. Script prints the path on stdout.
-            SNAPSHOT_FILE=$(bash scripts/pre-deploy-snapshot.sh)
-            echo "snapshot: $SNAPSHOT_FILE"
-
-            # Tag currently-running images as :previous so rollback can re-tag
-            # them back to :latest without rebuilding. If the :latest tag is
-            # missing for any reason (first deploy on the new pipeline), fall
-            # back to whatever image is currently in use by the running container.
+            # --- c. Tag currently-running images :previous ---
+            # Done BEFORE git pull so on-disk code drift doesn't matter.
             for svc in backend frontend; do
               if docker image inspect sahovat-${svc}:latest >/dev/null 2>&1; then
                 docker tag sahovat-${svc}:latest sahovat-${svc}:previous
+                echo "tagged sahovat-${svc}:previous from :latest"
               else
-                # Fallback: get image id from running container, retag it.
                 CID=$(docker ps -q --filter "name=sahovat_${svc}")
                 if [ -n "$CID" ]; then
                   IMG_ID=$(docker inspect --format '{{.Image}}' "$CID")
                   docker tag "$IMG_ID" sahovat-${svc}:previous
+                  echo "tagged sahovat-${svc}:previous from running container ${CID:0:12}"
                 else
-                  echo "::warning::no running sahovat_${svc} container; rollback will be limited"
+                  echo "::warning::no running sahovat_${svc} container; rollback for this service will be limited"
                 fi
               fi
             done
 
-            # Persist state so the rollback step (separate SSH session) can read it.
-            cat > .last-deploy-state <<EOF
+            # --- d. NOW pull new code so scripts/ are on disk ---
+            TARGET_SHA="${{ inputs.target_sha }}"
+            if [ -z "$TARGET_SHA" ]; then
+              TARGET_SHA="${{ github.sha }}"
+            fi
+            echo "target SHA: $TARGET_SHA"
+            git fetch origin
+            git reset --hard "$TARGET_SHA"
+
+            # --- e. Take pre-deploy snapshot ---
+            if [ ! -x scripts/pre-deploy-snapshot.sh ]; then
+              echo "::error::scripts/pre-deploy-snapshot.sh missing or not executable after git reset"
+              exit 1
+            fi
+            SNAPSHOT_FILE=$(bash scripts/pre-deploy-snapshot.sh)
+            echo "snapshot: $SNAPSHOT_FILE"
+
+            # --- f. Write IN-PROGRESS state file (promoted to final on success) ---
+            cat > .last-deploy-state.in-progress <<EOF
             ROLLBACK_SHA=$ROLLBACK_SHA
             SNAPSHOT_FILE=$SNAPSHOT_FILE
             DEPLOY_TIMESTAMP=$(date -Iseconds)
-            DEPLOY_TARGET_SHA=${{ inputs.target_sha || github.sha }}
+            DEPLOY_TARGET_SHA=$TARGET_SHA
             EOF
-            echo "state file written:"
-            cat .last-deploy-state
+            echo "in-progress state file written:"
+            cat .last-deploy-state.in-progress
 
       # ----------------------------------------------------------------
-      # 2. Deploy: pull, build, up, migrate. Any failure → rollback.
+      # 2. Deploy: build, up, migrate. Health-gated.
+      #    Pre-deploy already pulled the code; this step only builds.
       # ----------------------------------------------------------------
-      - name: deploy — pull, build, up, migrate
+      - name: deploy — build, up, migrate
         id: deploy
-        uses: appleboy/ssh-action@v1
+        if: steps.pre_deploy.outcome == 'success'
         continue-on-error: true
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -120,16 +164,6 @@ jobs:
           script: |
             set -euo pipefail
             cd ${{ secrets.VPS_DEPLOY_PATH }}
-
-            # Resolve target SHA. Empty input means "whatever the workflow ref points to".
-            TARGET_SHA="${{ inputs.target_sha }}"
-            if [ -z "$TARGET_SHA" ]; then
-              TARGET_SHA="${{ github.sha }}"
-            fi
-            echo "deploying SHA: $TARGET_SHA"
-
-            git fetch origin
-            git reset --hard "$TARGET_SHA"
 
             # Build with build args read from .env.production for the frontend
             # NEXT_PUBLIC_* values that need to be inlined at build time.
@@ -147,8 +181,7 @@ jobs:
               if [ "$STATUS" = "healthy" ]; then
                 break
               fi
-              if [ "$STATUS" = "missing" ] || [ "$STATUS" = "unhealthy" ]; then
-                # Don't waste budget if container has crashed outright.
+              if [ "$STATUS" = "missing" ]; then
                 if ! docker ps --format '{{.Names}}' | grep -qx sahovat_backend; then
                   echo "::error::sahovat_backend container is not running"
                   docker compose -f docker-compose.prod.yml logs --tail 100 backend
@@ -191,10 +224,16 @@ jobs:
               --max-attempts 6 --interval-seconds 10
 
       # ----------------------------------------------------------------
-      # 4. Rollback if either deploy or health-check failed.
+      # 4. Rollback if pre-deploy, deploy, or health-check failed.
+      #
+      # IMPORTANT: only roll back if pre-deploy got far enough to write
+      # the in-progress state file. If pre-deploy failed before that
+      # (disk gate, image tagging issues, git pull failure, etc.),
+      # production is unchanged and there's nothing to roll back to —
+      # we just report and exit.
       # ----------------------------------------------------------------
-      - name: rollback — on deploy or health failure
-        if: steps.deploy.outcome != 'success' || steps.health.outcome != 'success'
+      - name: rollback — on any pre-deploy / deploy / health failure
+        if: steps.pre_deploy.outcome != 'success' || steps.deploy.outcome != 'success' || steps.health.outcome != 'success'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -204,20 +243,37 @@ jobs:
           script: |
             set -euo pipefail
             cd ${{ secrets.VPS_DEPLOY_PATH }}
-            echo "::warning::deploy or health check failed — invoking rollback"
+
+            if [ ! -f .last-deploy-state.in-progress ]; then
+              echo "::warning::pre-deploy never wrote .last-deploy-state.in-progress"
+              echo "production state is unchanged — nothing to roll back"
+              echo "containers, database, and prior :previous tags untouched"
+              exit 0
+            fi
+
+            echo "::warning::deploy failed — invoking rollback"
+            cat .last-deploy-state.in-progress
             bash scripts/rollback.sh --yes
 
+            # Clean up the in-progress marker so a future manual rollback
+            # via scripts/rollback.sh doesn't try to act on it again.
+            rm -f .last-deploy-state.in-progress
+
       - name: fail workflow if rollback occurred
-        if: steps.deploy.outcome != 'success' || steps.health.outcome != 'success'
+        if: steps.pre_deploy.outcome != 'success' || steps.deploy.outcome != 'success' || steps.health.outcome != 'success'
         run: |
-          echo "::error::deploy was rolled back. See preceding log for details."
+          echo "::error::deploy failed. See preceding log for rollback details."
+          echo "  pre_deploy: ${{ steps.pre_deploy.outcome }}"
+          echo "  deploy:     ${{ steps.deploy.outcome }}"
+          echo "  health:     ${{ steps.health.outcome }}"
           exit 1
 
       # ----------------------------------------------------------------
-      # 5. Success bookkeeping: dated rollback tag + retention trim.
+      # 5. Success bookkeeping: promote in-progress state, dated tag,
+      #    retention prune.
       # ----------------------------------------------------------------
-      - name: post-deploy — tag dated rollback point + prune
-        if: steps.deploy.outcome == 'success' && steps.health.outcome == 'success'
+      - name: post-deploy — promote state, tag dated rollback point, prune
+        if: steps.pre_deploy.outcome == 'success' && steps.deploy.outcome == 'success' && steps.health.outcome == 'success'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -227,6 +283,11 @@ jobs:
             set -euo pipefail
             cd ${{ secrets.VPS_DEPLOY_PATH }}
 
+            # Promote in-progress → final. Next deploy reads this for
+            # ROLLBACK_SHA.
+            mv .last-deploy-state.in-progress .last-deploy-state
+            echo "state promoted to .last-deploy-state"
+
             DATED_TAG="rollback-$(date +%Y%m%d-%H%M)"
             docker tag sahovat-backend:latest  sahovat-backend:${DATED_TAG}
             docker tag sahovat-frontend:latest sahovat-frontend:${DATED_TAG}
@@ -234,7 +295,6 @@ jobs:
 
             # Retain the 3 most recent dated rollback tags per service.
             for svc in backend frontend; do
-              # List dated tags newest-first, skip first 3, delete rest.
               docker images "sahovat-${svc}" --format '{{.Tag}}' \
                 | grep -E '^rollback-[0-9]{8}-[0-9]{4}$' \
                 | sort -r \
@@ -246,10 +306,8 @@ jobs:
             done
 
             # Echo deploy summary for the workflow log.
-            if [ -f .last-deploy-state ]; then
-              echo "----- deploy summary -----"
-              cat .last-deploy-state
-              echo "--------------------------"
-            fi
+            echo "----- deploy summary -----"
+            cat .last-deploy-state
+            echo "--------------------------"
 
             echo "deploy successful — rollback target preserved as :previous and ${DATED_TAG}"

@@ -256,7 +256,8 @@ Retains the 3 most recent pre-deploy snapshots. Daily 7-day backups (`scripts/ba
 
 | Path | Purpose |
 |------|---------|
-| `~/sahovat/.last-deploy-state` | KV file written by the deploy workflow with `ROLLBACK_SHA`, `SNAPSHOT_FILE`, `DEPLOY_TIMESTAMP`, `DEPLOY_TARGET_SHA`. Read by `scripts/rollback.sh`. Gitignored. |
+| `~/sahovat/.last-deploy-state.in-progress` | Written by pre-deploy step. Holds the rollback target for the IN-FLIGHT deploy. Promoted to `.last-deploy-state` by the post-deploy success step, OR consumed by auto-rollback on failure. Gitignored. |
+| `~/sahovat/.last-deploy-state` | Written by the post-deploy step on a SUCCESSFUL deploy. Holds `ROLLBACK_SHA`, `SNAPSHOT_FILE`, `DEPLOY_TIMESTAMP`, `DEPLOY_TARGET_SHA`. Read by `scripts/rollback.sh` for manual rollback after a green-but-broken deploy. Gitignored. |
 | `~/sahovat/backups/pre-deploy-*.sql.gz` | Last 3 pre-deploy DB snapshots. |
 | `~/sahovat/backups/sahovat_*.sql.gz` | Last 7 daily cron snapshots. |
 | `sahovat-{backend,frontend}:previous` | Image tags pointing at the version that was running before the most recent deploy. |
