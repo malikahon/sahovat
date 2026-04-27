@@ -11,9 +11,13 @@ out/
 .env.local
 .env.*.local
 .env.production
+.env.demo
 
 # Backups
 backups/
+
+# Deploy pipeline state (written by .github/workflows/deploy.yml on the VPS)
+.last-deploy-state
 
 # Logs
 *.log
@@ -53,6 +57,7 @@ docker-compose.override.yml
 *.tsbuildinfo
 .turbo/
 roadmap.md
+roadmap_short.md
 functional-requirements.md
 demo-script.md
 Sahovat_Final_report.docx

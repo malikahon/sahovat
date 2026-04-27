@@ -1,0 +1,139 @@
+name: smoke
+
+# PR-time end-to-end smoke. Builds backend + frontend Docker images,
+# brings up postgres/redis from docker-compose.yml (the dev compose),
+# runs migrations against a fresh database, then verifies that
+# /api/health returns 200 + status:ok.
+#
+# Catches: zod env validation regressions, migration failures against
+# fresh schema, container startup crashes, build failures, missing
+# package.json scripts.
+#
+# Doesn't catch: nginx routing (no nginx in dev compose), real
+# Telegram/Resend integration (mocks used), prod-specific issues.
+# Those are checked manually in Phase 7.
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: docker-compose smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: bring up postgres + redis (dev compose)
+        run: |
+          docker compose up -d postgres redis
+          # Give the healthchecks time to settle.
+          for i in $(seq 1 12); do
+            PG=$(docker inspect --format '{{.State.Health.Status}}' sahovat_postgres 2>/dev/null || echo missing)
+            RD=$(docker inspect --format '{{.State.Health.Status}}' sahovat_redis 2>/dev/null || echo missing)
+            echo "  attempt $i: postgres=$PG redis=$RD"
+            if [ "$PG" = "healthy" ] && [ "$RD" = "healthy" ]; then break; fi
+            sleep 5
+          done
+          docker inspect --format '{{.State.Health.Status}}' sahovat_postgres | grep -q healthy
+          docker inspect --format '{{.State.Health.Status}}' sahovat_redis | grep -q healthy
+
+      - name: build backend image
+        run: docker build -t sahovat-backend:smoke ./backend
+
+      - name: run backend migrations
+        env:
+          DATABASE_URL: postgresql://sahovat:sahovat@localhost:5433/sahovat
+          REDIS_URL: redis://localhost:6379
+        run: |
+          docker run --rm \
+            --network host \
+            -e NODE_ENV=development \
+            -e DATABASE_URL=postgresql://sahovat:sahovat@localhost:5433/sahovat \
+            -e REDIS_URL=redis://localhost:6379 \
+            sahovat-backend:smoke node dist/database/migrate.js
+
+      - name: run backend container
+        run: |
+          docker run -d \
+            --name backend-smoke \
+            --network host \
+            -e NODE_ENV=development \
+            -e PORT=3001 \
+            -e DATABASE_URL=postgresql://sahovat:sahovat@localhost:5433/sahovat \
+            -e REDIS_URL=redis://localhost:6379 \
+            -e JWT_SECRET=smoke-jwt-secret-32-characters-long! \
+            -e JWT_REFRESH_SECRET=smoke-jwt-refresh-secret-32-chars-long! \
+            -e ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
+            -e EMAIL_PROVIDER=mock \
+            -e TELEGRAM_PROVIDER=mock \
+            -e PAYMENT_PROVIDER_CLICK=mock \
+            -e SMS_ESKIZ_TEST_MODE=false \
+            sahovat-backend:smoke
+
+          # Wait up to 60s for /api/health to return 200 + ok.
+          for i in $(seq 1 12); do
+            BODY=$(curl -sf http://localhost:3001/api/health 2>/dev/null || echo "")
+            if echo "$BODY" | grep -q '"status":"ok"'; then
+              echo "backend healthy after ${i} attempts: $BODY"
+              exit 0
+            fi
+            echo "  attempt $i/12: not yet ($BODY)"
+            sleep 5
+          done
+
+          echo "::error::backend never became healthy"
+          docker logs backend-smoke
+          exit 1
+
+      - name: build frontend image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=http://localhost:3001/api \
+            --build-arg NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=SahovatTechBot \
+            -t sahovat-frontend:smoke ./frontend
+
+      - name: run frontend container + verify root
+        run: |
+          docker run -d \
+            --name frontend-smoke \
+            --network host \
+            -e NEXT_PUBLIC_API_URL=http://localhost:3001/api \
+            -e BACKEND_URL=http://localhost:3001/api \
+            sahovat-frontend:smoke
+
+          for i in $(seq 1 12); do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/ || echo 000)
+            if [ "$CODE" = "200" ]; then
+              echo "frontend root returns 200 after ${i} attempts"
+              exit 0
+            fi
+            echo "  attempt $i/12: http=$CODE"
+            sleep 5
+          done
+
+          echo "::error::frontend never returned 200 on /"
+          docker logs frontend-smoke
+          exit 1
+
+      - name: dump logs on failure
+        if: failure()
+        run: |
+          echo "----- backend logs -----"
+          docker logs backend-smoke 2>&1 || true
+          echo "----- frontend logs -----"
+          docker logs frontend-smoke 2>&1 || true
+          echo "----- postgres logs -----"
+          docker logs sahovat_postgres 2>&1 | tail -50 || true
+
+      - name: tear down
+        if: always()
+        run: |
+          docker rm -f backend-smoke frontend-smoke 2>/dev/null || true
+          docker compose down -v 2>/dev/null || true
