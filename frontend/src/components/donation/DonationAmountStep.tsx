@@ -20,7 +20,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { formatUZS } from '@/lib/formatters';
-import type { VerificationStatus } from '@/lib/types';
+import { ProviderSelector } from './ProviderSelector';
+import { PaymentProvider, type VerificationStatus } from '@/lib/types';
 
 // ============================================================
 // Types
@@ -34,6 +35,7 @@ export interface DonationFormData {
   note: string;
   isRecurring: boolean;
   recurringFrequency: 'weekly' | 'monthly' | null;
+  paymentProvider: import('@/lib/types').PaymentProvider;
 }
 
 interface Props {
@@ -67,6 +69,7 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, verificatio
   const [note, setNote] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringFrequency, setRecurringFrequency] = useState<'weekly' | 'monthly'>('monthly');
+  const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>(PaymentProvider.PAYME);
   const [error, setError] = useState('');
   const [verificationDialog, setVerificationDialog] = useState<'required' | 'pending' | null>(null);
 
@@ -115,6 +118,7 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, verificatio
       note: note.trim(),
       isRecurring,
       recurringFrequency: isRecurring ? recurringFrequency : null,
+      paymentProvider,
     });
   };
 
@@ -325,6 +329,9 @@ export function DonationAmountStep({ campaignTitle, userDisplayName, verificatio
           <span className="font-semibold text-foreground">{formatUZS(amount)}</span>
         </div>
       )}
+
+      {/* Payment provider selection */}
+      <ProviderSelector value={paymentProvider} onChange={setPaymentProvider} />
 
       {/* CTA */}
       <Button className="w-full" size="lg" onClick={handleSubmit} disabled={amount < MIN_AMOUNT}>

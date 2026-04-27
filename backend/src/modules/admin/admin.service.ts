@@ -2,6 +2,7 @@ import { query } from '../../config/database.js';
 import { encrypt, decrypt } from '../../lib/encryption.js';
 import { NotFoundError, ForbiddenError, ValidationError } from '../../lib/errors.js';
 import { getTotalEscrow, getPlatformRevenue, invalidateFeeCache } from '../donations/ledger.service.js';
+import { dispatchSafe } from '../../services/notifications/dispatcher.js';
 import type { AdminDashboardStats } from '../../types/api.js';
 import type {
   AdminUserRow,
@@ -539,13 +540,20 @@ export async function verifyCampaign(
     `UPDATE campaigns
      SET is_verified = $1, status = $2
      WHERE id = $3
-     RETURNING id, status`,
+     RETURNING id, status, title, creator_id`,
     [dto.verified, newStatus, campaignId],
   );
 
   if (result.rows.length === 0) {
     throw new NotFoundError('Campaign', campaignId);
   }
+
+  const updated = result.rows[0] as {
+    id: string;
+    status: string;
+    title: string;
+    creator_id: string;
+  };
 
   await logAdminAction(
     adminId,
@@ -554,6 +562,20 @@ export async function verifyCampaign(
     campaignId,
     { verified: dto.verified, admin_notes: dto.admin_notes, new_status: newStatus },
   );
+
+  // Fire-and-forget: notify organizer that their campaign was approved.
+  // We deliberately do NOT notify on rejection — that's currently a
+  // dashboard-only signal. Add a 'campaign_rejected' event later if needed.
+  if (dto.verified) {
+    void dispatchSafe({
+      user_id: updated.creator_id,
+      event_type: 'campaign_verified',
+      payload: {
+        campaignId: updated.id,
+        campaignTitle: updated.title,
+      },
+    });
+  }
 }
 
 export async function updateCampaignStatus(

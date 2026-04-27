@@ -1,0 +1,193 @@
+[
+  {
+    "id": "donating-1",
+    "category": "donating",
+    "q": "Xayriya qilish uchun ro'yxatdan o'tish kerakmi?",
+    "a": "Yo'q. Har kim ro'yxatdan o'tmasdan ham xayriya qilishi mumkin. Akkaunt yaratsangiz, keyinchalik kvitansiyalarni yuklab olishingiz, xayriyalar tarixini ko'rishingiz va takrorlanuvchi xayriyalarni sozlashingiz mumkin."
+  },
+  {
+    "id": "donating-2",
+    "category": "donating",
+    "q": "Eng kam xayriya miqdori qancha?",
+    "a": "1 000 so'm. Eng yuqori chegara yo'q."
+  },
+  {
+    "id": "donating-3",
+    "category": "donating",
+    "q": "Anonim xayriya qilish mumkinmi?",
+    "a": "Ha. Har bir xayriyada ismingizni jamoatchilikdan yashirish uchun katakcha bor. Ma'lumotlaringiz ichki tarzda saqlanadi (kvitansiya va qaytarish uchun), ammo kampaniya yonida hech qachon ko'rsatilmaydi."
+  },
+  {
+    "id": "donating-4",
+    "category": "donating",
+    "q": "Kvitansiya olishim mumkinmi?",
+    "a": "Ha. Har bir tugatilgan xayriya yuklab olinadigan PDF kvitansiyani yaratadi. Tizimga kirgan foydalanuvchilar uni \"Mening xayriyalarim\" bo'limidan topadilar. Mehmon sifatida xayriya qilgan va email ko'rsatgan bo'lsangiz, kvitansiya havolasi tasdiq xabarida bo'ladi."
+  },
+  {
+    "id": "donating-5",
+    "category": "donating",
+    "q": "Xayriyani bekor qilish mumkinmi?",
+    "a": "To'lov amalga oshirilgandan keyin xayriyalar yakuniy hisoblanadi. Noto'g'ri kampaniyaga xayriya qilgan bo'lsangiz yoki xato deb hisoblasangiz, 24 soat ichida biz bilan bog'laning — har bir holatni alohida ko'rib chiqamiz."
+  },
+  {
+    "id": "donating-6",
+    "category": "donating",
+    "q": "Takrorlanuvchi xayriyalar sozlash mumkinmi?",
+    "a": "Ha. Tizimga kirgan holda dastlabki xayriyani amalga oshirgandan so'ng, uni oylik takrorlanuvchi xayriyaga aylantirishingiz mumkin. Istalgan vaqtda boshqaruv panelidan to'xtatib qo'yish yoki bekor qilish mumkin."
+  },
+
+  {
+    "id": "creating-1",
+    "category": "creating",
+    "q": "Kim kampaniya yarata oladi?",
+    "a": "18 yoshdan oshgan, identifikatsiyadan o'tgan har qanday O'zbekiston fuqarosi. Identifikatsiya OneID orqali bir marta amalga oshiriladi va kelgusida kampaniya yaratish imkonini beradi."
+  },
+  {
+    "id": "creating-2",
+    "category": "creating",
+    "q": "Tekshiruv qancha vaqt oladi?",
+    "a": "OneID orqali identifikatsiya bir zumda. Kampaniya admin jamoamiz tomonidan odatda 1 ish kuni, ba'zan 2 ish kunigacha ko'rib chiqiladi."
+  },
+  {
+    "id": "creating-3",
+    "category": "creating",
+    "q": "Qanday hujjatlar kerak?",
+    "a": "Bu kategoriyaga bog'liq — tibbiy kampaniyalar uchun shifoxona hisob-fakturalari yoki shifokor xulosasi, ta'lim uchun o'qishga qabul qilinganlik xati va h.k. To'liq ro'yxatni \"Tashkilotchi qo'llanmasi\" sahifasida ko'ring."
+  },
+  {
+    "id": "creating-4",
+    "category": "creating",
+    "q": "Kampaniya nashr etilgandan keyin uni tahrirlash mumkinmi?",
+    "a": "Tavsif, suratlar va yangiliklarni istalgan vaqtda tahrirlashingiz mumkin. Maqsad summasi, kategoriya va shaxs ma'lumotlari tasdiqdan keyin qulflanadi — ularni o'zgartirish uchun qo'llab-quvvatlash xizmatiga murojaat qiling."
+  },
+  {
+    "id": "creating-5",
+    "category": "creating",
+    "q": "Agar kampaniyam rad etilsa nima qilaman?",
+    "a": "Sababini tushuntiruvchi xabar olasiz, va muammoni hal qilgandan so'ng qayta yuborishingiz mumkin. Eng ko'p uchraydigan sabablar: hujjatlarning yo'qligi, hikoyaning tushunarsizligi, real bo'lmagan maqsad summasi."
+  },
+
+  {
+    "id": "withdrawals-1",
+    "category": "withdrawals",
+    "q": "Pulni qachon yechib olishim mumkin?",
+    "a": "Birinchi tugallangan xayriyadan keyin istalgan vaqtda. Eng kam balans talabi yoki kutish davri yo'q."
+  },
+  {
+    "id": "withdrawals-2",
+    "category": "withdrawals",
+    "q": "Pul yechib olish qancha vaqt oladi?",
+    "a": "1–3 ish kuni. Har bir pul yechish so'rovi to'lashdan oldin tasdiqlangan shaxsingizga taqqoslab qo'lda ko'rib chiqiladi."
+  },
+  {
+    "id": "withdrawals-3",
+    "category": "withdrawals",
+    "q": "Pul yechib olishda komissiya bormi?",
+    "a": "Platforma komissiyasi va to'lov ishlovi komissiyalari avtomatik ravishda yechib olinadi. Aniq taqsimot tasdiqlashdan oldin har bir pul yechish so'rovida ko'rsatiladi."
+  },
+  {
+    "id": "withdrawals-4",
+    "category": "withdrawals",
+    "q": "Nega bank kartasidagi ism tasdiqlangan ismimga mos kelishi shart?",
+    "a": "Bu firibgarlikdan himoyalanish qoidasi — tasdiqlangan shaxs tomonidan to'plangan mablag'lar faqat shu shaxsning ismidagi kartaga to'lanishi mumkin. Bu buzilgan akkauntlar orqali xayriyalarni qayta yo'naltirishni oldini oladi."
+  },
+  {
+    "id": "withdrawals-5",
+    "category": "withdrawals",
+    "q": "Qarindoshim kartasiga pul yechib olish mumkinmi?",
+    "a": "Yo'q. Karta tasdiqlangan shaxs ismida bo'lishi shart."
+  },
+
+  {
+    "id": "account-1",
+    "category": "account",
+    "q": "Qanday ro'yxatdan o'taman?",
+    "a": "\"Ro'yxatdan o'tish\" tugmasini bosing. Telefon raqamingiz orqali (SMS kod yuboramiz) yoki Telegram akkauntingiz orqali bir tugma bosish bilan ro'yxatdan o'tishingiz mumkin."
+  },
+  {
+    "id": "account-2",
+    "category": "account",
+    "q": "Agar SMS kod kelmasa nima qilishim kerak?",
+    "a": "Telegram orqali kirishni sinab ko'ring — bu bir zumda. Agar baribir SMS kerak bo'lsa, raqamingizni tekshiring va bir daqiqadan keyin qaytadan urinib ko'ring."
+  },
+  {
+    "id": "account-3",
+    "category": "account",
+    "q": "Mavjud akkauntimga Telegramni qanday bog'layman?",
+    "a": "Profil → Bog'langan akkauntlar → Telegramni bog'lash. Telegram Login Widget ochiladi va akkauntingizni bir tugma bosish bilan bog'laydi."
+  },
+  {
+    "id": "account-4",
+    "category": "account",
+    "q": "Email manzilimni qanday o'zgartiraman?",
+    "a": "Profil → Bog'langan akkauntlar → Email tahrirlash. Yangi manzilni saqlashdan oldin uni tasdiqlash uchun 6 raqamli kod yuboramiz."
+  },
+  {
+    "id": "account-5",
+    "category": "account",
+    "q": "Akkauntimni o'chirib tashlashim mumkinmi?",
+    "a": "Ha. Qo'llab-quvvatlash xizmatiga murojaat qiling — 7 ish kuni ichida o'chirib tashlaymiz. O'zbekiston soliq qonunchiligiga muvofiq xayriya yozuvlarini saqlaymiz, ammo shaxsiy ma'lumotlar olib tashlanadi."
+  },
+
+  {
+    "id": "payments-1",
+    "category": "payments",
+    "q": "Qanday to'lov usullari qabul qilinadi?",
+    "a": "PayMe va Click — O'zbekistondagi ikki yirik karta to'lov tizimlari. Ikkalasi ham Uzcard va Humo kartalarini qabul qiladi."
+  },
+  {
+    "id": "payments-2",
+    "category": "payments",
+    "q": "Xalqaro kartalar qo'llab-quvvatlanadimi?",
+    "a": "Hozircha yo'q. PayMe va Click ikkalasi ham O'zbekistonda chiqarilgan kartalarni talab qiladi. Visa/Mastercard qo'llab-quvvatlashni keyinroq joriy etish ko'rib chiqilmoqda."
+  },
+  {
+    "id": "payments-3",
+    "category": "payments",
+    "q": "Karta ma'lumotlarim xavfsizmi?",
+    "a": "Ha. Karta ma'lumotlaringiz PayMe yoki Clickning o'z to'lov sahifasida kiritiladi — ular hech qachon Sahovat serverlariga tushmaydi. Biz faqat tokenizatsiyalangan havolani olamiz."
+  },
+  {
+    "id": "payments-4",
+    "category": "payments",
+    "q": "Agar to'lov muvaffaqiyatsiz bo'lsa nima bo'ladi?",
+    "a": "Muvaffaqiyatsiz to'lovlar kampaniyaga ta'sir qilmaydi va kartangizdan yechib olinmaydi. Qaytadan urinib ko'ring yoki birida nosozlik bo'lsa PayMe va Click o'rtasida almashtiring."
+  },
+  {
+    "id": "payments-5",
+    "category": "payments",
+    "q": "Platforma komissiyasi qanday hisoblanadi?",
+    "a": "Har bir tugallangan xayriyaning kichik foizi va to'lov tizimining o'z komissiyasi. Aniq taqsimot har qanday to'lovni tasdiqlashdan oldin ko'rsatiladi."
+  },
+
+  {
+    "id": "telegram-1",
+    "category": "telegramSms",
+    "q": "Telegram orqali kirish va Telegram bildirishnomalari o'rtasida nima farq?",
+    "a": "Kirish — Telegram orqali kim ekanligingizni tasdiqlash, ya'ni tizimga kirish. Bildirishnomalar — xayriyalar, kampaniya yangiliklari va boshqa hodisalar haqida Telegram chatingizga yuboradigan xabarlar. Bular alohida funksiyalar va birini boshqasisiz ham ishlatishingiz mumkin."
+  },
+  {
+    "id": "telegram-2",
+    "category": "telegramSms",
+    "q": "Telegram bildirishnomalarini qanday yoqaman?",
+    "a": "Telegramda @SahovatTechBot ni oching va Boshlash ni bosing. Shundan so'ng Profil → Bildirishnomalar bo'limida qaysi hodisalar uchun bildirishnoma olishni xohlasangiz tanlang."
+  },
+  {
+    "id": "telegram-3",
+    "category": "telegramSms",
+    "q": "SMS bildirishnomalarini o'chirib qo'yish mumkinmi?",
+    "a": "Ha — Profil → Bildirishnomalar bo'limida hodisalar (xayriya kvitansiyasi, pul yechish yangiliklari va h.k.) va kanallar (SMS, Telegram, Email) jadvalini ko'rasiz. Har birini mustaqil yoqishingiz/o'chirishingiz mumkin."
+  },
+  {
+    "id": "telegram-4",
+    "category": "telegramSms",
+    "q": "SMS yoki Telegram xabarlari kelmayapti — nima qilaman?",
+    "a": "Avval Profil → Bildirishnomalar bo'limida o'sha hodisa uchun kanal yoqilganligini tekshiring. Yoqilgan bo'lsa, qo'llab-quvvatlash xizmatiga murojaat qiling — aksariyat hollar telefon yoki Telegram akkauntini qayta bog'lash bilan hal etiladi."
+  },
+  {
+    "id": "telegram-5",
+    "category": "telegramSms",
+    "q": "Reklama xabarlari yuborasizlarmi?",
+    "a": "Yo'q. Biz faqat xayriya, kampaniya yoki akkauntingiz haqidagi tranzaksion bildirishnomalarni yuboramiz. Reklama kanali yo'q."
+  }
+]

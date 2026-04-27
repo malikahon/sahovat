@@ -22,6 +22,8 @@ export interface CampaignRow {
   is_verified: boolean;
   end_date: string | null;
   cover_image_url: string | null;
+  /** Highest milestone percent already announced (0 | 25 | 50 | 75 | 90 | 100). */
+  last_milestone_notified: number;
   created_at: string;
   updated_at: string;
 }

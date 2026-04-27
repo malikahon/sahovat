@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { authApi } from '@/lib/api';
-import type { User, RegisterDto, AuthContextType } from '@/lib/types';
+import type { User, RegisterDto, AuthContextType, TelegramAuthPayload } from '@/lib/types';
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -63,13 +63,63 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   /**
    * Step 1 of auth: request OTP for phone number.
+   * The OTP code is never returned over the wire — read it from the
+   * SMS (production) or backend logs (dev).
    */
-  const login = useCallback(async (phone: string): Promise<string | undefined> => {
+  const login = useCallback(async (phone: string): Promise<void> => {
     const result = await authApi.requestOtp(phone);
     if (!result.success) {
       throw new Error(result.message || 'Failed to send OTP');
     }
-    return result.dev_otp;
+  }, []);
+
+  /**
+   * Telegram Login Widget callback — exchanges the verified payload
+   * for a session. Returns is_new_user so callers can redirect to
+   * /register when appropriate.
+   */
+  const telegramLogin = useCallback(
+    async (payload: TelegramAuthPayload) => {
+      const result = await authApi.telegramLogin(payload);
+      if (!result.success || !result.data) {
+        throw new Error(result.error || result.message || 'Telegram login failed');
+      }
+      if (result.data.user) {
+        setUser(result.data.user);
+      }
+      return {
+        user: result.data.user,
+        is_new_user: result.data.is_new_user,
+      };
+    },
+    [],
+  );
+
+  /**
+   * Link a Telegram account to the currently logged-in user.
+   */
+  const telegramLink = useCallback(
+    async (payload: TelegramAuthPayload) => {
+      const result = await authApi.telegramLink(payload);
+      if (!result.success || !result.data) {
+        throw new Error(result.error || result.message || 'Failed to link Telegram');
+      }
+      setUser(result.data.user);
+      return result.data.user;
+    },
+    [],
+  );
+
+  /**
+   * Unlink the user's Telegram identity.
+   */
+  const telegramUnlink = useCallback(async () => {
+    const result = await authApi.telegramUnlink();
+    if (!result.success || !result.data) {
+      throw new Error(result.error || result.message || 'Failed to unlink Telegram');
+    }
+    setUser(result.data.user);
+    return result.data.user;
   }, []);
 
   /**
@@ -151,8 +201,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       register,
       logout,
       refreshUser,
+      telegramLogin,
+      telegramLink,
+      telegramUnlink,
     }),
-    [user, isLoading, isAuthenticated, login, verifyOtp, register, logout, refreshUser],
+    [
+      user,
+      isLoading,
+      isAuthenticated,
+      login,
+      verifyOtp,
+      register,
+      logout,
+      refreshUser,
+      telegramLogin,
+      telegramLink,
+      telegramUnlink,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

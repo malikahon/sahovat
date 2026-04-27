@@ -20,6 +20,11 @@ import type {
   ImpactStats,
 } from './recurring.types.js';
 import * as ledgerService from '../donations/ledger.service.js';
+import { dispatchSafe } from '../../services/notifications/dispatcher.js';
+import {
+  computeCrossedMilestones,
+  highestCrossed,
+} from '../../services/notifications/milestones.js';
 
 // ============================================================
 // HELPERS
@@ -412,7 +417,7 @@ export async function processRecurringCharge(
     }
 
     const recurring = recurringResult.rows[0] as RecurringDonationRow & {
-      phone_number: string;
+      phone_number: string | null;
     };
 
     if (recurring.status !== RecurringStatus.ACTIVE) {
@@ -547,7 +552,7 @@ export async function processRecurringCharge(
         amount,
         donation_id: donation.id,
         card_token: defaultCard.card_token,
-        payer_phone: recurring.phone_number,
+        payer_phone: recurring.phone_number ?? undefined,
       });
 
       if (!chargeResult.success) {
@@ -556,8 +561,9 @@ export async function processRecurringCharge(
           `UPDATE donations SET status = $1 WHERE id = $2`,
           [DonationStatus.FAILED, donation.id],
         );
-        await handleChargeFailure(client, recurringId, recurring.phone_number);
+        const failure = await handleChargeFailure(client, recurringId, recurring.phone_number);
         await client.query('COMMIT');
+        dispatchRecurringFailure(recurring.donor_id, recurringId, failure.failureCount, failure.paused);
         return {
           success: false,
           donationId: donation.id,
@@ -583,8 +589,9 @@ export async function processRecurringCharge(
           `UPDATE donations SET status = $1 WHERE id = $2`,
           [DonationStatus.FAILED, donation.id],
         );
-        await handleChargeFailure(client, recurringId, recurring.phone_number);
+        const failure = await handleChargeFailure(client, recurringId, recurring.phone_number);
         await client.query('COMMIT');
+        dispatchRecurringFailure(recurring.donor_id, recurringId, failure.failureCount, failure.paused);
         return {
           success: false,
           donationId: donation.id,
@@ -610,13 +617,37 @@ export async function processRecurringCharge(
       [donation.id, 'donation', platformFee],
     );
 
-    // Credit campaign balance
-    await client.query(
+    // Credit campaign balance + capture pre/post values for milestone detection.
+    const balanceUpdateResult = await client.query(
       `UPDATE campaigns
        SET current_amount = current_amount + $1
-       WHERE id = $2`,
+       WHERE id = $2
+       RETURNING current_amount, goal_amount, last_milestone_notified, title, creator_id`,
       [netAmount, targetCampaignId],
     );
+
+    const balanceRow = balanceUpdateResult.rows[0] as {
+      current_amount: string | number;
+      goal_amount: string | number;
+      last_milestone_notified: number;
+      title: string;
+      creator_id: string;
+    };
+    const newAmount = Number(balanceRow.current_amount);
+    const goalAmount = Number(balanceRow.goal_amount);
+    const prevAmount = newAmount - netAmount;
+    const lastNotified = Number(balanceRow.last_milestone_notified);
+    const crossed = computeCrossedMilestones(prevAmount, newAmount, goalAmount, lastNotified);
+    const newLastNotified = highestCrossed(crossed, lastNotified);
+
+    if (newLastNotified !== lastNotified) {
+      await client.query(
+        `UPDATE campaigns
+         SET last_milestone_notified = $1
+         WHERE id = $2 AND last_milestone_notified < $1`,
+        [newLastNotified, targetCampaignId],
+      );
+    }
 
     // Advance recurring schedule
     const today = new Date().toISOString().split('T')[0]!;
@@ -637,6 +668,54 @@ export async function processRecurringCharge(
       `[Sahovat] Recurring charge successful: ${recurringId} → donation ${donation.id} (${amount} UZS)`,
     );
 
+    // Fire-and-forget post-COMMIT notifications.
+    try {
+      // 1. Donor: recurring_charge_succeeded (and donation_completed too,
+      //    so the donor's standard receipt + Telegram + email also flows).
+      void dispatchSafe({
+        user_id: recurring.donor_id,
+        event_type: 'recurring_charge_succeeded',
+        payload: {
+          recurringId,
+          donationId: donation.id,
+          amount,
+          campaignId: targetCampaignId,
+          campaignTitle: balanceRow.title,
+        },
+      });
+      void dispatchSafe({
+        user_id: recurring.donor_id,
+        event_type: 'donation_completed',
+        payload: {
+          donationId: donation.id,
+          campaignId: targetCampaignId,
+          campaignTitle: balanceRow.title,
+          amount,
+          donorName: '',
+        },
+      });
+
+      // 2. Organizer: campaign_milestone_reached (one per crossed threshold).
+      for (const pct of crossed) {
+        void dispatchSafe({
+          user_id: balanceRow.creator_id,
+          event_type: 'campaign_milestone_reached',
+          payload: {
+            campaignId: targetCampaignId,
+            campaignTitle: balanceRow.title,
+            percentage: pct as 25 | 50 | 75 | 90 | 100,
+            currentAmount: newAmount,
+            goalAmount,
+          },
+        });
+      }
+    } catch (notifyErr) {
+      console.error(
+        `[Sahovat] [notify] failed to dispatch recurring success for ${recurringId}:`,
+        notifyErr,
+      );
+    }
+
     return { success: true, donationId: donation.id };
   } catch (err) {
     await client.query('ROLLBACK');
@@ -655,55 +734,69 @@ export async function processRecurringCharge(
 // ============================================================
 
 /**
- * Handle a charge failure: increment failure_count, auto-pause after 3,
- * send SMS notification.
+ * Handle a charge failure: increment failure_count, auto-pause after 3.
+ *
+ * Notification dispatch is queued for after the surrounding transaction
+ * commits — the caller fires `dispatchRecurringFailureNotifications()` after
+ * `client.query('COMMIT')` to ensure consistent state.
  */
 async function handleChargeFailure(
   client: import('pg').PoolClient,
   recurringId: string,
-  phone: string,
-): Promise<void> {
+  _phone: string | null,
+): Promise<{ failureCount: number; paused: boolean }> {
   // Increment failure count
   const updateResult = await client.query(
     `UPDATE recurring_donations
      SET failure_count = failure_count + 1
      WHERE id = $1
-     RETURNING failure_count`,
+     RETURNING failure_count, donor_id`,
     [recurringId],
   );
 
-  const failureCount = Number(
-    (updateResult.rows[0] as { failure_count: number }).failure_count,
-  );
+  const row = updateResult.rows[0] as { failure_count: number; donor_id: string };
+  const failureCount = Number(row.failure_count);
+  const paused = failureCount >= 3;
 
-  if (failureCount >= 3) {
-    // Auto-pause
+  if (paused) {
     await client.query(
       `UPDATE recurring_donations SET status = $1 WHERE id = $2`,
       [RecurringStatus.FAILED, recurringId],
     );
-
-    await notifySafe(
-      phone,
-      'Your recurring donation has been paused after 3 failed attempts. Please update your payment method and resume from your dashboard.',
-    );
-  } else if (failureCount === 2) {
-    await notifySafe(
-      phone,
-      'Your recurring donation failed again. We will try once more.',
-    );
-  } else {
-    await notifySafe(
-      phone,
-      'Your recurring donation could not be processed. We will retry tomorrow.',
-    );
   }
+
+  return { failureCount, paused };
 }
 
 /**
- * Send SMS notification without letting errors propagate.
+ * Fire-and-forget dispatch for a recurring failure. Called by the parent
+ * function AFTER its transaction commits, so notifications never reflect
+ * a rolled-back state.
  */
-async function notifySafe(phone: string, message: string): Promise<void> {
+function dispatchRecurringFailure(
+  donorId: string,
+  recurringId: string,
+  failureCount: number,
+  paused: boolean,
+): void {
+  void dispatchSafe({
+    user_id: donorId,
+    event_type: 'recurring_charge_failed',
+    payload: { recurringId, failureCount, paused },
+  });
+}
+
+/**
+ * Tiny SMS-only helper for legacy edge cases (campaign deleted, campaign ended).
+ * These are not first-class NotificationDispatcher events — they're one-off
+ * advisory messages for the donor. SMS-only is acceptable; richer cross-channel
+ * coverage can be added if/when these become structured events.
+ */
+async function notifySafe(phone: string | null, message: string): Promise<void> {
+  if (!phone) {
+    console.log('[Sahovat] Skipped SMS — recurring donor has no phone number');
+    return;
+  }
   try {
     await smsService.sendNotification(phone, message);
   } catch (err) {

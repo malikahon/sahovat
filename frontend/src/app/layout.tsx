@@ -4,6 +4,7 @@ import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import { QueryProvider } from '@/components/shared/QueryProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { DemoNotificationsConsole } from '@/components/dev/DemoNotificationsConsole';
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ export default async function RootLayout({
             <AuthProvider>{children}</AuthProvider>
           </QueryProvider>
         </NextIntlClientProvider>
+        <DemoNotificationsConsole />
       </body>
     </html>
   );

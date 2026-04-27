@@ -77,6 +77,29 @@
       "submit": "Parolni o'rnatish va davom etish",
       "setting": "Parol o'rnatilmoqda...",
       "failed": "Parolni o'rnatib bo'lmadi. Qaytadan urinib ko'ring."
+    },
+    "otpChannel": {
+      "tabLabel": "Tasdiqlash usuli",
+      "sms": "SMS",
+      "telegram": "Telegram"
+    },
+    "telegramLogin": {
+      "subtitle": "Quyidagi tugmani bosing — tasdiqlash uchun Telegramga yo'naltirilasiz.",
+      "helperText": "Telegram orqali kirish SMS kodisiz amalga oshiriladi. Buni profilda istalgan vaqtda o'zgartirishingiz mumkin.",
+      "linking": "Telegramga ulanmoqda…",
+      "unlinking": "Telegram uziladi…",
+      "linkSuccess": "Telegram hisobi muvaffaqiyatli bog'landi.",
+      "linkFailed": "Telegram orqali kirib bo'lmadi. Qaytadan urinib ko'ring.",
+      "alreadyLinked": "Ushbu Telegram hisobi boshqa Sahovat foydalanuvchisiga bog'langan.",
+      "notConfigured": "Telegram orqali kirish bu serverda mavjud emas."
+    },
+    "registerEmail": {
+      "label": "Email (ixtiyoriy)",
+      "placeholder": "sizning@email.com",
+      "hint": "Bu manzilga xayriya kvitansiyalari va bildirishnomalar yuboriladi. SMS yoki Telegramni afzal ko'rsangiz, o'tkazib yuboring.",
+      "skip": "O'tkazib yuborish",
+      "invalid": "Iltimos, to'g'ri email manzilini kiriting",
+      "alreadyTaken": "Ushbu email allaqachon ishlatilmoqda."
     }
   },
   "campaigns": {
@@ -294,6 +317,10 @@
     "anonymousDonor": "Anonim",
     "paymentMethod": "To'lov usuli",
     "paymeRedirect": "To'lovni yakunlash uchun PayMe sahifasiga yo'naltirilasiz.",
+    "clickRedirect": "To'lovni yakunlash uchun Click sahifasiga yo'naltirilasiz.",
+    "chooseProvider": "To'lov provayderi",
+    "paymeDescription": "PayMe orqali to'lash",
+    "clickDescription": "Click orqali to'lash",
     "simulatePayment": "To'lovni simulyatsiya qilish (Dev rejimi)",
     "successTitle": "Xayriya muvaffaqiyatli!",
     "successDescription": "Saxovatliligingiz uchun rahmat. Xayriyangiz qabul qilindi.",
@@ -341,6 +368,20 @@
     "feeIncludedLabel": "1% komissiyani xayriyamga kiritish",
     "feeIncludedHint": "Belgilansa, komissiya miqdoringizdan ushlanadi. Aks holda ustiga qo'shiladi va 100% kampaniyaga o'tadi.",
     "totalCharged": "Sizdan olinadi"
+  },
+  "donationReturn": {
+    "verifying": "To'lov tekshirilmoqda...",
+    "loading": "Yuklanmoqda...",
+    "successTitle": "Xayriya muvaffaqiyatli!",
+    "successMessage": "Saxiyligingiz uchun rahmat. Xayriyangiz qabul qilindi.",
+    "cancelTitle": "To'lov bekor qilindi",
+    "cancelMessage": "Xayriyangiz amalga oshirilmadi. Yana urinib ko'rishingiz mumkin.",
+    "errorTitle": "Nimadir noto'g'ri ketdi",
+    "errorMessage": "To'lovingizni tasdiqlay olmadik. Iltimos, xayriyalar tarixini tekshiring.",
+    "goBack": "Orqaga",
+    "browseCampaigns": "Kampaniyalarni ko'rish",
+    "browseMore": "Yana ko'rish",
+    "myDonations": "Mening xayriyalarim"
   },
   "savedCards": {
     "title": "To'lov usullari",
@@ -500,7 +541,104 @@
     "categoriesHint": "Sizni qiziqtirgan kategoriyalarni tanlang (maks 7)",
     "save": "O'zgarishlarni saqlash",
     "saveSuccess": "Profil muvaffaqiyatli yangilandi",
-    "saveError": "Profilni yangilashda xatolik"
+    "saveError": "Profilni yangilashda xatolik",
+    "linkedAccounts": {
+      "title": "Bog'langan hisoblar",
+      "subtitle": "Kirish usullari va bildirishnoma kanallarini boshqaring.",
+      "emailHelperNote": "Email kanali haqida ma'lumot",
+      "phone": {
+        "label": "Telefon",
+        "none": "Telefon raqam ko'rsatilmagan"
+      },
+      "telegram": {
+        "label": "Telegram",
+        "linkedAt": "Bog'langan {date}",
+        "linkButton": "Telegramni bog'lash",
+        "unlinkButton": "Uzish",
+        "unlinkConfirmTitle": "Telegramni uzasizmi?",
+        "unlinkConfirmDescription": "Telegram bildirishnomalari kelmay qoladi va kirish uchun SMS kerak bo'ladi.",
+        "unlinkConfirmCta": "Uzish",
+        "unlinkSuccess": "Telegram uzildi.",
+        "unlinkError": "Telegramni uzib bo'lmadi.",
+        "wouldOrphan": "Bu sizning yagona kirish usulingiz, shuning uchun Telegramni uzib bo'lmaydi. Avval telefon raqam qo'shing.",
+        "linkSuccess": "Telegram bog'landi.",
+        "linkError": "Telegramni bog'lab bo'lmadi. Qaytadan urinib ko'ring."
+      },
+      "email": {
+        "label": "Email",
+        "none": "Email kiritilmagan",
+        "verified": "Tasdiqlangan",
+        "verifiedAt": "Tasdiqlangan {date}",
+        "unverified": "Tasdiqlanmagan",
+        "addButton": "Email qo'shish",
+        "editButton": "Tahrirlash",
+        "verifyButton": "Tasdiqlash kodini yuborish",
+        "addDialogTitle": "Email qo'shing",
+        "editDialogTitle": "Emailni o'zgartirish",
+        "addDialogDescription": "Bu manzilga xayriya kvitansiyalari va bildirishnomalar yuboriladi.",
+        "saveButton": "Saqlash",
+        "saveSuccess": "Email saqlandi. Email-bildirishnomalarni faollashtirish uchun uni tasdiqlang.",
+        "alreadyTaken": "Ushbu email allaqachon ishlatilmoqda.",
+        "saveError": "Emailni saqlab bo'lmadi. Qaytadan urinib ko'ring.",
+        "verifyDialogTitle": "Emailni tasdiqlang",
+        "verifyDialogDescription": "{email} manziliga yuborilgan 6 xonali kodni kiriting.",
+        "verifySuccess": "Email tasdiqlandi.",
+        "verifyError": "Tasdiqlash muvaffaqiyatsiz.",
+        "codeExpired": "Kod muddati o'tgan. Yangisini so'rang.",
+        "codeInvalid": "Noto'g'ri kod. Qaytadan urinib ko'ring.",
+        "rateLimited": "Juda ko'p so'rov. Bir soat kuting va qaytadan urinib ko'ring."
+      }
+    },
+    "notifications": {
+      "title": "Bildirishnomalar",
+      "description": "Har bir hodisa uchun qaysi kanallar orqali xabar olishni tanlang.",
+      "eventLabel": "Hodisa",
+      "save": "Saqlash",
+      "saveSuccess": "Bildirishnoma sozlamalari saqlandi.",
+      "saveError": "Sozlamalarni saqlab bo'lmadi. Qaytadan urinib ko'ring.",
+      "hintLinkAccounts": "Ba'zi kanallar tegishli hisobni bog'lab yoki tasdiqlamaguningizcha mavjud bo'lmaydi.",
+      "channels": {
+        "sms": "SMS",
+        "telegram": "Telegram",
+        "email": "Email"
+      },
+      "disabled": {
+        "noPhone": "Telefon raqam yo'q",
+        "noTelegram": "Avval Telegramni bog'lang",
+        "noEmail": "Avval email qo'shing",
+        "emailUnverified": "Avval emailingizni tasdiqlang"
+      },
+      "events": {
+        "donation_completed": {
+          "label": "Xayriya kvitansiyasi",
+          "help": "Xayriyangiz qabul qilinganda."
+        },
+        "campaign_verified": {
+          "label": "Kampaniya tasdiqlandi",
+          "help": "Adminlar kampaniyangizni tasdiqlaganda."
+        },
+        "withdrawal_status_changed": {
+          "label": "Pul yechish yangiliklari",
+          "help": "Pul yechish so'rovingiz tasdiqlangan, rad etilgan yoki bajarilganda."
+        },
+        "recurring_charge_succeeded": {
+          "label": "Avtomatik xayriya o'tdi",
+          "help": "Avtomatik xayriyangiz muvaffaqiyatli o'tganda."
+        },
+        "recurring_charge_failed": {
+          "label": "Avtomatik xayriya xatoligi",
+          "help": "Avtomatik to'lov xato bersa yoki obuna to'xtatilsa."
+        },
+        "campaign_milestone_reached": {
+          "label": "Kampaniya bosqichlari",
+          "help": "Kampaniya 25%, 50%, 75%, 90% yoki 100% maqsadga yetganda."
+        },
+        "contact_message_received": {
+          "label": "Yordam javoblari",
+          "help": "Aloqa formasi orqali yuborilgan murojaatlaringiz uchun tasdiqlash."
+        }
+      }
+    }
   },
   "verification": {
     "title": "Shaxsni tasdiqlash",
@@ -814,7 +952,6 @@
     "resources": "Resurslar",
     "helpCenter": "Yordam markazi",
     "organizerGuidelines": "Tashkilotchi qo'llanmasi",
-    "impactStories": "Ta'sir hikoyalari",
     "contact": "Aloqa",
     "copyright": "Barcha huquqlar himoyalangan."
   },
@@ -859,5 +996,295 @@
     "FORBIDDEN": "Ruxsat yo'q",
     "RATE_LIMIT": "Juda ko'p so'rovlar. Biroz kutib turing.",
     "INTERNAL_ERROR": "Ichki xatolik yuz berdi"
+  },
+  "acceptedPayments": {
+    "title": "Qabul qilinadigan to'lov usullari",
+    "subtitle": "Sahovat xavfsiz va qulay xayriya qilish uchun ishonchli to'lov provayderlarini qo'llab-quvvatlaydi.",
+    "paymeDescription": "O'zbekistoning yetakchi raqamli to'lov platformasi",
+    "paymeFees": "Qo'shimcha to'lovlarsiz — 1% platforma to'lovi ichiga kiritilgan",
+    "paymeProcessingTime": "Darhol",
+    "paymeFeature1": "Karta to'lovlari (UzCard, Humo, Visa, Mastercard)",
+    "paymeFeature2": "Takroriy xayriya uchun saqlangan kartalar",
+    "paymeFeature3": "Muntazam xayriya qo'llab-quvvatlash",
+    "clickDescription": "O'zbekistonda mashhur to'lov xizmati",
+    "clickFees": "Qo'shimcha to'lovlarsiz — 1% platforma to'lovi ichiga kiritilgan",
+    "clickProcessingTime": "Darhol",
+    "clickFeature1": "Click xavfsiz checkout orqali karta to'lovlari",
+    "clickFeature2": "Tezkor yo'naltirish to'lov oqimi",
+    "clickFeature3": "Mobil uchun qulay checkout tajribasi",
+    "securityTitle": "To'lovlaringiz xavfsiz",
+    "securityDescription": "Barcha tranzaksiyalar bank darajasidagi shifrlash bilan tasdiqlangan to'lov provayderlari orqali amalga oshiriladi. Sahovat sizning karta ma'lumotlaringizni saqlamaydi — faqat xavfsiz tokenlashtirilgan ma'lumotlar.",
+    "browseCampaigns": "Kampaniyalarni ko'rish"
+  },
+  "errorPages": {
+    "notFoundTitle": "Sahifa topilmadi",
+    "notFoundDescription": "Siz qidirayotgan sahifa mavjud emas yoki ko'chirilgan.",
+    "serverErrorTitle": "Nimadir noto'g'ri ketdi",
+    "serverErrorDescription": "Tizimda kutilmagan xato yuz berdi. Iltimos, biroz keyinroq qayta urinib ko'ring.",
+    "tryAgain": "Qayta urinib ko'rish",
+    "goHome": "Bosh sahifaga",
+    "browseCampaigns": "Kampaniyalarni ko'rish"
+  },
+  "marketing": {
+    "browseCampaigns": "Kampaniyalarni ko'rish",
+    "createCampaign": "Kampaniya yaratish",
+    "contactUs": "Biz bilan bog'lanish",
+    "register": "Ro'yxatdan o'tish",
+    "learnMore": "Batafsil",
+    "stats": {
+      "activeCampaigns": "Faol kampaniyalar",
+      "donationsCount": "Xayriyalar soni",
+      "totalRaised": "Jami yig'ilgan",
+      "verifiedOrganizers": "Tasdiqlangan tashkilotchilar",
+      "recentVerifications": "Tekshiruvlar (30 kun)",
+      "platformFees": "Platforma komissiyasi",
+      "totalDonated": "Jami xayriya",
+      "totalWithdrawn": "Jami to'langan"
+    }
+  },
+  "metadata": {
+    "about": {
+      "title": "Biz haqimizda — Sahovat",
+      "description": "Sahovat — bu xayriyachilarni ishonchli kampaniyalar bilan bog'laydigan O'zbekistonning ishonchli kraudfanding platformasi."
+    },
+    "howItWorks": {
+      "title": "Qanday ishlaydi — Sahovat",
+      "description": "Xayriyachilar va tashkilotchilar Sahovat-dan to'rt oddiy bosqichda foydalanadi."
+    },
+    "trustSafety": {
+      "title": "Ishonch va xavfsizlik — Sahovat",
+      "description": "Sahovat kampaniyalarni qanday tekshirishi, xayriyalarni himoya qilishi va firibgarlik haqida xabar berish."
+    },
+    "transparency": {
+      "title": "Shaffoflik — Sahovat",
+      "description": "Jonli platforma statistikasi, komissiya tarkibi va ma'lumotlarni mahalliylashtirish majburiyatimiz."
+    },
+    "help": {
+      "title": "Yordam markazi — Sahovat",
+      "description": "Xayriya, tashkilotchilik, to'lovlar va boshqa ko'p so'raladigan savollarga javoblar."
+    },
+    "organizerGuidelines": {
+      "title": "Tashkilotchi qo'llanmasi — Sahovat",
+      "description": "Sahovatda yaxshi kampaniyani nima yaratadi — kerakli hujjatlar, qoidalar va eng yaxshi amaliyotlar."
+    },
+    "contact": {
+      "title": "Aloqa — Sahovat",
+      "description": "Sahovat jamoasiga murojaat qiling. Odatda 1–2 ish kuni ichida javob beramiz."
+    }
+  },
+  "pages": {
+    "about": {
+      "eyebrow": "Sahovat haqida",
+      "title": "Xayriya, shaffof tarzda.",
+      "subtitle": "Sahovat O'zbek xayriyachilarini tasdiqlangan oilalar, shaxslar va loyihalar bilan bog'laydi — va har bir so'm qayerga ketganini aniq ko'rsatadi.",
+      "ctaPrimary": "Kampaniyalarni ko'rish",
+      "ctaSecondary": "Kampaniya boshlash",
+      "missionTitle": "Bizning maqsadimiz",
+      "missionBody": "Sahovat-ni shuning uchun yaratdikki, xayriya bu ishonch o'yini bo'lmasligi kerak. Platformadagi har bir kampaniya jonli efirga chiqishidan oldin shaxsni va hujjatlarni tekshirishdan o'tadi, har bir xayriya escrow orqali o'tadi va har bir pul yechib olish jonli inson tomonidan ko'rib chiqiladi.",
+      "storyTitle": "Bizning hikoyamiz",
+      "storyBody": "Sahovat 2025 yilda ikki do'st to'satdan tibbiy hisob bilan duch kelgan oilani qo'llab-quvvatlashning ishonchli usulini topa olmagandan keyin yaratilgan dam olish kuni prototipidan boshlandi. Tanlov anonim bank o'tkazmalari yoki o'zbek tilida gapirmaydigan va mahalliy kartalarni qabul qilmaydigan xalqaro platformalar o'rtasida edi. Biz O'zbekiston yaxshiroqqa loyiq deb hisobladik.",
+      "valuesTitle": "Biz nimaning tarafidamiz",
+      "valuesIntro": "Uchta tamoyil bizning har bir mahsulot qarorimizni boshqaradi.",
+      "values": {
+        "transparency": {
+          "title": "Tom ma'noda shaffoflik",
+          "body": "Har bir faol kampaniya tasdiqlangan holatini, joriy balansni va xayriyalar tarixini ko'rsatadi. Komissiyalarimiz oshkor qilingan, yashirilmagan."
+        },
+        "verification": {
+          "title": "Haqiqiy tekshiruv",
+          "body": "Tashkilotchilarning shaxsini OneID orqali tekshiramiz va kampaniya kategoriyasiga muvofiq qo'shimcha hujjatlarni talab qilamiz. Anonim mablag' yig'uvchilar yo'q."
+        },
+        "localFirst": {
+          "title": "O'zbekiston uchun yaratilgan",
+          "body": "Mahalliy PayMe va Click qo'llab-quvvatlanadi, O'zbek/Rus/Ingliz interfeyslari, OneID identifikatsiyasi, ZRU-547 ga muvofiq O'zbekistonda saqlanadigan ma'lumotlar."
+        }
+      },
+      "statsTitle": "Sahovat raqamlarda",
+      "statsIntro": "Har besh daqiqada jonli platforma ma'lumotlaridan yangilanadi.",
+      "ctaTitle": "Kim haqiqatan ham yordam talab qilayotgan bo'lsa, unga yordam bering.",
+      "ctaBody": "Tasdiqlangan kampaniyani toping yoki o'zingiznikini boshlang."
+    },
+    "howItWorks": {
+      "eyebrow": "Qanday ishlaydi",
+      "title": "Ikkita yo'nalish, bitta platforma.",
+      "subtitle": "Xayriya qilsangiz ham, mablag' yig'sangiz ham qadamlar oddiy — va har biri ikkala tomonni himoya qilish uchun mo'ljallangan.",
+      "donorTab": "Xayriyachilar uchun",
+      "organizerTab": "Tashkilotchilar uchun",
+      "donor": {
+        "title": "Bir daqiqada xayriya qiling.",
+        "intro": "Birinchi xayriya qilish uchun ro'yxatdan o'tish kerak emas.",
+        "step1Title": "Kampaniyani tanlang",
+        "step1Body": "Tasdiqlangan kampaniyalarni kategoriya, dolzarblik yoki manzil bo'yicha ko'rib chiqing. Har bir kampaniya tekshiruv holatini va joriy taraqqiyotni ko'rsatadi.",
+        "step2Title": "Summani tanlang",
+        "step2Body": "1 000 so'mdan boshlab har qanday miqdorda to'lash. Anonim yoki o'z ismingiz bilan xayriya qilishingiz mumkin.",
+        "step3Title": "PayMe yoki Click bilan to'lang",
+        "step3Body": "O'zbekistonning ikkala mahalliy to'lov usuli qo'llab-quvvatlanadi. Karta ma'lumotlaringiz hech qachon serverlarimizga tushmaydi.",
+        "step4Title": "Ta'sirini kuzatib boring",
+        "step4Body": "Email yoki Telegram orqali yuklab olinadigan kvitansiya oling va kampaniya yangiliklarini maqsadga yetguncha kuzatib boring.",
+        "ctaTitle": "Yordam berishga tayyormisiz?",
+        "ctaBody": "Yuzlab tasdiqlangan ehtiyojlar sizni kutmoqda."
+      },
+      "organizer": {
+        "title": "Odamlar ishonadigan kampaniya o'tkazing.",
+        "intro": "Loyihadan birinchi xayriyagacha 1–2 ish kuni.",
+        "step1Title": "Shaxsingizni tasdiqlang",
+        "step1Body": "O'zbekiston fuqarolari OneID orqali tasdiqlanadi. Bu bir martalik bosqich va kelajakda kampaniya yaratish imkonini ochadi.",
+        "step2Title": "Kampaniyangizni yarating",
+        "step2Body": "Beshta qisqa qadam: kategoriya, hikoya, maqsad, hujjatlar, suratlar. Istalgan vaqtda qoralama saqlang.",
+        "step3Title": "Tekshiruvni kutib turing",
+        "step3Body": "Admin jamoamiz har bir kampaniyani qo'lda ko'rib chiqadi. Aksariyat qarorlar bir ish kuni ichida keladi.",
+        "step4Title": "Tayyor bo'lganda yechib oling",
+        "step4Body": "Tasdiqlangan bank kartangizga pul yechib olish so'rovini yuboring. Har bir so'rov ko'rib chiqilib 1–3 ish kuni ichida to'lanadi.",
+        "ctaTitle": "Kampaniyangizni boshlang",
+        "ctaBody": "Yaratish bepul. Biz faqat siz mablag' to'plaganingizda — tugallangan xayriyalarga kichik komissiya orqali daromad olamiz."
+      },
+      "faqTitle": "Tez-tez beriladigan savollar",
+      "faqIntro": "Quyidagilarning barchasi Yordam markazida ham yoritilgan."
+    },
+    "trustSafety": {
+      "eyebrow": "Ishonch va xavfsizlik",
+      "title": "Ishonch — bu shior emas. Bu jarayon.",
+      "subtitle": "Sahovatdagi har bir kampaniya, har bir xayriya va har bir pul yechib olish ham xayriyachini, ham tashkilotchini himoya qilish uchun mo'ljallangan nazoratlardan o'tadi.",
+      "verifyTitle": "Kampaniyalarni qanday tekshiramiz",
+      "verifyIntro": "Kampaniya jonli efirga chiqishidan oldin uchta mustaqil tekshiruv.",
+      "verify": {
+        "step1Title": "OneID identifikatsiyasi",
+        "step1Body": "Tashkilotchilar O'zbekistonning OneID milliy xizmati orqali huquqiy shaxsini tasdiqlaydi. Buni soxtalashtira olmaymiz — firibgarlar ham."
+        ,
+        "step2Title": "Tasdiqlovchi hujjatlar",
+        "step2Body": "Har bir kategoriya o'ziga xos dalillarni talab qiladi: tibbiy kampaniyalar uchun tibbiy hisoblar, ta'lim uchun o'qishga qabul xati va hokazo. Hujjatlar shaxsiy yuklanadi, ommaviy emas."
+        ,
+        "step3Title": "Qo'lda admin tekshiruvi",
+        "step3Body": "Tasdiqlashdan oldin Sahovat jamoasidagi haqiqiy inson har bir murojaatni ko'rib chiqadi. Avtomatik tasdiqlash yo'q, qisqartirilgan yo'l yo'q."
+      },
+      "moneyTitle": "Pulingiz xavfsiz",
+      "moneyBody": "Xayriyalar yo'qolib qolishi mumkin bo'lgan bitta bank hisobida turmaydi. Har bir kampaniyaning o'z virtual hisobi bor va mablag'lar tashkilotchi pul yechib olish so'rovini yuborgunga qadar escrow-da saqlanadi — bu so'rov ham tasdiqlangan tashkilotchi shaxsiyatiga taqqoslanib ko'rib chiqiladi.",
+      "moneyPoint1": "Xayriyalar har bir kampaniya uchun virtual hisobda escrow-da saqlanadi.",
+      "moneyPoint2": "Pul yechib olish faqat tasdiqlangan tashkilotchi ismiga mos keluvchi bank kartalariga to'lanadi.",
+      "moneyPoint3": "Muvaffaqiyatsiz yoki qaytarilgan to'lovlar tashkilotchi balansiga hech qachon yetib bormaydi.",
+      "moneyPoint4": "Barcha to'lovlar litsenziyalangan O'zbek protsessorlari orqali (PayMe, Click) o'tadi.",
+      "fraudTitle": "Firibgarlik haqida xabar berish",
+      "fraudBody": "Agar kampaniyada biror narsa noto'g'ri ko'rinsa — platformadagi istalgan joyda — bizga ayting. Har bir xabarni jiddiy qabul qilamiz va bir ish kuni ichida javob beramiz.",
+      "fraudCta": "Kampaniya haqida xabar berish",
+      "ctaTitle": "Xavfsizlik bo'yicha savollar?",
+      "ctaBody": "Yordam markazini o'qing yoki bevosita jamoamizga murojaat qiling."
+    },
+    "transparency": {
+      "eyebrow": "Shaffoflik",
+      "title": "Ochiq raqamlar, ochiq jarayon.",
+      "subtitle": "Bilganimizni nashr etamiz — jami yig'ilgan, qayerga ketgan, biz nimani saqlab qoldik va hali escrowda nima bor.",
+      "liveTitle": "Jonli platforma raqamlari",
+      "liveIntro": "Har besh daqiqada ishlab chiqarish ma'lumotlaridan yangilanadi.",
+      "feeTitle": "Pul qayerga ketadi",
+      "feeIntro": "Har 100 000 so'm xayriyaga aniq taqsimot.",
+      "feeBars": {
+        "campaign": "Kampaniyaga ketadi",
+        "platform": "Platforma komissiyasi",
+        "processing": "To'lov ishlovi"
+      },
+      "feeNote": "Platforma komissiyasi tekshiruv, hosting, qo'llab-quvvatlash va admin nazoratini o'z ichiga oladi. To'lov ishlovi komissiyalari PayMe va Click-dan tannarxda o'tkaziladi.",
+      "dataTitle": "Ma'lumotlarni mahalliylashtirish",
+      "dataBody": "O'zbekiston ZRU-547 ga muvofiq, O'zbek foydalanuvchilarning barcha shaxsiy ma'lumotlari O'zbekistondagi serverlarda saqlanadi. Bu ma'lumotlarni chet elga uzatmaymiz va sotmaymiz.",
+      "verificationsTitle": "So'nggi faollik",
+      "verificationsBody": "Oxirgi 30 kun ichida tasdiqlangan yangi tashkilotchi tekshiruvlari soni:",
+      "verificationsHint": "Faol tashkilotchilar, oxirgi 30 kun",
+      "ctaTitle": "Bu yerda yoritilishi kerak deb hisoblagan savolingiz bormi?",
+      "ctaBody": "Bizga shaffoflik so'rovini yuboring — javob beramiz va, agar foydali bo'lsa, nashr qilamiz."
+    },
+    "help": {
+      "eyebrow": "Yordam markazi",
+      "title": "Sizga qanday yordam beraylik?",
+      "subtitle": "Ko'p eshitilgan savollarga javoblar. Agar o'zingizniki yo'q bo'lsa, bizga yozing — har bir xabarni haqiqiy inson o'qiydi.",
+      "categoryHeading": "Mavzu bo'yicha tanlash",
+      "categories": {
+        "donating": "Xayriya qilish",
+        "creating": "Kampaniya yaratish",
+        "withdrawals": "Pul yechib olish",
+        "account": "Akkaunt va tekshiruv",
+        "payments": "To'lovlar",
+        "telegramSms": "Telegram va SMS"
+      },
+      "stillNeedHelp": "Hali ham yordam kerakmi?",
+      "stillNeedHelpBody": "Jamoaga bevosita murojaat qiling, 1–2 ish kuni ichida javob beramiz.",
+      "stillNeedHelpCta": "Qo'llab-quvvatlash"
+    },
+    "organizerGuidelines": {
+      "eyebrow": "Tashkilotchi qo'llanmasi",
+      "title": "Kampaniyani muvaffaqiyatli qiladigan narsa.",
+      "subtitle": "Boshlashdan oldin shuni o'qing — bu soatlar ichida tasdiqlanish va kunlardan keyin rad etilish o'rtasidagi farq.",
+      "checklistTitle": "Yaxshi kampaniyaning xususiyatlari",
+      "checklist": {
+        "item1Title": "Aniq, halol sarlavha",
+        "item1Body": "Kim yordam talab qilayotgani va nima uchun ekanligini oddiy tilda yozing. Sensatsiya yoki katta harflarni qo'llamang.",
+        "item2Title": "Haqiqiy hikoya, haqiqiy fotosuratlar",
+        "item2Body": "Hikoyani o'zingiz yozing — o'z so'zlaringiz, o'z fotosuratlaringiz. Stok-fotosuratlar — shubhali belgi.",
+        "item3Title": "Real maqsad miqdori",
+        "item3Body": "Maqsad haqiqiy xarajatlarga mos kelishi kerak. Summa katta bo'lsa taqsimotni ko'rsating.",
+        "item4Title": "Tasdiqlanadigan hujjatlar",
+        "item4Body": "Tibbiy kampaniyalar uchun hisoblar yoki shifokor xulosasi kerak. Ta'lim kampaniyalari uchun o'qishga qabul xati."
+      },
+      "documentsTitle": "Kategoriya bo'yicha kerakli hujjatlar",
+      "documentsIntro": "Hujjatlar shaxsiy yuklanadi. Xayriyachilar ularni hech qachon ko'rmaydi — faqat admin tekshiruv jamoasi.",
+      "documents": {
+        "medical": "Shifoxona schyot-fakturalari, retseptlar, shifokor yo'llanmasi yoki davolash rejasi.",
+        "education": "O'qishga qabul xati, o'qish to'lovi schyoti yoki stipendiya rad etish xati.",
+        "emergency": "Politsiya bayonoti, rasmiy zarar baholash yoki fotosurat dalillari.",
+        "community": "Byudjet taqsimoti va kamida bitta jamoa tomonidan tasdiqlangan loyiha taklifi.",
+        "creative": "Loyiha tavsifi, oldingi ishlar namunalari va batafsil byudjet.",
+        "business": "Biznes ro'yxatdan o'tkazish, moliyaviy reja va mablag'larning aniq qo'llanilishi."
+      },
+      "prohibitedTitle": "Biz ruxsat bermaydigan narsalar",
+      "prohibitedIntro": "Quyidagi shartlarning birortasiga to'g'ri keladigan kampaniyalar istisnosiz rad etiladi.",
+      "prohibited": {
+        "item1Title": "Aldash yoki yolg'on da'volar",
+        "item1Body": "Soxta hikoyalar, oshirilgan tashxislar yoki sahnalashtirilgan fotosuratlar.",
+        "item2Title": "Siyosiy yoki diniy mablag' yig'ish",
+        "item2Body": "Biz gumanitar platformamiz. Partiyaviy xayriyalar yo'q, diniy bino loyihalari yo'q.",
+        "item3Title": "Noqonuniy faoliyat",
+        "item3Body": "O'zbekiston qonunlarini buzadigan har qanday narsa — litsenziyasiz tibbiy da'volar shu jumladan."
+      },
+      "photosTitle": "Fotosurat qoidalari",
+      "photosBody": "Uchdan beshtagacha haqiqiy, o'zingiz olgan, tabiiy yorug'likda, og'ir filtrlarsiz fotosuratlar. Eng yaxshi kampaniyalar (roziligi bilan) mablag' yig'ilayotgan shaxs yoki oilaning suratini va kontekst suratlarini (uy, loyiha joyi, tashxis) o'z ichiga oladi.",
+      "withdrawalsTitle": "Pul yechib olish — nimani kutish kerak",
+      "withdrawalsBody": "Birinchi tasdiqlangan xayriyadan keyin istalgan vaqtda pul yechib olish so'rovini yuborishingiz mumkin. Har bir so'rov tasdiqlangan shaxsingizga taqqoslanib ko'rib chiqiladi va bank kartangizga 1–3 ish kuni ichida to'lanadi. Platforma komissiyasi va to'lov ishlovi komissiyalari avtomatik ravishda yechib olinadi.",
+      "ctaTitle": "Boshlashga tayyormisiz?",
+      "ctaBody": "Hozir kampaniya yarating yoki savollaringiz bo'lsa avval biz bilan bog'laning."
+    },
+    "contact": {
+      "eyebrow": "Aloqa",
+      "title": "Sizdan eshitishni xohlaymiz.",
+      "subtitle": "Savollar, fikrlar, hamkorlik takliflari yoki firibgarlik haqida xabar — Sahovat jamoasiga yozing va shaxsan javob beramiz.",
+      "form": {
+        "nameLabel": "Ismingiz",
+        "namePlaceholder": "Aliyev Aziz",
+        "emailLabel": "Email (ixtiyoriy)",
+        "emailPlaceholder": "siz@example.com",
+        "emailHint": "Email kiritsangiz, tasdiq xabarini yuboramiz.",
+        "phoneLabel": "Telefon (ixtiyoriy)",
+        "phonePlaceholder": "+998 90 123 45 67",
+        "subjectLabel": "Mavzu",
+        "subjectPlaceholder": "Qaysi mavzuda?",
+        "messageLabel": "Xabar",
+        "messagePlaceholder": "Bizga nimani aytmoqchisiz…",
+        "submit": "Xabar yuborish",
+        "submitting": "Yuborilmoqda…",
+        "successTitle": "Xabar qabul qilindi",
+        "successBody": "Rahmat — sizning raqamingiz {ref}. Odatda 1–2 ish kuni ichida javob beramiz. Email kiritgan bo'lsangiz, qisqa vaqt ichida pochta qutingizda tasdiq xabarini ko'rasiz.",
+        "successAgain": "Yana xabar yuborish",
+        "errorTitle": "Xabarni yuborib bo'lmadi",
+        "errorGeneric": "Xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring."
+      },
+      "infoTitle": "Bizga murojaat qilishning boshqa usullari",
+      "info": {
+        "telegramLabel": "Telegram",
+        "telegramValue": "@SahovatTechBot",
+        "emailLabel": "Email",
+        "emailValue": "support@sahovat.tech",
+        "responseTimeLabel": "Javob berish vaqti",
+        "responseTimeValue": "1–2 ish kuni",
+        "addressLabel": "Manzil",
+        "addressValue": "Toshkent, O'zbekiston"
+      }
+    }
   }
 }

@@ -19,7 +19,12 @@ import { eventsRouter } from './modules/events/events.routes.js';
 import { feedRouter } from './modules/feed/feed.routes.js';
 import { recurringRouter } from './modules/recurring/recurring.routes.js';
 import { paymeRouter } from './modules/payme/payme.routes.js';
+import { clickRouter } from './modules/click/click.routes.js';
 import { savedCardsRouter } from './modules/saved-cards/saved-cards.routes.js';
+import { telegramRouter } from './modules/telegram/telegram.routes.js';
+import { publicRouter } from './modules/public/public.routes.js';
+import { contactRouter } from './modules/contact/contact.routes.js';
+import { devRouter } from './modules/dev/dev.routes.js';
 import { setupSwagger } from './docs/swagger.js';
 
 export function createApp(): express.Express {
@@ -94,8 +99,19 @@ export function createApp(): express.Express {
   app.use('/api/feed', feedRouter);
   app.use('/api/recurring-donations', requireAuth, recurringRouter);
   app.use('/api/payme', paymeRouter);
+  app.use('/api/click', clickRouter);
   app.use('/api/saved-cards', requireAuth, savedCardsRouter);
+  app.use('/api/telegram', telegramRouter);
+  app.use('/api/public', publicRouter);
+  app.use('/api/contact', contactRouter);
   app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
+
+  // Demo Notifications Console SSE — gated by env flag, route-level admin
+  // guard further restricts to authenticated admin users.
+  if (env.DEMO_CONSOLE_ENABLED) {
+    app.use('/api/dev', devRouter);
+    console.log('[Sahovat] Demo Notifications Console enabled (/api/dev)');
+  }
 
   // Global error handler (must be last)
   app.use(errorHandler);

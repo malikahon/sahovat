@@ -12,6 +12,7 @@ import {
   adminVerifyPasswordSchema,
   setPasswordSchema,
   refreshTokenSchema,
+  telegramAuthSchema,
 } from './auth.validation.js';
 import * as authController from './auth.controller.js';
 
@@ -85,6 +86,29 @@ authRouter.get(
   '/me',
   requireAuth,
   authController.getMe,
+);
+
+// POST /api/auth/telegram-login — Telegram Login Widget callback (no auth)
+authRouter.post(
+  '/telegram-login',
+  authLimiter,
+  validate(telegramAuthSchema),
+  authController.telegramLogin,
+);
+
+// POST /api/auth/telegram-link — Link Telegram to authenticated user
+authRouter.post(
+  '/telegram-link',
+  requireAuth,
+  validate(telegramAuthSchema),
+  authController.telegramLink,
+);
+
+// POST /api/auth/telegram-unlink — Remove Telegram identity (authenticated)
+authRouter.post(
+  '/telegram-unlink',
+  requireAuth,
+  authController.telegramUnlink,
 );
 
 // GET /api/auth/test-otp/:phone — Retrieve stored OTP (TEST ENVIRONMENT ONLY)

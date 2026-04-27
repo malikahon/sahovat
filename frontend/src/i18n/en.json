@@ -77,6 +77,29 @@
       "submit": "Set Password & Continue",
       "setting": "Setting password...",
       "failed": "Failed to set password. Please try again."
+    },
+    "otpChannel": {
+      "tabLabel": "Verification method",
+      "sms": "SMS",
+      "telegram": "Telegram"
+    },
+    "telegramLogin": {
+      "subtitle": "Tap the button below — you'll be redirected to Telegram to confirm.",
+      "helperText": "Telegram login skips the SMS code entirely. You can change this anytime in your profile.",
+      "linking": "Connecting to Telegram…",
+      "unlinking": "Removing Telegram…",
+      "linkSuccess": "Telegram account linked successfully.",
+      "linkFailed": "Telegram login failed. Please try again.",
+      "alreadyLinked": "This Telegram account is already linked to another Sahovat account.",
+      "notConfigured": "Telegram login is unavailable on this server."
+    },
+    "registerEmail": {
+      "label": "Email (optional)",
+      "placeholder": "your@email.com",
+      "hint": "We'll send donation receipts and notifications here. Skip if you prefer SMS or Telegram only.",
+      "skip": "Skip for now",
+      "invalid": "Please enter a valid email address",
+      "alreadyTaken": "This email is already in use."
     }
   },
   "campaigns": {
@@ -343,7 +366,104 @@
     "categoriesHint": "Select categories you're interested in (max 7)",
     "save": "Save Changes",
     "saveSuccess": "Profile updated successfully",
-    "saveError": "Failed to update profile"
+    "saveError": "Failed to update profile",
+    "linkedAccounts": {
+      "title": "Linked Accounts",
+      "subtitle": "Manage how you sign in and where we send notifications.",
+      "emailHelperNote": "Email channel info",
+      "phone": {
+        "label": "Phone",
+        "none": "No phone number on file"
+      },
+      "telegram": {
+        "label": "Telegram",
+        "linkedAt": "Linked {date}",
+        "linkButton": "Connect Telegram",
+        "unlinkButton": "Disconnect",
+        "unlinkConfirmTitle": "Disconnect Telegram?",
+        "unlinkConfirmDescription": "You won't receive Telegram notifications and you'll need to use SMS to log in.",
+        "unlinkConfirmCta": "Disconnect",
+        "unlinkSuccess": "Telegram disconnected.",
+        "unlinkError": "Could not disconnect Telegram.",
+        "wouldOrphan": "You can't disconnect Telegram while it's your only login method. Add a phone number first.",
+        "linkSuccess": "Telegram connected.",
+        "linkError": "Could not connect Telegram. Please try again."
+      },
+      "email": {
+        "label": "Email",
+        "none": "No email on file",
+        "verified": "Verified",
+        "verifiedAt": "Verified {date}",
+        "unverified": "Not verified",
+        "addButton": "Add email",
+        "editButton": "Edit",
+        "verifyButton": "Send verification code",
+        "addDialogTitle": "Add your email",
+        "editDialogTitle": "Update your email",
+        "addDialogDescription": "We'll send donation receipts and notifications here.",
+        "saveButton": "Save",
+        "saveSuccess": "Email saved. Verify it to enable email notifications.",
+        "alreadyTaken": "This email is already in use.",
+        "saveError": "Could not save your email. Please try again.",
+        "verifyDialogTitle": "Verify your email",
+        "verifyDialogDescription": "Enter the 6-digit code we sent to {email}.",
+        "verifySuccess": "Email verified.",
+        "verifyError": "Verification failed.",
+        "codeExpired": "This code has expired. Request a new one.",
+        "codeInvalid": "Invalid code. Please try again.",
+        "rateLimited": "Too many requests. Please wait an hour and try again."
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Choose which channels we use to reach you for each event.",
+      "eventLabel": "Event",
+      "save": "Save",
+      "saveSuccess": "Notification preferences saved.",
+      "saveError": "Could not save preferences. Please try again.",
+      "hintLinkAccounts": "Some channels are unavailable until you link or verify the corresponding account.",
+      "channels": {
+        "sms": "SMS",
+        "telegram": "Telegram",
+        "email": "Email"
+      },
+      "disabled": {
+        "noPhone": "No phone on file",
+        "noTelegram": "Link Telegram first",
+        "noEmail": "Add an email first",
+        "emailUnverified": "Verify your email first"
+      },
+      "events": {
+        "donation_completed": {
+          "label": "Donation receipt",
+          "help": "When your donation is processed."
+        },
+        "campaign_verified": {
+          "label": "Campaign approved",
+          "help": "When admins approve your campaign for fundraising."
+        },
+        "withdrawal_status_changed": {
+          "label": "Withdrawal updates",
+          "help": "When your withdrawal is approved, rejected, or completed."
+        },
+        "recurring_charge_succeeded": {
+          "label": "Recurring donation processed",
+          "help": "When your recurring donation is charged successfully."
+        },
+        "recurring_charge_failed": {
+          "label": "Recurring donation failed",
+          "help": "When a recurring charge fails or your subscription is paused."
+        },
+        "campaign_milestone_reached": {
+          "label": "Campaign milestones",
+          "help": "When your campaign reaches 25%, 50%, 75%, 90%, or 100% of its goal."
+        },
+        "contact_message_received": {
+          "label": "Support replies",
+          "help": "Confirmations for messages you send via the contact form."
+        }
+      }
+    }
   },
   "verification": {
     "title": "Identity Verification",
@@ -415,6 +535,10 @@
     "anonymousDonor": "Anonymous",
     "paymentMethod": "Payment Method",
     "paymeRedirect": "You will be redirected to PayMe to complete your payment.",
+    "clickRedirect": "You will be redirected to Click to complete your payment.",
+    "chooseProvider": "Payment Provider",
+    "paymeDescription": "Pay with PayMe",
+    "clickDescription": "Pay with Click",
     "simulatePayment": "Simulate Payment (Dev Mode)",
     "successTitle": "Donation Successful!",
     "successDescription": "Thank you for your generosity. Your donation has been received.",
@@ -462,6 +586,20 @@
     "feeIncludedLabel": "Include the 1% fee in my donation",
     "feeIncludedHint": "If checked, the fee is deducted from your amount. Otherwise, it is added on top so 100% goes to the campaign.",
     "totalCharged": "You will be charged"
+  },
+  "donationReturn": {
+    "verifying": "Verifying payment...",
+    "loading": "Loading...",
+    "successTitle": "Donation Successful!",
+    "successMessage": "Thank you for your generosity. Your donation has been received.",
+    "cancelTitle": "Payment Cancelled",
+    "cancelMessage": "Your donation was not processed. You can try again.",
+    "errorTitle": "Something Went Wrong",
+    "errorMessage": "We could not verify your payment. Please check your donation history.",
+    "goBack": "Go Back",
+    "browseCampaigns": "Browse Campaigns",
+    "browseMore": "Browse More",
+    "myDonations": "My Donations"
   },
   "savedCards": {
     "title": "Payment Methods",
@@ -815,7 +953,6 @@
     "resources": "Resources",
     "helpCenter": "Help Center",
     "organizerGuidelines": "Organizer Guidelines",
-    "impactStories": "Impact Stories",
     "contact": "Contact",
     "copyright": "All rights reserved."
   },
@@ -860,5 +997,295 @@
     "FORBIDDEN": "Insufficient permissions",
     "RATE_LIMIT": "Too many requests. Please wait a moment.",
     "INTERNAL_ERROR": "An internal error occurred"
+  },
+  "acceptedPayments": {
+    "title": "Accepted Payment Methods",
+    "subtitle": "Sahovat supports trusted payment providers for secure and convenient donations.",
+    "paymeDescription": "Uzbekistan's leading digital payment platform",
+    "paymeFees": "No additional fees — 1% platform fee included",
+    "paymeProcessingTime": "Instant",
+    "paymeFeature1": "Card payments (UzCard, Humo, Visa, Mastercard)",
+    "paymeFeature2": "Saved cards for quick repeat donations",
+    "paymeFeature3": "Recurring donation support",
+    "clickDescription": "Popular payment service in Uzbekistan",
+    "clickFees": "No additional fees — 1% platform fee included",
+    "clickProcessingTime": "Instant",
+    "clickFeature1": "Card payments via Click's secure checkout",
+    "clickFeature2": "Quick redirect payment flow",
+    "clickFeature3": "Mobile-friendly checkout experience",
+    "securityTitle": "Your payments are secure",
+    "securityDescription": "All transactions are processed through verified payment providers with bank-level encryption. Sahovat never stores your raw card details — only secure, tokenized references.",
+    "browseCampaigns": "Browse campaigns"
+  },
+  "errorPages": {
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "The page you're looking for doesn't exist or has been moved.",
+    "serverErrorTitle": "Something went wrong",
+    "serverErrorDescription": "An unexpected error occurred on our side. Please try again in a moment.",
+    "tryAgain": "Try again",
+    "goHome": "Go home",
+    "browseCampaigns": "Browse campaigns"
+  },
+  "marketing": {
+    "browseCampaigns": "Browse campaigns",
+    "createCampaign": "Create a campaign",
+    "contactUs": "Contact us",
+    "register": "Sign up",
+    "learnMore": "Learn more",
+    "stats": {
+      "activeCampaigns": "Active campaigns",
+      "donationsCount": "Donations made",
+      "totalRaised": "Total raised",
+      "verifiedOrganizers": "Verified organizers",
+      "recentVerifications": "Verifications (30 days)",
+      "platformFees": "Platform fees collected",
+      "totalDonated": "Total donated",
+      "totalWithdrawn": "Total paid out"
+    }
+  },
+  "metadata": {
+    "about": {
+      "title": "About — Sahovat",
+      "description": "Sahovat is Uzbekistan's trusted crowdfunding platform connecting donors with verified causes."
+    },
+    "howItWorks": {
+      "title": "How It Works — Sahovat",
+      "description": "How donors and organizers use Sahovat in four simple steps."
+    },
+    "trustSafety": {
+      "title": "Trust & Safety — Sahovat",
+      "description": "How Sahovat verifies campaigns, protects donations, and reports fraud."
+    },
+    "transparency": {
+      "title": "Transparency — Sahovat",
+      "description": "Live platform stats, fee breakdown, and our commitment to data localization."
+    },
+    "help": {
+      "title": "Help Center — Sahovat",
+      "description": "Frequently asked questions about donating, organizing, payments, and more."
+    },
+    "organizerGuidelines": {
+      "title": "Organizer Guidelines — Sahovat",
+      "description": "What makes a great campaign on Sahovat — required documents, content rules, and best practices."
+    },
+    "contact": {
+      "title": "Contact — Sahovat",
+      "description": "Reach the Sahovat team. We typically respond within 1–2 business days."
+    }
+  },
+  "pages": {
+    "about": {
+      "eyebrow": "About Sahovat",
+      "title": "Charity, made transparent.",
+      "subtitle": "Sahovat connects Uzbek donors with verified people, families and projects in need — and shows exactly where every som goes.",
+      "ctaPrimary": "Browse campaigns",
+      "ctaSecondary": "Start a campaign",
+      "missionTitle": "Our mission",
+      "missionBody": "We started Sahovat because we believe charity shouldn't be a leap of faith. Every campaign on the platform passes identity and document verification before it goes live, every donation flows through escrow, and every withdrawal is reviewed by a real person.",
+      "storyTitle": "Our story",
+      "storyBody": "Sahovat began in 2025 as a single weekend prototype after two friends tried — and failed — to find a trustworthy way to help a family with a sudden medical bill. The choice was either anonymous bank transfers or international platforms that didn't speak Uzbek and couldn't accept local cards. We thought Uzbekistan deserved better.",
+      "valuesTitle": "What we stand for",
+      "valuesIntro": "Three principles guide every product decision we make.",
+      "values": {
+        "transparency": {
+          "title": "Radical transparency",
+          "body": "Every active campaign shows verified status, current balance, and donation history. Our platform fees are published, not hidden."
+        },
+        "verification": {
+          "title": "Real verification",
+          "body": "We verify organizer identity through OneID and require supporting documents per campaign category. No anonymous fundraisers."
+        },
+        "localFirst": {
+          "title": "Built for Uzbekistan",
+          "body": "Native PayMe and Click support, Uzbek/Russian/English UI, OneID identity, data stored in Uzbekistan per ZRU-547."
+        }
+      },
+      "statsTitle": "Sahovat by the numbers",
+      "statsIntro": "Updated every five minutes from live platform data.",
+      "ctaTitle": "Help where it counts.",
+      "ctaBody": "Find a verified campaign or start one of your own."
+    },
+    "howItWorks": {
+      "eyebrow": "How it works",
+      "title": "Two paths, one platform.",
+      "subtitle": "Whether you're giving or raising, the steps are simple — and every step is designed to protect both sides.",
+      "donorTab": "For donors",
+      "organizerTab": "For organizers",
+      "donor": {
+        "title": "Give in under a minute.",
+        "intro": "No account required to make your first donation.",
+        "step1Title": "Pick a campaign",
+        "step1Body": "Browse verified campaigns by category, urgency, or location. Every campaign shows its verification status and current progress.",
+        "step2Title": "Choose your amount",
+        "step2Body": "Pay any amount from 1,000 UZS upward. You can donate anonymously or under your name.",
+        "step3Title": "Pay with PayMe or Click",
+        "step3Body": "Both Uzbekistan-native payment methods are supported. Your card details never touch our servers.",
+        "step4Title": "Track the impact",
+        "step4Body": "Get a downloadable receipt by email or Telegram, and follow campaign updates as the goal is reached.",
+        "ctaTitle": "Ready to help?",
+        "ctaBody": "Hundreds of verified causes are waiting."
+      },
+      "organizer": {
+        "title": "Run a campaign people trust.",
+        "intro": "From draft to first donation in 1–2 business days.",
+        "step1Title": "Verify your identity",
+        "step1Body": "We verify Uzbek citizens via OneID. This step happens once and unlocks campaign creation forever.",
+        "step2Title": "Build your campaign",
+        "step2Body": "Five short steps: category, story, goal, supporting documents, photos. Save a draft any time.",
+        "step3Title": "Wait for review",
+        "step3Body": "Our admin team reviews every campaign manually. Most decisions arrive within one business day.",
+        "step4Title": "Withdraw when ready",
+        "step4Body": "Request withdrawals to your verified bank card. Each request is reviewed and paid within 1–3 business days.",
+        "ctaTitle": "Start your campaign",
+        "ctaBody": "Free to create. We only earn when you do — through a small platform fee on completed donations."
+      },
+      "faqTitle": "Common questions",
+      "faqIntro": "Everything below is also covered in the Help Center."
+    },
+    "trustSafety": {
+      "eyebrow": "Trust & Safety",
+      "title": "Trust isn't a tagline. It's a process.",
+      "subtitle": "Every campaign, every donation and every withdrawal on Sahovat passes through controls designed to protect both donors and organizers.",
+      "verifyTitle": "How we verify campaigns",
+      "verifyIntro": "Three independent checks before a campaign goes live.",
+      "verify": {
+        "step1Title": "OneID identity",
+        "step1Body": "Organizers verify their legal identity through Uzbekistan's national OneID service. We can't fake this — and neither can fraudsters."
+        ,
+        "step2Title": "Supporting documents",
+        "step2Body": "Each category requires specific evidence: medical bills for medical campaigns, school enrollment letters for education, etc. Uploaded privately, not public."
+        ,
+        "step3Title": "Manual admin review",
+        "step3Body": "A real person on the Sahovat team reviews every submission before approval. No auto-approval, no shortcuts."
+      },
+      "moneyTitle": "Your money is safe",
+      "moneyBody": "Donations don't sit in a single bank account that could vanish. Each campaign has its own virtual ledger, and funds are escrowed until the organizer requests a withdrawal — which itself is reviewed and matched against the verified organizer's identity.",
+      "moneyPoint1": "Donations are escrowed per campaign in a virtual ledger.",
+      "moneyPoint2": "Withdrawals are paid only to bank cards that match the verified organizer's name.",
+      "moneyPoint3": "Failed or refunded payments never reach the organizer's balance.",
+      "moneyPoint4": "All payments flow through licensed Uzbek processors (PayMe, Click).",
+      "fraudTitle": "Reporting fraud",
+      "fraudBody": "If something looks wrong on a campaign — anywhere on the platform — tell us. We treat every report seriously and respond within one business day.",
+      "fraudCta": "Report a campaign",
+      "ctaTitle": "Questions about safety?",
+      "ctaBody": "Read the Help Center or contact our team directly."
+    },
+    "transparency": {
+      "eyebrow": "Transparency",
+      "title": "Open numbers, open process.",
+      "subtitle": "We publish what we know — total raised, where it went, what we kept, and what's still in escrow.",
+      "liveTitle": "Live platform numbers",
+      "liveIntro": "Refreshed every five minutes from production data.",
+      "feeTitle": "Where the money goes",
+      "feeIntro": "For every 100,000 UZS donated, here's the exact split.",
+      "feeBars": {
+        "campaign": "Goes to the campaign",
+        "platform": "Platform fee",
+        "processing": "Payment processing"
+      },
+      "feeNote": "Platform fee covers verification, hosting, customer support, and admin review. Payment processing fees are passed through from PayMe and Click at cost.",
+      "dataTitle": "Data localization",
+      "dataBody": "Per Uzbekistan's ZRU-547, all personal data of Uzbek users is stored on servers physically located in Uzbekistan. We do not transfer this data abroad and we do not sell it.",
+      "verificationsTitle": "Recent activity",
+      "verificationsBody": "Number of new organizer verifications approved in the last 30 days:",
+      "verificationsHint": "Active organizers, last 30 days",
+      "ctaTitle": "Have a question we should answer here?",
+      "ctaBody": "Send us a transparency request — we'll respond and, if useful, publish."
+    },
+    "help": {
+      "eyebrow": "Help Center",
+      "title": "How can we help?",
+      "subtitle": "Answers to the questions we hear most. If you can't find yours, write to us — a real person reads every message.",
+      "categoryHeading": "Browse by topic",
+      "categories": {
+        "donating": "Donating",
+        "creating": "Creating campaigns",
+        "withdrawals": "Withdrawals",
+        "account": "Account & verification",
+        "payments": "Payments",
+        "telegramSms": "Telegram & SMS"
+      },
+      "stillNeedHelp": "Still need help?",
+      "stillNeedHelpBody": "Reach the team directly and we'll get back within 1–2 business days.",
+      "stillNeedHelpCta": "Contact support"
+    },
+    "organizerGuidelines": {
+      "eyebrow": "Organizer guidelines",
+      "title": "What makes a campaign succeed.",
+      "subtitle": "Read this before you start — it's the difference between approval in hours and rejection in days.",
+      "checklistTitle": "What makes a great campaign",
+      "checklist": {
+        "item1Title": "Clear, honest title",
+        "item1Body": "State who needs help and why in plain language. Avoid clickbait or all-caps.",
+        "item2Title": "Real story, real photos",
+        "item2Body": "Write the story yourself — your own words, your own photos. Stock photos are a red flag.",
+        "item3Title": "Realistic goal amount",
+        "item3Body": "Goal should match the actual cost. Show a breakdown if the amount is large.",
+        "item4Title": "Verifiable documents",
+        "item4Body": "Medical campaigns need bills or doctor's notes. Educational campaigns need enrollment letters."
+      },
+      "documentsTitle": "Required documents by category",
+      "documentsIntro": "Documents are uploaded privately. Donors never see them — only the admin review team.",
+      "documents": {
+        "medical": "Hospital invoices, prescriptions, doctor's referral, or treatment plan.",
+        "education": "Enrollment letter, tuition invoice, or scholarship denial letter.",
+        "emergency": "Police report, official damage assessment, or photo evidence.",
+        "community": "Project proposal with budget breakdown and at least one community endorsement.",
+        "creative": "Project description, samples of past work, and detailed budget.",
+        "business": "Business registration, financial plan, and clear use of funds."
+      },
+      "prohibitedTitle": "What we don't allow",
+      "prohibitedIntro": "Campaigns matching any of the below are rejected without exception.",
+      "prohibited": {
+        "item1Title": "Misleading or false claims",
+        "item1Body": "Fabricated stories, inflated diagnoses, or staged photos.",
+        "item2Title": "Political or religious fundraising",
+        "item2Body": "We're a humanitarian platform. No party donations, no religious building projects.",
+        "item3Title": "Illegal activities",
+        "item3Body": "Anything that violates Uzbek law — including unlicensed medical claims."
+      },
+      "photosTitle": "Photo guidelines",
+      "photosBody": "Three to five real photos, taken yourself, lit naturally, no heavy filters. The best campaigns include a photo of the person or family you're raising for (with their consent) plus context photos (the home, the project site, the diagnosis).",
+      "withdrawalsTitle": "Withdrawals — what to expect",
+      "withdrawalsBody": "You can request a withdrawal at any time after your first verified donation. Each request is reviewed against your verified identity and paid to your bank card within 1–3 business days. Platform fee and any payment processing fees are deducted automatically.",
+      "ctaTitle": "Ready to start?",
+      "ctaBody": "Create a campaign now or contact us first if you have questions."
+    },
+    "contact": {
+      "eyebrow": "Contact",
+      "title": "We'd love to hear from you.",
+      "subtitle": "Questions, feedback, partnership ideas, or fraud reports — write to the Sahovat team and we'll respond personally.",
+      "form": {
+        "nameLabel": "Your name",
+        "namePlaceholder": "Aliyev Aziz",
+        "emailLabel": "Email (optional)",
+        "emailPlaceholder": "you@example.com",
+        "emailHint": "We'll send a confirmation if you provide an email.",
+        "phoneLabel": "Phone (optional)",
+        "phonePlaceholder": "+998 90 123 45 67",
+        "subjectLabel": "Subject",
+        "subjectPlaceholder": "What's this about?",
+        "messageLabel": "Message",
+        "messagePlaceholder": "Tell us what's on your mind…",
+        "submit": "Send message",
+        "submitting": "Sending…",
+        "successTitle": "Message received",
+        "successBody": "Thanks — your reference is {ref}. We typically reply within 1–2 business days. If you provided an email, you should see a confirmation in your inbox shortly.",
+        "successAgain": "Send another message",
+        "errorTitle": "Could not send message",
+        "errorGeneric": "Something went wrong. Please try again."
+      },
+      "infoTitle": "Other ways to reach us",
+      "info": {
+        "telegramLabel": "Telegram",
+        "telegramValue": "@SahovatTechBot",
+        "emailLabel": "Email",
+        "emailValue": "support@sahovat.tech",
+        "responseTimeLabel": "Response time",
+        "responseTimeValue": "1–2 business days",
+        "addressLabel": "Address",
+        "addressValue": "Tashkent, Uzbekistan"
+      }
+    }
   }
 }

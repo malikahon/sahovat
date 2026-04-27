@@ -1,10 +1,18 @@
-import { randomUUID } from 'node:crypto';
+import { randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { query } from '../../config/database.js';
 import { redis } from '../../config/redis.js';
 import { env } from '../../config/env.js';
-import { NotFoundError, ValidationError, UnauthorizedError } from '../../lib/errors.js';
+import {
+  NotFoundError,
+  ValidationError,
+  UnauthorizedError,
+  ConflictError,
+  RateLimitError,
+  AppError,
+} from '../../lib/errors.js';
 import { storageService } from '../../services/storage.service.js';
 import { verifyDocumentName } from '../../services/ocr.service.js';
+import { emailService } from '../../services/email.service.js';
 import type { UpdateProfileDto } from '../../types/api.js';
 import type { UserRow, SafeUser } from './users.types.js';
 
@@ -19,6 +27,8 @@ const USER_COLUMNS = `id, phone_number, display_name, password_hash,
   date_of_birth, gender, preferred_categories,
   is_verified, is_admin, is_banned, verification_status,
   oneid_id, oneid_verified_at, language_preference,
+  telegram_id, telegram_username, telegram_photo_url, telegram_linked_at,
+  preferred_otp_channel, email, email_verified_at,
   created_at, updated_at`;
 
 /**
@@ -380,6 +390,212 @@ function runOcrAsync(
   // This pattern prevents any rejected promise from leaking to the process.
 }
 
+// ============================================================
+// EMAIL — UPDATE / VERIFY (Week 1 baseline; verification flow in F.5)
+// ============================================================
+
+/**
+ * Postgres unique-violation error code. node-postgres surfaces this on
+ * `err.code` when a UNIQUE constraint fails (e.g. users_email_unique).
+ */
+const PG_UNIQUE_VIOLATION = '23505';
+
+/**
+ * Sets or replaces the current user's email. Always clears
+ * email_verified_at — verification must be re-done.
+ *
+ * Throws ConflictError if the email is already on another user.
+ */
+export async function updateEmail(userId: string, email: string): Promise<SafeUser> {
+  // Normalize again at the boundary as belt-and-braces (zod already lowercased).
+  const normalized = email.trim().toLowerCase();
+
+  try {
+    const result = await query(
+      `UPDATE users
+       SET email             = $1,
+           email_verified_at = NULL,
+           updated_at        = NOW()
+       WHERE id = $2
+       RETURNING ${USER_COLUMNS}`,
+      [normalized, userId],
+    );
+
+    if (result.rows.length === 0) {
+      throw new NotFoundError('User not found');
+    }
+
+    return toSafeUser(result.rows[0] as UserRow);
+  } catch (err) {
+    // Unique constraint hit on users_email_unique → conflict.
+    if ((err as { code?: string }).code === PG_UNIQUE_VIOLATION) {
+      throw new ConflictError('This email is already in use', 'EMAIL_TAKEN');
+    }
+    throw err;
+  }
+}
+
+/**
+ * Marks the current user's email as verified by setting email_verified_at.
+ * Used by the verification-code flow (F.5).
+ */
+export async function markEmailVerified(userId: string): Promise<SafeUser> {
+  const result = await query(
+    `UPDATE users
+     SET email_verified_at = NOW(),
+         updated_at        = NOW()
+     WHERE id = $1
+       AND email IS NOT NULL
+     RETURNING ${USER_COLUMNS}`,
+    [userId],
+  );
+
+  if (result.rows.length === 0) {
+    throw new ValidationError(
+      'Cannot verify: no email set on this account',
+      'NO_EMAIL_SET',
+    );
+  }
+
+  return toSafeUser(result.rows[0] as UserRow);
+}
+
+/**
+ * Re-export the rate-limit error class for callers that want to map
+ * Redis counter overflows to a 429 response.
+ */
+export { RateLimitError };
+
+// ------------------------------------------------------------
+// Email verification flow (pulled forward from Week 3 task 3.12)
+// ------------------------------------------------------------
+
+const EMAIL_VERIFY_PREFIX = 'email_verify:';
+const EMAIL_VERIFY_COUNT_PREFIX = 'email_verify_count:';
+const EMAIL_VERIFY_TTL_SECONDS = 600; // 10 minutes
+const EMAIL_VERIFY_RATE_WINDOW_SECONDS = 3600; // 1 hour
+const EMAIL_VERIFY_RATE_LIMIT = 5; // max 5 sends per hour per user
+
+/**
+ * Generates a 6-digit numeric code using crypto.randomInt for unbiased
+ * uniform distribution. Padded to 6 chars.
+ */
+function generateVerificationCode(): string {
+  return randomInt(0, 1_000_000).toString().padStart(6, '0');
+}
+
+/**
+ * Sends a 6-digit verification code to the current user's email.
+ *
+ * Behavior:
+ *  - 400 if user has no email or it's already verified.
+ *  - 429 if the user has already requested >5 codes in the last hour.
+ *  - 502 if the email provider rejects the send.
+ *
+ * The code is stored in Redis at `email_verify:{userId}` with a 10-min TTL.
+ * Re-requesting overwrites the existing code (the latest request wins).
+ */
+export async function requestEmailVerification(userId: string): Promise<void> {
+  // Fetch current email + verified state.
+  const result = await query(
+    `SELECT email, email_verified_at FROM users WHERE id = $1`,
+    [userId],
+  );
+  if (result.rows.length === 0) {
+    throw new NotFoundError('User not found');
+  }
+  const { email, email_verified_at } = result.rows[0] as {
+    email: string | null;
+    email_verified_at: string | null;
+  };
+
+  if (!email) {
+    throw new ValidationError(
+      'No email address on file. Add an email first.',
+      'NO_EMAIL_SET',
+    );
+  }
+  if (email_verified_at) {
+    throw new ValidationError('Email is already verified', 'ALREADY_VERIFIED');
+  }
+
+  // Rate limit. INCR returns the new value; first call sets the key.
+  const countKey = `${EMAIL_VERIFY_COUNT_PREFIX}${userId}`;
+  const count = await redis.incr(countKey);
+  if (count === 1) {
+    // First send in the window — set the TTL.
+    await redis.expire(countKey, EMAIL_VERIFY_RATE_WINDOW_SECONDS);
+  }
+  if (count > EMAIL_VERIFY_RATE_LIMIT) {
+    throw new RateLimitError(
+      'Too many verification code requests. Please wait an hour.',
+      'EMAIL_VERIFY_RATE_LIMIT',
+    );
+  }
+
+  // Generate and store code.
+  const code = generateVerificationCode();
+  await redis.set(
+    `${EMAIL_VERIFY_PREFIX}${userId}`,
+    code,
+    'EX',
+    EMAIL_VERIFY_TTL_SECONDS,
+  );
+
+  // Send — surface failures as 502 (Bad Gateway: upstream provider failed).
+  try {
+    await emailService.sendVerificationCode(email, code);
+  } catch (err) {
+    // Don't leave a stale code in Redis if the send failed — the user
+    // would never receive it but the code would still validate.
+    await redis.del(`${EMAIL_VERIFY_PREFIX}${userId}`);
+    const msg = err instanceof Error ? err.message : 'Email send failed';
+    console.error(`[Sahovat] Email send failed for user ${userId}: ${msg}`);
+    throw new AppError(
+      'Could not send verification email. Please try again.',
+      502,
+      'EMAIL_SEND_FAILED',
+    );
+  }
+}
+
+/**
+ * Validates a 6-digit verification code against the Redis-stored value.
+ * On success, marks the user's email as verified and deletes the code.
+ *
+ * Uses constant-time comparison even though the code TTL is short — an
+ * attacker who could observe timing can otherwise extract codes char by
+ * char in <600s.
+ */
+export async function confirmEmailVerification(
+  userId: string,
+  code: string,
+): Promise<SafeUser> {
+  const key = `${EMAIL_VERIFY_PREFIX}${userId}`;
+  const stored = await redis.get(key);
+
+  if (!stored) {
+    throw new UnauthorizedError(
+      'This verification code has expired. Request a new one.',
+      'CODE_EXPIRED',
+    );
+  }
+
+  // Constant-time compare. Both must be the same byte length; otherwise
+  // it's invalid by construction.
+  const a = Buffer.from(stored);
+  const b = Buffer.from(code);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
+    throw new UnauthorizedError('Invalid verification code', 'INVALID_CODE');
+  }
+
+  // Mark verified + delete the code.
+  const user = await markEmailVerified(userId);
+  await redis.del(key);
+
+  return user;
+}
+
 /**
  * Lists all verification documents submitted by a user.
  */
@@ -420,4 +636,147 @@ export async function getMyVerificationDocuments(userId: string): Promise<Array<
     reviewed_at: string | null;
     reviewer_notes: string | null;
   }>;
+}
+
+// ============================================================
+// NOTIFICATION PREFERENCES
+// ============================================================
+
+import {
+  NotificationChannel,
+  NOTIFICATION_CHANNELS,
+  NOTIFICATION_EVENT_TYPES,
+  type NotificationEventType,
+  type NotificationPreference,
+} from '../../types/entities.js';
+
+interface PreferenceUpdate {
+  event_type: NotificationEventType;
+  channel: NotificationChannel;
+  enabled: boolean;
+}
+
+/**
+ * Returns the full preference grid for a user. Lazy-creates default rows
+ * if any are missing — defends against users created before migration 011
+ * was applied (or against partial backfill failures).
+ */
+export async function getNotificationPreferences(
+  userId: string,
+): Promise<NotificationPreference[]> {
+  // Fetch existing rows.
+  const existing = await query(
+    `SELECT user_id, event_type, channel, enabled, created_at, updated_at
+     FROM notification_preferences
+     WHERE user_id = $1`,
+    [userId],
+  );
+
+  const rows = existing.rows as NotificationPreference[];
+
+  // Compute missing (event, channel) pairs and lazily insert defaults.
+  const present = new Set(rows.map((r) => `${r.event_type}:${r.channel}`));
+  const missing: PreferenceUpdate[] = [];
+
+  // Look up email_verified_at once for default-enable decision on email channel.
+  const userResult = await query(
+    `SELECT email_verified_at FROM users WHERE id = $1`,
+    [userId],
+  );
+  if (userResult.rows.length === 0) {
+    throw new NotFoundError('User not found');
+  }
+  const emailVerified =
+    !!(userResult.rows[0] as { email_verified_at: string | null }).email_verified_at;
+
+  for (const event_type of NOTIFICATION_EVENT_TYPES) {
+    for (const channel of NOTIFICATION_CHANNELS) {
+      if (!present.has(`${event_type}:${channel}`)) {
+        missing.push({
+          event_type,
+          channel,
+          enabled: channel === NotificationChannel.EMAIL ? emailVerified : true,
+        });
+      }
+    }
+  }
+
+  if (missing.length > 0) {
+    const values: string[] = [];
+    const params: unknown[] = [];
+    let idx = 1;
+    for (const m of missing) {
+      values.push(`($${idx++}, $${idx++}, $${idx++}, $${idx++})`);
+      params.push(userId, m.event_type, m.channel, m.enabled);
+    }
+    await query(
+      `INSERT INTO notification_preferences (user_id, event_type, channel, enabled)
+       VALUES ${values.join(', ')}
+       ON CONFLICT (user_id, event_type, channel) DO NOTHING`,
+      params,
+    );
+    // Refetch to return a consistent set.
+    const refetch = await query(
+      `SELECT user_id, event_type, channel, enabled, created_at, updated_at
+       FROM notification_preferences
+       WHERE user_id = $1`,
+      [userId],
+    );
+    return refetch.rows as NotificationPreference[];
+  }
+
+  return rows;
+}
+
+/**
+ * Bulk-update a user's preferences. Validates each update against the
+ * email-verification gate: enabling email channels requires a verified
+ * email. Other validation (event_type / channel enum) is handled by the
+ * route's zod schema.
+ */
+export async function updateNotificationPreferences(
+  userId: string,
+  updates: PreferenceUpdate[],
+): Promise<NotificationPreference[]> {
+  if (updates.length === 0) {
+    return getNotificationPreferences(userId);
+  }
+
+  // Email-verification gate: any update enabling 'email' requires verified email.
+  const enablingEmail = updates.some(
+    (u) => u.channel === NotificationChannel.EMAIL && u.enabled,
+  );
+  if (enablingEmail) {
+    const userResult = await query(
+      `SELECT email_verified_at FROM users WHERE id = $1`,
+      [userId],
+    );
+    if (userResult.rows.length === 0) {
+      throw new NotFoundError('User not found');
+    }
+    const verified = !!(userResult.rows[0] as { email_verified_at: string | null })
+      .email_verified_at;
+    if (!verified) {
+      throw new ValidationError(
+        'Verify your email before enabling the email channel.',
+        'EMAIL_NOT_VERIFIED',
+      );
+    }
+  }
+
+  // Upsert each update. Done in a single statement using UNNEST for efficiency.
+  const eventTypes = updates.map((u) => u.event_type);
+  const channels = updates.map((u) => u.channel);
+  const enabledFlags = updates.map((u) => u.enabled);
+
+  await query(
+    `INSERT INTO notification_preferences (user_id, event_type, channel, enabled, updated_at)
+     SELECT $1, e, c, en, NOW()
+     FROM UNNEST($2::text[], $3::text[], $4::boolean[]) AS t(e, c, en)
+     ON CONFLICT (user_id, event_type, channel)
+     DO UPDATE SET enabled = EXCLUDED.enabled, updated_at = NOW()`,
+    [userId, eventTypes, channels, enabledFlags],
+  );
+
+  return getNotificationPreferences(userId);
 }

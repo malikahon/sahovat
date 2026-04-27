@@ -6,10 +6,15 @@ import { storageService } from '../../services/storage.service.js';
 import { smsService } from '../../services/sms.service.js';
 import { generateOtp, storeOtp, verifyOtp, isOtpLocked } from '../../lib/otp.js';
 import { NotFoundError, ValidationError, ForbiddenError, RateLimitError } from '../../lib/errors.js';
-import { CampaignStatus, DonationStatus } from '../../types/entities.js';
+import { CampaignStatus, DonationStatus, PaymentProvider } from '../../types/entities.js';
 import type { InitiateDonationDto, DonationListQuery } from '../../types/api.js';
 import type { DonationRow, DonationWithCampaignRow, DonationReceiptRow } from './donations.types.js';
 import * as ledgerService from './ledger.service.js';
+import { dispatchSafe } from '../../services/notifications/dispatcher.js';
+import {
+  computeCrossedMilestones,
+  highestCrossed,
+} from '../../services/notifications/milestones.js';
 
 /** Redis key prefix for storing OTP verification state for large donations. */
 const DONATION_OTP_VERIFIED_PREFIX = 'donation_otp_verified:';
@@ -227,6 +232,9 @@ export async function initiateDonation(
 
   // If a saved card was provided, charge it directly
   if (data.saved_card_id) {
+    if (data.payment_provider === PaymentProvider.CLICK) {
+      throw new ValidationError('Click does not support saved card payments. Use redirect-based payment.', 'CLICK_NO_SAVED_CARDS');
+    }
     const { getCardWithToken } = await import('../saved-cards/saved-cards.service.js');
     const savedCard = await getCardWithToken(data.saved_card_id, userId);
 
@@ -326,6 +334,19 @@ export async function confirmDonation(
     }
 
     let updatedDonation: DonationRow;
+    /**
+     * Captured during the COMMIT-protected balance update; consumed after
+     * COMMIT to fire milestone notifications. Null when the donation
+     * resolves to 'failed' (no balance change → no milestone crossing).
+     */
+    let milestoneContext: {
+      campaignId: string;
+      campaignTitle: string;
+      creatorId: string;
+      crossed: number[];
+      currentAmount: number;
+      goalAmount: number;
+    } | null = null;
 
     if (status === 'completed') {
       // Update donation to completed
@@ -346,13 +367,49 @@ export async function confirmDonation(
         [donationId, 'donation', Number(donation.platform_fee)],
       );
 
-      // Credit campaign balance
-      await client.query(
+      // Credit campaign balance and capture pre/post values for milestone detection.
+      // Note: current_amount is incremented by net_amount, so prev = (returned) - net.
+      const balanceUpdateResult = await client.query(
         `UPDATE campaigns
          SET current_amount = current_amount + $1
-         WHERE id = $2`,
+         WHERE id = $2
+         RETURNING current_amount, goal_amount, last_milestone_notified, title, creator_id`,
         [Number(donation.net_amount), donation.campaign_id],
       );
+
+      const balanceRow = balanceUpdateResult.rows[0] as {
+        current_amount: string | number;
+        goal_amount: string | number;
+        last_milestone_notified: number;
+        title: string;
+        creator_id: string;
+      };
+      const newAmount = Number(balanceRow.current_amount);
+      const goalAmount = Number(balanceRow.goal_amount);
+      const prevAmount = newAmount - Number(donation.net_amount);
+      const lastNotified = Number(balanceRow.last_milestone_notified);
+      const crossed = computeCrossedMilestones(prevAmount, newAmount, goalAmount, lastNotified);
+      const newLastNotified = highestCrossed(crossed, lastNotified);
+
+      // Persist new milestone marker atomically with the same transaction.
+      if (newLastNotified !== lastNotified) {
+        await client.query(
+          `UPDATE campaigns
+           SET last_milestone_notified = $1
+           WHERE id = $2 AND last_milestone_notified < $1`,
+          [newLastNotified, donation.campaign_id],
+        );
+      }
+
+      // Stash for post-COMMIT notify (we only fire if the COMMIT succeeds).
+      milestoneContext = {
+        campaignId: donation.campaign_id,
+        campaignTitle: balanceRow.title,
+        creatorId: balanceRow.creator_id,
+        crossed,
+        currentAmount: newAmount,
+        goalAmount,
+      };
     } else {
       // Update donation to failed
       const updateResult = await client.query(
@@ -410,6 +467,55 @@ export async function confirmDonation(
         console.error(
           `[Sahovat] Failed to generate receipt for donation ${donationId}:`,
           receiptErr,
+        );
+      }
+
+      // Fire-and-forget notifications (donor + organizer milestones).
+      // Modeled on the receipt block above — try/catch wraps everything so
+      // notify failure never propagates to the webhook caller.
+      try {
+        const donorRow = await query(
+          `SELECT display_name FROM users WHERE id = $1`,
+          [donation.donor_id],
+        );
+        const donorDisplay =
+          (donorRow.rows[0] as { display_name: string | null } | undefined)
+            ?.display_name ?? 'Anonymous';
+        const ctx = milestoneContext;
+
+        // 1. Donor: donation_completed
+        void dispatchSafe({
+          user_id: donation.donor_id,
+          event_type: 'donation_completed',
+          payload: {
+            donationId,
+            campaignId: donation.campaign_id,
+            campaignTitle: ctx?.campaignTitle ?? '',
+            amount: Number(donation.amount),
+            donorName: donation.is_anonymous ? 'Anonymous' : donorDisplay,
+          },
+        });
+
+        // 2. Organizer: campaign_milestone_reached, one per crossed threshold.
+        if (ctx) {
+          for (const pct of ctx.crossed) {
+            void dispatchSafe({
+              user_id: ctx.creatorId,
+              event_type: 'campaign_milestone_reached',
+              payload: {
+                campaignId: ctx.campaignId,
+                campaignTitle: ctx.campaignTitle,
+                percentage: pct as 25 | 50 | 75 | 90 | 100,
+                currentAmount: ctx.currentAmount,
+                goalAmount: ctx.goalAmount,
+              },
+            });
+          }
+        }
+      } catch (notifyErr) {
+        console.error(
+          `[Sahovat] [notify] failed to dispatch donation_completed for ${donationId}:`,
+          notifyErr,
         );
       }
     }

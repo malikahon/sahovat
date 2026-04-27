@@ -7,6 +7,7 @@ import {
 } from '../../lib/errors.js';
 import { CampaignStatus } from '../../types/entities.js';
 import type { DocumentType } from '../../types/entities.js';
+import { notifyCampaignPending } from '../../services/notifications/admin-feed.js';
 import type {
   CreateCampaignDto,
   UpdateCampaignDto,
@@ -49,6 +50,7 @@ function toCampaignWithStats(row: CampaignWithStatsRow): CampaignWithStats {
     is_verified: row.is_verified,
     end_date: row.end_date,
     cover_image_url: row.cover_image_url,
+    last_milestone_notified: Number(row.last_milestone_notified ?? 0),
     created_at: row.created_at,
     updated_at: row.updated_at,
     donor_count: Number(row.donor_count),
@@ -752,6 +754,26 @@ export async function submitCampaign(
     `UPDATE campaigns SET status = 'pending_review', updated_at = NOW() WHERE id = $1 RETURNING *`,
     [campaignId],
   );
+
+  // Fire-and-forget admin alert. Loads organizer name for the message.
+  void (async () => {
+    try {
+      const orgRow = await query(
+        `SELECT display_name FROM users WHERE id = $1`,
+        [creatorId],
+      );
+      const organizerName =
+        (orgRow.rows[0] as { display_name: string | null } | undefined)
+          ?.display_name ?? null;
+      await notifyCampaignPending({
+        campaignId,
+        title: existing.title,
+        organizerName,
+      });
+    } catch (notifyErr) {
+      console.error('[Sahovat] [notify] campaign pending admin alert failed:', notifyErr);
+    }
+  })();
 
   return toCampaign(result.rows[0] as CampaignRow);
 }

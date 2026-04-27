@@ -86,3 +86,16 @@ export const webhookPaymeSchema = {
     status: z.enum(['completed', 'failed']),
   }),
 };
+
+// ============================================================
+// WEBHOOK — CLICK
+// ============================================================
+
+export const webhookClickSchema = {
+  body: z.object({
+    donation_id: z.string(),
+    transaction_id: z.string(),
+    amount: z.number(),
+    status: z.enum(['completed', 'failed']),
+  }),
+};

@@ -80,8 +80,10 @@ async function safeJson<T>(res: Response, fallback?: T): Promise<T> {
 export const authApi = {
   /**
    * Send OTP to the given phone number.
+   * The OTP code is never returned in the HTTP response — read from
+   * server console during dev or from the SMS during production.
    */
-  async requestOtp(phone_number: string): Promise<{ success: boolean; message?: string; dev_otp?: string }> {
+  async requestOtp(phone_number: string): Promise<{ success: boolean; message?: string }> {
     const res = await fetch('/api/auth/request-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -199,6 +201,60 @@ export const authApi = {
     });
     return res.json();
   },
+
+  /**
+   * Telegram Login Widget — exchanges a verified Telegram payload for a session.
+   * Cookies are set server-side by the BFF.
+   */
+  async telegramLogin(
+    payload: import('./types').TelegramAuthPayload,
+  ): Promise<{
+    success: boolean;
+    data?: { user: import('./types').User | null; is_new_user: boolean };
+    error?: string;
+    message?: string;
+  }> {
+    const res = await fetch('/api/auth/telegram-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
+
+  /**
+   * Link a Telegram account to the current authenticated user.
+   */
+  async telegramLink(
+    payload: import('./types').TelegramAuthPayload,
+  ): Promise<{
+    success: boolean;
+    data?: { user: import('./types').User };
+    error?: string;
+    message?: string;
+  }> {
+    const res = await fetch('/api/auth/telegram-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  },
+
+  /**
+   * Unlink the current user's Telegram identity.
+   */
+  async telegramUnlink(): Promise<{
+    success: boolean;
+    data?: { user: import('./types').User };
+    error?: string;
+    message?: string;
+  }> {
+    const res = await fetch('/api/auth/telegram-unlink', {
+      method: 'POST',
+    });
+    return res.json();
+  },
 };
 
 // ============================================================
@@ -236,6 +292,106 @@ export const usersApi = {
     error?: string;
   }> {
     const res = await fetchWithRetry('/api/users/oneid/initiate');
+    return safeJson(res);
+  },
+
+  /**
+   * Set or replace the user's email. Always resets email_verified_at.
+   */
+  async updateEmail(email: string): Promise<{
+    success: boolean;
+    data?: { user: import('./types').User };
+    error?: string;
+    message?: string;
+  }> {
+    const res = await fetchWithRetry('/api/users/me/email', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    return safeJson(res);
+  },
+
+  /**
+   * Send a 6-digit verification code to the user's current email.
+   * The code is never returned by the API — read it from the email.
+   */
+  async requestEmailVerification(): Promise<{
+    success: boolean;
+    error?: string;
+    message?: string;
+  }> {
+    const res = await fetchWithRetry('/api/users/me/email/verify-request', {
+      method: 'POST',
+    });
+    return safeJson(res);
+  },
+
+  /**
+   * Submit a 6-digit verification code. On success, returns the user
+   * with email_verified_at set.
+   */
+  async confirmEmailVerification(code: string): Promise<{
+    success: boolean;
+    data?: { user: import('./types').User };
+    error?: string;
+    message?: string;
+  }> {
+    const res = await fetchWithRetry('/api/users/me/email/verify-confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    return safeJson(res);
+  },
+
+  // ============================================================
+  // Notification preferences (Week 3)
+  // ============================================================
+
+  async getNotificationPreferences(): Promise<{
+    success: boolean;
+    data?: {
+      preferences: Array<{
+        user_id: string;
+        event_type: string;
+        channel: 'sms' | 'telegram' | 'email';
+        enabled: boolean;
+        created_at: string;
+        updated_at: string;
+      }>;
+    };
+    error?: string;
+  }> {
+    const res = await fetchWithRetry('/api/users/me/notification-preferences');
+    return safeJson(res);
+  },
+
+  async updateNotificationPreferences(
+    updates: Array<{
+      event_type: string;
+      channel: 'sms' | 'telegram' | 'email';
+      enabled: boolean;
+    }>,
+  ): Promise<{
+    success: boolean;
+    data?: {
+      preferences: Array<{
+        user_id: string;
+        event_type: string;
+        channel: 'sms' | 'telegram' | 'email';
+        enabled: boolean;
+        created_at: string;
+        updated_at: string;
+      }>;
+    };
+    error?: string;
+  }> {
+    const res = await fetchWithRetry('/api/users/me/notification-preferences', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updates }),
+    });
     return safeJson(res);
   },
 
@@ -557,11 +713,12 @@ export const donationsApi = {
 
   /**
    * Request OTP for a donation > 100,000 UZS.
+   * The OTP code is never returned in the HTTP response.
    */
   async requestOtp(
     campaign_id: string,
     amount: number,
-  ): Promise<{ success: boolean; message?: string; error?: string; dev_otp?: string }> {
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
     const res = await fetchWithRetry('/api/donations/request-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -599,21 +756,23 @@ export const donationsApi = {
   },
 
   /**
-   * Dev-only: Simulate PayMe payment completion by calling the webhook endpoint.
-   * Triggers the backend to mark the donation as completed.
+   * Dev-only: Simulate payment completion by calling the webhook endpoint.
+   * Supports both PayMe and Click providers.
    */
   async simulatePayment(
     donationId: string,
     amount: number,
+    provider: 'payme' | 'click' | 'uzum' = 'payme',
   ): Promise<{ success: boolean; error?: string }> {
-    const res = await fetch('/api/donations/webhook/payme', {
+    const endpoint = `/api/donations/webhook/${provider}`;
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         donation_id: donationId,
         status: 'completed',
         amount,
-        transaction_id: `mock_txn_${Date.now()}`,
+        transaction_id: `mock_txn_${provider}_${Date.now()}`,
       }),
     });
     return res.json();

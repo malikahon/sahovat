@@ -3,21 +3,24 @@ import type { AuthenticatedRequest } from '../../types/middleware.js';
 import type { RequestOtpDto, VerifyOtpDto, AdminLoginDto, RefreshTokenDto } from '../../types/api.js';
 import * as authService from './auth.service.js';
 import type { RegisterData } from './auth.service.js';
-import { env } from '../../config/env.js';
 
 /**
  * POST /api/auth/request-otp
  * Sends an OTP to the provided phone number.
+ *
+ * In dev/test environments the OTP is still returned by the service
+ * (logged to server stdout via SmsService) but is never echoed in the
+ * HTTP response. To read codes during dev, watch the backend log; to
+ * read codes during E2E tests, use GET /api/auth/test-otp/:phone.
  */
 export async function requestOtp(req: Request, res: Response): Promise<void> {
   const { phone_number } = req.body as RequestOtpDto;
 
-  const otp = await authService.requestOtp(phone_number);
+  await authService.requestOtp(phone_number);
 
   res.status(200).json({
     success: true,
     message: 'OTP sent successfully',
-    dev_otp: otp,
   });
 }
 
@@ -146,6 +149,54 @@ export async function getMe(req: Request, res: Response): Promise<void> {
 
   // Get full user data (not just the middleware subset)
   const user = await authService.getUserById(authReq.user.id);
+
+  res.status(200).json({
+    success: true,
+    data: { user },
+  });
+}
+
+/**
+ * POST /api/auth/telegram-login
+ * Logs a user in via the Telegram Login Widget. Verifies HMAC,
+ * finds-or-creates the user by telegram_id, returns AuthResponse.
+ */
+export async function telegramLogin(req: Request, res: Response): Promise<void> {
+  const payload = req.body as Record<string, string | undefined>;
+
+  const authResponse = await authService.telegramLogin(payload);
+
+  res.status(200).json({
+    success: true,
+    data: authResponse,
+  });
+}
+
+/**
+ * POST /api/auth/telegram-link
+ * Authenticated. Attaches a Telegram identity to the current user.
+ */
+export async function telegramLink(req: Request, res: Response): Promise<void> {
+  const authReq = req as AuthenticatedRequest;
+  const payload = req.body as Record<string, string | undefined>;
+
+  const user = await authService.telegramLink(authReq.user.id, payload);
+
+  res.status(200).json({
+    success: true,
+    data: { user },
+  });
+}
+
+/**
+ * POST /api/auth/telegram-unlink
+ * Authenticated. Removes the user's Telegram identity. Refuses if it
+ * would orphan the account (no phone AND no password).
+ */
+export async function telegramUnlink(req: Request, res: Response): Promise<void> {
+  const authReq = req as AuthenticatedRequest;
+
+  const user = await authService.telegramUnlink(authReq.user.id);
 
   res.status(200).json({
     success: true,

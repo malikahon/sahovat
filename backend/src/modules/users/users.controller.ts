@@ -139,3 +139,86 @@ export async function getVerificationDocuments(req: Request, res: Response): Pro
     data: { documents },
   });
 }
+
+/**
+ * PATCH /api/users/me/email
+ * Sets or replaces the current user's email. Resets verification.
+ */
+export async function updateEmail(req: Request, res: Response): Promise<void> {
+  const authReq = req as AuthenticatedRequest;
+  const { email } = req.body as { email: string };
+
+  const user = await usersService.updateEmail(authReq.user.id, email);
+
+  res.status(200).json({
+    success: true,
+    data: { user },
+  });
+}
+
+/**
+ * POST /api/users/me/email/verify-request
+ * Sends a 6-digit code to the user's email (10-minute TTL).
+ */
+export async function requestEmailVerification(req: Request, res: Response): Promise<void> {
+  const authReq = req as AuthenticatedRequest;
+
+  await usersService.requestEmailVerification(authReq.user.id);
+
+  res.status(200).json({
+    success: true,
+    message: 'Verification code sent. Check your inbox.',
+  });
+}
+
+/**
+ * POST /api/users/me/email/verify-confirm
+ * Validates the 6-digit code and marks email_verified_at.
+ */
+export async function confirmEmailVerification(req: Request, res: Response): Promise<void> {
+  const authReq = req as AuthenticatedRequest;
+  const { code } = req.body as { code: string };
+
+  const user = await usersService.confirmEmailVerification(authReq.user.id, code);
+
+  res.status(200).json({
+    success: true,
+    data: { user },
+  });
+}
+
+/**
+ * GET /api/users/me/notification-preferences
+ * Returns the full preference grid (event × channel) for the user.
+ */
+export async function getNotificationPreferences(req: Request, res: Response): Promise<void> {
+  const authReq = req as AuthenticatedRequest;
+  const preferences = await usersService.getNotificationPreferences(authReq.user.id);
+  res.status(200).json({
+    success: true,
+    data: { preferences },
+  });
+}
+
+/**
+ * PUT /api/users/me/notification-preferences
+ * Bulk-updates preferences. Body: { updates: { event_type, channel, enabled }[] }
+ */
+export async function updateNotificationPreferences(req: Request, res: Response): Promise<void> {
+  const authReq = req as AuthenticatedRequest;
+  const { updates } = req.body as {
+    updates: {
+      event_type: import('../../types/entities.js').NotificationEventType;
+      channel: import('../../types/entities.js').NotificationChannel;
+      enabled: boolean;
+    }[];
+  };
+  const preferences = await usersService.updateNotificationPreferences(
+    authReq.user.id,
+    updates,
+  );
+  res.status(200).json({
+    success: true,
+    data: { preferences },
+  });
+}

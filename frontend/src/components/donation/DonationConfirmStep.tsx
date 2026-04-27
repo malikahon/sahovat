@@ -54,7 +54,7 @@ export function DonationConfirmStep({
         campaign_id: campaignId,
         amount: formData.amount,
         fee_included: formData.feeIncluded,
-        payment_provider: 'payme' as import('@/lib/types').PaymentProvider,
+        payment_provider: formData.paymentProvider,
         is_anonymous: formData.isAnonymous,
         donor_display_name: formData.isAnonymous ? undefined : formData.displayName || undefined,
         note: formData.note || undefined,
@@ -76,7 +76,7 @@ export function DonationConfirmStep({
         window.location.href = checkout_url;
       } else if (IS_DEV && !savedCardId) {
         // Dev mode without saved card: simulate payment via webhook
-        const simRes = await donationsApi.simulatePayment(donation.id, totalCharge);
+        const simRes = await donationsApi.simulatePayment(donation.id, totalCharge, formData.paymentProvider);
         if (simRes.success) {
           onSuccess(donation.id);
         } else {
@@ -164,7 +164,7 @@ export function DonationConfirmStep({
 
       {/* Payment method indicator */}
       <div className="text-xs text-muted-foreground">
-        <span className="font-medium">{t('paymentMethod')}:</span> PayMe
+        <span className="font-medium">{t('paymentMethod')}:</span> {formData.paymentProvider === 'click' ? 'Click' : 'PayMe'}
         {savedCardId && (
           <span className="ml-1">({t('savedCard')})</span>
         )}

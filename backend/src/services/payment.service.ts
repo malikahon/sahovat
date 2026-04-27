@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { env } from '../config/env.js';
 import { PaymentProvider } from '../types/entities.js';
 import { paymeClient } from './payme.client.js';
+import { createClickService } from './click-payment.service.js';
 import type {
   PaymentService,
   CreatePaymentParams,
@@ -16,10 +17,6 @@ import type {
 // ============================================================
 
 class MockPaymeService implements PaymentService {
-  /**
-   * Creates a mock payment by generating a fake transaction ID
-   * and returning a local checkout URL for development.
-   */
   async createPayment(params: CreatePaymentParams): Promise<PaymentResult> {
     const transaction_id = randomUUID();
     const checkout_url =
@@ -37,10 +34,6 @@ class MockPaymeService implements PaymentService {
     };
   }
 
-  /**
-   * Charges a saved card using the mock PayMe client.
-   * Creates a receipt and pays it in a single call.
-   */
   async chargeCard(params: ChargeCardParams): Promise<ChargeCardResult> {
     const amountTiyin = params.amount * 100;
 
@@ -79,11 +72,6 @@ class MockPaymeService implements PaymentService {
     }
   }
 
-  /**
-   * Verifies a mock webhook payload.
-   * In mock mode this always returns `valid: true` as long as
-   * the body contains the required fields.
-   */
   verifyWebhook(
     _provider: PaymentProvider,
     _headers: Record<string, string>,
@@ -133,10 +121,6 @@ class MockPaymeService implements PaymentService {
 class RealPaymeService implements PaymentService {
   private readonly fallback = new MockPaymeService();
 
-  /**
-   * Creates a payment receipt via the PayMe Subscribe API.
-   * Returns a checkout URL for redirect-based payment (when no saved card).
-   */
   async createPayment(params: CreatePaymentParams): Promise<PaymentResult> {
     const amountTiyin = params.amount * 100;
 
@@ -147,7 +131,6 @@ class RealPaymeService implements PaymentService {
         `Donation ${params.donation_id}`,
       );
 
-      // Build PayMe checkout URL
       const checkoutBase = env.PAYME_SANDBOX
         ? 'https://checkout.test.paycom.uz'
         : 'https://checkout.paycom.uz';
@@ -165,9 +148,6 @@ class RealPaymeService implements PaymentService {
     }
   }
 
-  /**
-   * Charges a saved card via the PayMe Subscribe API.
-   */
   async chargeCard(params: ChargeCardParams): Promise<ChargeCardResult> {
     const amountTiyin = params.amount * 100;
 
@@ -202,31 +182,20 @@ class RealPaymeService implements PaymentService {
     }
   }
 
-  /**
-   * Webhook verification for real PayMe.
-   * The actual verification happens in the Merchant API controller (/api/payme).
-   * This method is kept for backward compatibility with the simple webhook endpoint.
-   */
   verifyWebhook(
     provider: PaymentProvider,
     headers: Record<string, string>,
     body: unknown,
   ): WebhookVerificationResult {
-    // For the legacy webhook endpoint, fall back to mock verification.
-    // Real PayMe uses the Merchant API endpoint at /api/payme instead.
     return this.fallback.verifyWebhook(provider, headers, body);
   }
 }
 
 // ============================================================
-// FACTORY
+// PAYME FACTORY
 // ============================================================
 
-/**
- * Creates the appropriate payment service based on environment.
- * Uses MockPaymeService when PAYME_MERCHANT_ID is not configured (development).
- */
-export function createPaymentService(): PaymentService {
+function createPaymeService(): PaymentService {
   if (!env.PAYME_MERCHANT_ID || env.NODE_ENV === 'test') {
     console.log('[Sahovat] Using mock PayMe payment service');
     return new MockPaymeService();
@@ -236,5 +205,43 @@ export function createPaymentService(): PaymentService {
   return new RealPaymeService();
 }
 
-/** Singleton payment service instance */
-export const paymentService: PaymentService = createPaymentService();
+// ============================================================
+// PROVIDER REGISTRY
+// ============================================================
+
+const providerRegistry = new Map<PaymentProvider, PaymentService>([
+  [PaymentProvider.PAYME, createPaymeService()],
+  [PaymentProvider.CLICK, createClickService()],
+]);
+
+export const paymentService: PaymentService = {
+  async createPayment(params: CreatePaymentParams): Promise<PaymentResult> {
+    const service = providerRegistry.get(params.provider);
+    if (!service) {
+      throw new Error(`[Sahovat] Unsupported payment provider: ${params.provider}`);
+    }
+    return service.createPayment(params);
+  },
+
+  async chargeCard(params: ChargeCardParams): Promise<ChargeCardResult> {
+    return providerRegistry.get(PaymentProvider.PAYME)!.chargeCard(params);
+  },
+
+  verifyWebhook(
+    provider: PaymentProvider,
+    headers: Record<string, string>,
+    body: unknown,
+  ): WebhookVerificationResult {
+    const service = providerRegistry.get(provider);
+    if (!service) {
+      return {
+        valid: false,
+        donation_id: null,
+        transaction_id: null,
+        status: null,
+        amount: null,
+      };
+    }
+    return service.verifyWebhook(provider, headers, body);
+  },
+};

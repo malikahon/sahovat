@@ -37,12 +37,22 @@ export async function requestOtp(req: Request, res: Response): Promise<void> {
   const phone = authReq.user.phone_number;
   const { campaign_id, amount } = req.body as { campaign_id: string; amount: number };
 
-  const otp = await donationsService.requestDonationOtp(authReq.user.id, phone, campaign_id, amount);
+  if (!phone) {
+    res.status(400).json({
+      success: false,
+      error: 'PHONE_REQUIRED',
+      message: 'A verified phone number is required to donate. Please add a phone in your profile.',
+    });
+    return;
+  }
+
+  // Note: donations OTP echoes the code in dev for testing convenience.
+  // This should be removed for production polish (Week 5 task 5.9).
+  await donationsService.requestDonationOtp(authReq.user.id, phone, campaign_id, amount);
 
   res.status(200).json({
     success: true,
     message: 'OTP sent successfully',
-    dev_otp: otp,
   });
 }
 
@@ -52,6 +62,15 @@ export async function requestOtp(req: Request, res: Response): Promise<void> {
 export async function verifyOtp(req: Request, res: Response): Promise<void> {
   const authReq = req as AuthenticatedRequest;
   const { otp } = req.body as { donation_id: string; otp: string };
+
+  if (!authReq.user.phone_number) {
+    res.status(400).json({
+      success: false,
+      error: 'PHONE_REQUIRED',
+      message: 'A verified phone number is required.',
+    });
+    return;
+  }
 
   const verified = await donationsService.verifyDonationOtp(
     authReq.user.id,
@@ -102,6 +121,37 @@ export async function initiate(req: Request, res: Response): Promise<void> {
 export async function confirmWebhook(req: Request, res: Response): Promise<void> {
   const result = paymentService.verifyWebhook(
     PaymentProvider.PAYME,
+    req.headers as Record<string, string>,
+    req.body,
+  );
+
+  if (!result.valid) {
+    res.status(400).json({
+      success: false,
+      error: 'INVALID_WEBHOOK',
+    });
+    return;
+  }
+
+  await donationsService.confirmDonation(
+    result.donation_id!,
+    result.transaction_id!,
+    result.status!,
+    result.amount!,
+  );
+
+  res.status(200).json({
+    success: true,
+    message: 'Webhook processed',
+  });
+}
+
+/**
+ * POST /api/donations/webhook/click
+ */
+export async function confirmWebhookClick(req: Request, res: Response): Promise<void> {
+  const result = paymentService.verifyWebhook(
+    PaymentProvider.CLICK,
     req.headers as Record<string, string>,
     req.body,
   );

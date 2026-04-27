@@ -60,7 +60,6 @@ export function DonationBottomSheet({
   const [otpSubmitting, setOtpSubmitting] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(RESEND_COOLDOWN);
   const [otpResending, setOtpResending] = useState(false);
-  const [devOtp, setDevOtp] = useState<string | undefined>(undefined);
 
   const resetFlow = useCallback(() => {
     setStep('amount');
@@ -85,14 +84,13 @@ export function DonationBottomSheet({
     return () => clearInterval(timer);
   }, [step, otpCountdown]);
 
-  // Send OTP when entering the OTP step
+  // Send OTP when entering the OTP step.
+  // The code is delivered via SMS only — never echoed in the response.
   const sendDonationOtp = useCallback(async (cId: string, amount: number) => {
     try {
       const res = await donationsApi.requestOtp(cId, amount);
       if (!res.success) {
         setOtpError(res.error || t('errors.otpFailed'));
-      } else {
-        setDevOtp(res.dev_otp);
       }
     } catch {
       setOtpError(t('errors.otpFailed'));
@@ -133,9 +131,8 @@ export function DonationBottomSheet({
     setOtpResending(true);
     setOtpError(null);
     try {
-      const res = await donationsApi.requestOtp(campaignId, formData.amount);
+      await donationsApi.requestOtp(campaignId, formData.amount);
       setOtpCountdown(RESEND_COOLDOWN);
-      setDevOtp(res.dev_otp);
     } catch {
       setOtpError(t('errors.otpFailed'));
     } finally {
@@ -163,7 +160,7 @@ export function DonationBottomSheet({
           campaign_id: campaignId,
           amount: formData.amount,
           frequency: formData.recurringFrequency as import('@/lib/types').RecurringFrequency,
-          payment_provider: 'payme' as import('@/lib/types').PaymentProvider,
+          payment_provider: formData.paymentProvider,
         });
       } catch (err) {
         console.error('[Sahovat] Failed to create recurring subscription:', err);
@@ -262,7 +259,6 @@ export function DonationBottomSheet({
         countdown={otpCountdown}
         onResend={handleOtpResend}
         isResending={otpResending}
-        devOtp={devOtp}
       />
     </>
   );

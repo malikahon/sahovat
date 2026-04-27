@@ -39,8 +39,6 @@ interface OtpDialogProps {
   onResend: () => void;
   /** Whether the resend request is in flight */
   isResending?: boolean;
-  /** Dev-only: OTP code to display in the dialog (only present in non-production) */
-  devOtp?: string;
 }
 
 export function OtpDialog({
@@ -54,7 +52,6 @@ export function OtpDialog({
   countdown,
   onResend,
   isResending = false,
-  devOtp,
 }: OtpDialogProps) {
   const t = useTranslations('auth');
 
@@ -216,13 +213,6 @@ export function OtpDialog({
             )}
           </div>
 
-          {/* Dev-only: show OTP code */}
-          {devOtp && (
-            <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-center">
-              <p className="text-xs font-medium text-amber-800">DEV MODE</p>
-              <p className="font-mono text-lg font-bold tracking-widest text-amber-900">{devOtp}</p>
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>

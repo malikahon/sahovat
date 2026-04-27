@@ -10,6 +10,63 @@ export interface SmsService {
 }
 
 // ============================================================
+// EMAIL SERVICE
+// ============================================================
+
+/**
+ * Inputs for the generic email sender. The `react` element is the
+ * React Email template instance (rendered to HTML via @react-email/render).
+ */
+export interface SendEmailParams {
+  to: string;
+  subject: string;
+  /** Pre-rendered React Email element. */
+  react: React.ReactElement;
+  /** Optional plain-text fallback. If omitted, derived from html. */
+  text?: string;
+  /** Optional list-unsubscribe headers, etc. */
+  headers?: Record<string, string>;
+}
+
+export interface EmailService {
+  /**
+   * Sends a single email. Resolves with the provider's message id.
+   */
+  sendEmail(params: SendEmailParams): Promise<{ id: string }>;
+
+  /**
+   * Convenience: sends a 6-digit verification code email.
+   */
+  sendVerificationCode(to: string, code: string, locale?: string): Promise<void>;
+}
+
+// ============================================================
+// TELEGRAM BOT SERVICE (outbound notifications)
+// ============================================================
+
+/**
+ * Subset of Telegram Bot API sendMessage parameters we use.
+ * https://core.telegram.org/bots/api#sendmessage
+ */
+export interface TelegramMessageParams {
+  /** Markdown / HTML / plain text body. */
+  text: string;
+  /** 'HTML' (default) or 'MarkdownV2'. We use HTML for safety + ease. */
+  parse_mode?: 'HTML' | 'MarkdownV2';
+  /** Suppress link previews — keeps messages tight. */
+  disable_web_page_preview?: boolean;
+}
+
+export interface TelegramService {
+  /**
+   * Sends a Telegram message. `chatId` is the numeric Telegram user id
+   * (or group/channel id, as a string to avoid 64-bit JS overflow).
+   * Resolves with Telegram's `message_id`. Throws on non-2xx.
+   */
+  sendMessage(chatId: string, params: TelegramMessageParams): Promise<{ message_id: number }>;
+}
+
+// ============================================================
 // PAYMENT SERVICE
 // ============================================================
 

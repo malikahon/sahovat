@@ -2,7 +2,12 @@ import { Router } from 'express';
 import { validate } from '../../middleware/validate.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { uploadKycDocument } from '../../middleware/upload.js';
-import { updateProfileSchema } from './users.validation.js';
+import {
+  updateProfileSchema,
+  updateEmailSchema,
+  verifyEmailConfirmSchema,
+  updateNotificationPreferencesSchema,
+} from './users.validation.js';
 import * as usersController from './users.controller.js';
 
 export const usersRouter = Router();
@@ -48,4 +53,42 @@ usersRouter.get(
   '/verification/documents',
   requireAuth,
   usersController.getVerificationDocuments,
+);
+
+// PATCH /api/users/me/email — Set or replace email (resets verification)
+usersRouter.patch(
+  '/me/email',
+  requireAuth,
+  validate(updateEmailSchema),
+  usersController.updateEmail,
+);
+
+// POST /api/users/me/email/verify-request — Send 6-digit code
+usersRouter.post(
+  '/me/email/verify-request',
+  requireAuth,
+  usersController.requestEmailVerification,
+);
+
+// POST /api/users/me/email/verify-confirm — Submit 6-digit code
+usersRouter.post(
+  '/me/email/verify-confirm',
+  requireAuth,
+  validate(verifyEmailConfirmSchema),
+  usersController.confirmEmailVerification,
+);
+
+// GET /api/users/me/notification-preferences — Read preference matrix
+usersRouter.get(
+  '/me/notification-preferences',
+  requireAuth,
+  usersController.getNotificationPreferences,
+);
+
+// PUT /api/users/me/notification-preferences — Bulk update
+usersRouter.put(
+  '/me/notification-preferences',
+  requireAuth,
+  validate(updateNotificationPreferencesSchema),
+  usersController.updateNotificationPreferences,
 );

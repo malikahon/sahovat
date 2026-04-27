@@ -3,7 +3,7 @@ import type { VerificationStatus } from './entities.js';
 
 export interface AuthenticatedUser {
   id: string;
-  phone_number: string;
+  phone_number: string | null;
   display_name: string | null;
   is_verified: boolean;
   is_admin: boolean;

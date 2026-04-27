@@ -34,6 +34,7 @@ export async function cleanDatabase(): Promise<void> {
       recurring_donations,
       withdrawals,
       withdrawal_accounts,
+      click_transactions,
       donations,
       campaign_documents,
       campaigns,

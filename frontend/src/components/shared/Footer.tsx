@@ -1,8 +1,19 @@
-'use client';
-
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Globe, Mail, Share2 } from 'lucide-react';
 import { Logo } from '@/components/shared/Logo';
+
+const PLATFORM_LINKS: { key: string; href: string }[] = [
+  { key: 'aboutUs', href: '/about' },
+  { key: 'howItWorks', href: '/how-it-works' },
+  { key: 'trustSafety', href: '/trust-safety' },
+  { key: 'transparency', href: '/transparency' },
+];
+
+const RESOURCE_LINKS: { key: string; href: string }[] = [
+  { key: 'helpCenter', href: '/help' },
+  { key: 'organizerGuidelines', href: '/organizer-guidelines' },
+  { key: 'contact', href: '/contact' },
+];
 
 export function Footer() {
   const t = useTranslations('footer');
@@ -29,17 +40,16 @@ export function Footer() {
               {t('platform')}
             </h3>
             <ul className="mt-4 space-y-3">
-              {['aboutUs', 'howItWorks', 'trustSafety', 'transparency'].map(
-                (key) => (
-                  <li key={key}>
-                    <span
-                      className="text-sm text-muted-foreground transition-colors duration-200 hover:text-primary cursor-default"
-                    >
-                      {t(key)}
-                    </span>
-                  </li>
-                ),
-              )}
+              {PLATFORM_LINKS.map(({ key, href }) => (
+                <li key={key}>
+                  <Link
+                    href={href}
+                    className="text-sm text-muted-foreground transition-colors duration-200 hover:text-primary"
+                  >
+                    {t(key)}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -49,17 +59,16 @@ export function Footer() {
               {t('resources')}
             </h3>
             <ul className="mt-4 space-y-3">
-              {['helpCenter', 'organizerGuidelines', 'impactStories', 'contact'].map(
-                (key) => (
-                  <li key={key}>
-                    <span
-                      className="text-sm text-muted-foreground transition-colors duration-200 hover:text-primary cursor-default"
-                    >
-                      {t(key)}
-                    </span>
-                  </li>
-                ),
-              )}
+              {RESOURCE_LINKS.map(({ key, href }) => (
+                <li key={key}>
+                  <Link
+                    href={href}
+                    className="text-sm text-muted-foreground transition-colors duration-200 hover:text-primary"
+                  >
+                    {t(key)}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -69,20 +78,6 @@ export function Footer() {
           <p className="text-sm text-muted-foreground">
             &copy; {currentYear} {t('copyright')}
           </p>
-          <div className="flex items-center gap-2">
-            {[
-              { icon: Globe, label: 'Website' },
-              { icon: Mail, label: 'Email' },
-              { icon: Share2, label: 'Share' },
-            ].map(({ icon: Icon, label }) => (
-              <span
-                key={label}
-                className="inline-flex size-9 items-center justify-center rounded-full border border-border/50 text-muted-foreground transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-default"
-              >
-                <Icon className="size-4" />
-              </span>
-            ))}
-          </div>
         </div>
       </div>
     </footer>

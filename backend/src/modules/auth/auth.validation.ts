@@ -2,6 +2,18 @@ import { z } from 'zod';
 import { CampaignCategory } from '../../types/entities.js';
 
 // ============================================================
+// EMAIL HELPER (used by register + email update flows)
+// ============================================================
+//
+// Pre-process: trim + lowercase so the DB always sees a normalized
+// value. We then run zod's email check.
+const emailField = z
+  .string()
+  .trim()
+  .transform((v) => v.toLowerCase())
+  .pipe(z.string().email('Invalid email address'));
+
+// ============================================================
 // REQUEST OTP
 // ============================================================
 
@@ -68,6 +80,7 @@ export const registerSchema = {
     registration_token: z
       .string()
       .optional(),
+    email: emailField.optional(),
   }),
 };
 
@@ -120,4 +133,25 @@ export const refreshTokenSchema = {
       .string()
       .min(1, 'Refresh token is required'),
   }),
+};
+
+// ============================================================
+// TELEGRAM LOGIN / LINK
+// ============================================================
+
+/**
+ * Telegram Login Widget callback payload.
+ * Fields are validated minimally — the cryptographic check is the
+ * source of truth.
+ */
+export const telegramAuthSchema = {
+  body: z.object({
+    id: z.union([z.string(), z.number()]).transform((v) => String(v)),
+    first_name: z.string().min(1),
+    last_name: z.string().optional(),
+    username: z.string().optional(),
+    photo_url: z.string().optional(),
+    auth_date: z.union([z.string(), z.number()]).transform((v) => String(v)),
+    hash: z.string().min(1),
+  }).passthrough(),
 };

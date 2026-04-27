@@ -1,7 +1,11 @@
 import cron from 'node-cron';
 import { getDueRecurringDonations, processRecurringCharge } from '../modules/recurring/recurring.service.js';
+import { env } from '../config/env.js';
+import { tick as notificationTick } from './notifications/queue.js';
 
 let recurringTask: cron.ScheduledTask | null = null;
+let notificationInterval: NodeJS.Timeout | null = null;
+let notificationRunning = false;
 
 // ============================================================
 // PROCESS RECURRING DONATIONS
@@ -11,7 +15,7 @@ let recurringTask: cron.ScheduledTask | null = null;
  * Fetch all due recurring donations and process each charge sequentially.
  * Runs as a daily cron job.
  */
-async function processRecurringDonations(): Promise<void> {
+export async function processRecurringDonations(): Promise<void> {
   console.log('[Sahovat] [Scheduler] Starting recurring donation processing...');
 
   try {
@@ -72,6 +76,7 @@ async function processRecurringDonations(): Promise<void> {
 /**
  * Start the scheduler with all cron jobs.
  * - Recurring donations: runs daily at 06:00 UTC.
+ * - Notification retry queue: ticked every NOTIFICATION_QUEUE_TICK_MS.
  */
 export function startScheduler(): void {
   // Daily at 06:00 UTC
@@ -79,7 +84,24 @@ export function startScheduler(): void {
     void processRecurringDonations();
   });
 
-  console.log('[Sahovat] [Scheduler] Started — recurring donations checked daily at 06:00 UTC');
+  // Notification retry queue tick. Guarded against overlap.
+  notificationInterval = setInterval(() => {
+    if (notificationRunning) return;
+    notificationRunning = true;
+    void notificationTick()
+      .catch((err) => {
+        console.error('[Sahovat] [Scheduler] notification tick threw:', err);
+      })
+      .finally(() => {
+        notificationRunning = false;
+      });
+  }, env.NOTIFICATION_QUEUE_TICK_MS);
+  // Don't keep the event loop alive solely for the queue tick.
+  notificationInterval.unref?.();
+
+  console.log(
+    `[Sahovat] [Scheduler] Started — recurring daily at 06:00 UTC, notification queue every ${env.NOTIFICATION_QUEUE_TICK_MS}ms`,
+  );
 }
 
 /**
@@ -89,6 +111,10 @@ export function stopScheduler(): void {
   if (recurringTask) {
     recurringTask.stop();
     recurringTask = null;
-    console.log('[Sahovat] [Scheduler] Stopped');
   }
+  if (notificationInterval) {
+    clearInterval(notificationInterval);
+    notificationInterval = null;
+  }
+  console.log('[Sahovat] [Scheduler] Stopped');
 }

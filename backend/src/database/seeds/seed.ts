@@ -366,7 +366,7 @@ async function seed(): Promise<void> {
           if (di % 3 === 0) {
             await client.query(
               `INSERT INTO donation_receipts (donation_id, file_url) VALUES ($1, $2)`,
-              [donationResult.rows[0].id, `https://sahovat.uz/receipts/${donationResult.rows[0].id}.pdf`],
+              [donationResult.rows[0].id, `https://sahovat.tech/receipts/${donationResult.rows[0].id}.pdf`],
             );
             totalReceipts++;
           }

@@ -9,6 +9,7 @@ import {
   donationOtpRequestSchema,
   donationOtpVerifySchema,
   webhookPaymeSchema,
+  webhookClickSchema,
 } from './donations.validation.js';
 import * as donationsController from './donations.controller.js';
 
@@ -67,6 +68,13 @@ donationsRouter.post(
   '/webhook/payme',
   validate(webhookPaymeSchema),
   donationsController.confirmWebhook,
+);
+
+// POST /api/donations/webhook/click — Click webhook callback (no auth)
+donationsRouter.post(
+  '/webhook/click',
+  validate(webhookClickSchema),
+  donationsController.confirmWebhookClick,
 );
 
 // ============================================================

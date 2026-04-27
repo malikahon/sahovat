@@ -100,13 +100,60 @@ export enum RecurringStatus {
   FAILED = 'failed',
 }
 
+export enum NotificationChannel {
+  SMS = 'sms',
+  TELEGRAM = 'telegram',
+  EMAIL = 'email',
+}
+
+/**
+ * All event types the NotificationDispatcher recognizes. Mirrored as a
+ * CHECK constraint on `notification_preferences.event_type` (migration 011).
+ */
+export type NotificationEventType =
+  | 'donation_completed'
+  | 'campaign_verified'
+  | 'withdrawal_status_changed'
+  | 'recurring_charge_succeeded'
+  | 'recurring_charge_failed'
+  | 'campaign_milestone_reached'
+  | 'contact_message_received';
+
+export const NOTIFICATION_EVENT_TYPES: readonly NotificationEventType[] = [
+  'donation_completed',
+  'campaign_verified',
+  'withdrawal_status_changed',
+  'recurring_charge_succeeded',
+  'recurring_charge_failed',
+  'campaign_milestone_reached',
+  'contact_message_received',
+] as const;
+
+export const NOTIFICATION_CHANNELS: readonly NotificationChannel[] = [
+  NotificationChannel.SMS,
+  NotificationChannel.TELEGRAM,
+  NotificationChannel.EMAIL,
+] as const;
+
+/** Per-user, per-event, per-channel toggle row (table notification_preferences). */
+export interface NotificationPreference {
+  user_id: string;
+  event_type: NotificationEventType;
+  channel: NotificationChannel;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type OtpChannel = 'sms' | 'telegram';
+
 // ============================================================
 // ENTITY INTERFACES
 // ============================================================
 
 export interface User {
   id: string;
-  phone_number: string;
+  phone_number: string | null;
   display_name: string | null;
   password_hash: string | null;
   date_of_birth: string | null;
@@ -119,6 +166,16 @@ export interface User {
   oneid_id: string | null;
   oneid_verified_at: string | null;
   language_preference: 'uz' | 'ru' | 'en';
+  // Telegram identity (added in migration 008)
+  // telegram_id is BIGINT in PG; serialized as a string to avoid JS number overflow.
+  telegram_id: string | null;
+  telegram_username: string | null;
+  telegram_photo_url: string | null;
+  telegram_linked_at: string | null;
+  preferred_otp_channel: OtpChannel;
+  // Email channel (added in migration 009)
+  email: string | null;
+  email_verified_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -136,6 +193,12 @@ export interface Campaign {
   is_verified: boolean;
   end_date: string | null;
   cover_image_url: string | null;
+  /**
+   * Highest milestone percentage already announced to the organizer.
+   * One of 0, 25, 50, 75, 90, 100. Used to dedupe milestone notifications
+   * across concurrent donations. (Migration 012.)
+   */
+  last_milestone_notified: number;
   created_at: string;
   updated_at: string;
 }
@@ -307,4 +370,23 @@ export interface SavedCard {
   is_verified: boolean;
   created_at: string;
   updated_at: string;
+}
+
+// ============================================================
+// CONTACT MESSAGE
+// ============================================================
+
+export interface ContactMessage {
+  id: string;
+  user_id: string | null;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  subject: string;
+  message: string;
+  reference_code: string;
+  source_ip: string | null;
+  responded_at: string | null;
+  admin_notes: string | null;
+  created_at: string;
 }

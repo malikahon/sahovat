@@ -3,24 +3,35 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { donationsApi } from '@/lib/api';
 
 /**
- * PayMe return URL handler.
- * PayMe redirects here after payment with query params:
+ * Payment return URL handler.
+ *
+ * PayMe redirects here after payment with:
  *   ?donation_id=xxx&status=success|cancel
  *
+ * Click redirects here after payment with:
+ *   ?merchant_trans_id=xxx&payment_status=1 (success) | 2 (cancel/failure)
+ *
  * In dev mode this page won't be reached (simulate button is used instead).
- * In production this is the actual return URL registered with PayMe.
  */
 function DonationReturnContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const t = useTranslations('donationReturn');
 
-  const donationId = searchParams.get('donation_id');
-  const status = searchParams.get('status');
+  // Unified: accept both PayMe and Click query param formats
+  const donationId = searchParams.get('donation_id') ?? searchParams.get('merchant_trans_id');
+  const rawStatus = searchParams.get('status') ?? (
+    searchParams.get('payment_status') === '1' ? 'success'
+    : searchParams.get('payment_status') === '2' ? 'cancel'
+    : null
+  );
+  const status = rawStatus === 'success' ? 'success' : rawStatus === 'cancel' ? 'cancel' : null;
 
   const [isChecking, setIsChecking] = useState(true);
   const [verified, setVerified] = useState(false);
@@ -49,7 +60,7 @@ function DonationReturnContent() {
   if (isChecking) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">Verifying payment...</p>
+        <p className="text-muted-foreground">{t('verifying')}</p>
       </div>
     );
   }
@@ -58,11 +69,11 @@ function DonationReturnContent() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
         <XCircle className="size-16 text-destructive" />
-        <h2 className="text-xl font-bold text-foreground">Payment Cancelled</h2>
-        <p className="text-sm text-muted-foreground">Your donation was not processed. You can try again.</p>
+        <h2 className="text-xl font-bold text-foreground">{t('cancelTitle')}</h2>
+        <p className="text-sm text-muted-foreground">{t('cancelMessage')}</p>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => router.back()}>Go Back</Button>
-          <Button render={<Link href="/campaigns" />}>Browse Campaigns</Button>
+          <Button variant="outline" onClick={() => router.back()}>{t('goBack')}</Button>
+          <Button render={<Link href="/campaigns" />}>{t('browseCampaigns')}</Button>
         </div>
       </div>
     );
@@ -72,13 +83,11 @@ function DonationReturnContent() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
         <CheckCircle className="size-16 text-green-600" />
-        <h2 className="text-xl font-bold text-foreground">Donation Successful!</h2>
-        <p className="text-sm text-muted-foreground">
-          Thank you for your generosity. Your donation has been received.
-        </p>
+        <h2 className="text-xl font-bold text-foreground">{t('successTitle')}</h2>
+        <p className="text-sm text-muted-foreground">{t('successMessage')}</p>
         <div className="flex gap-3">
-          <Button variant="outline" render={<Link href="/my-donations" />}>My Donations</Button>
-          <Button render={<Link href="/campaigns" />}>Browse More</Button>
+          <Button variant="outline" render={<Link href="/my-donations" />}>{t('myDonations')}</Button>
+          <Button render={<Link href="/campaigns" />}>{t('browseMore')}</Button>
         </div>
       </div>
     );
@@ -87,22 +96,25 @@ function DonationReturnContent() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
       <XCircle className="size-16 text-muted-foreground/40" />
-      <h2 className="text-xl font-bold text-foreground">Something Went Wrong</h2>
-      <p className="text-sm text-muted-foreground">
-        We could not verify your payment. Please check your donation history.
-      </p>
-      <Button render={<Link href="/my-donations" />}>My Donations</Button>
+      <h2 className="text-xl font-bold text-foreground">{t('errorTitle')}</h2>
+      <p className="text-sm text-muted-foreground">{t('errorMessage')}</p>
+      <Button render={<Link href="/my-donations" />}>{t('myDonations')}</Button>
+    </div>
+  );
+}
+
+function DonationReturnFallback() {
+  const t = useTranslations('donationReturn');
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <p className="text-muted-foreground">{t('loading')}</p>
     </div>
   );
 }
 
 export default function DonationReturnPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    }>
+    <Suspense fallback={<DonationReturnFallback />}>
       <DonationReturnContent />
     </Suspense>
   );

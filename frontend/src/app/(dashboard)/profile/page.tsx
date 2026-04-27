@@ -16,6 +16,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OneIdSection } from './oneid-section';
 import { DocumentUploadSection } from './document-upload-section';
+import { LinkedAccountsSection } from '@/components/profile/LinkedAccountsSection';
+import { NotificationPreferencesSection } from '@/components/profile/NotificationPreferencesSection';
 
 const CATEGORIES = Object.values(CampaignCategory);
 
@@ -244,6 +246,12 @@ export default function ProfilePage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Linked Accounts (phone + telegram + email) */}
+      <LinkedAccountsSection />
+
+      {/* Notification Preferences (per-event × per-channel matrix) */}
+      <NotificationPreferencesSection />
 
       {/* Identity Verification Section */}
       <div id="verification" className="space-y-4">

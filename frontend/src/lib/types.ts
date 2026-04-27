@@ -104,9 +104,11 @@ export enum RecurringStatus {
 // ENTITY INTERFACES
 // ============================================================
 
+export type OtpChannel = 'sms' | 'telegram';
+
 export interface User {
   id: string;
-  phone_number: string;
+  phone_number: string | null;
   display_name: string | null;
   has_password: boolean;
   date_of_birth: string | null;
@@ -119,8 +121,31 @@ export interface User {
   oneid_id: string | null;
   oneid_verified_at: string | null;
   language_preference: 'uz' | 'ru' | 'en';
+  // Telegram identity (Week 1 migration 008)
+  telegram_id: string | null;
+  telegram_username: string | null;
+  telegram_photo_url: string | null;
+  telegram_linked_at: string | null;
+  preferred_otp_channel: OtpChannel;
+  // Email channel (Week 1 migration 009)
+  email: string | null;
+  email_verified_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Payload returned by the Telegram Login Widget callback.
+ * Forwarded verbatim to the backend for HMAC verification.
+ */
+export interface TelegramAuthPayload {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+  auth_date: number;
+  hash: string;
 }
 
 export interface Campaign {
@@ -332,6 +357,7 @@ export interface RegisterDto {
   preferred_categories?: CampaignCategory[];
   language_preference?: 'uz' | 'ru' | 'en';
   registration_token?: string;
+  email?: string;
 }
 
 export interface AdminLoginDto {
@@ -814,9 +840,15 @@ export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login(phone: string): Promise<string | undefined>;
+  login(phone: string): Promise<void>;
   verifyOtp(phone: string, otp: string): Promise<AuthResponse>;
   register(data: RegisterDto): Promise<void>;
   logout(): Promise<void>;
   refreshUser(): Promise<void>;
+  telegramLogin(payload: TelegramAuthPayload): Promise<{
+    user: User | null;
+    is_new_user: boolean;
+  }>;
+  telegramLink(payload: TelegramAuthPayload): Promise<User>;
+  telegramUnlink(): Promise<User>;
 }

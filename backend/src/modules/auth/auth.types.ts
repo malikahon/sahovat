@@ -1,4 +1,4 @@
-import type { CampaignCategory, VerificationStatus } from '../../types/entities.js';
+import type { CampaignCategory, OtpChannel, VerificationStatus } from '../../types/entities.js';
 
 /**
  * Raw user row from the database.
@@ -6,7 +6,7 @@ import type { CampaignCategory, VerificationStatus } from '../../types/entities.
  */
 export interface UserRow {
   id: string;
-  phone_number: string;
+  phone_number: string | null;
   display_name: string | null;
   password_hash: string | null;
   date_of_birth: string | null;
@@ -19,6 +19,16 @@ export interface UserRow {
   oneid_id: string | null;
   oneid_verified_at: string | null;
   language_preference: 'uz' | 'ru' | 'en';
+  // Telegram identity (added in migration 008)
+  // PG returns BIGINT as a string by default in node-postgres — keep as string.
+  telegram_id: string | null;
+  telegram_username: string | null;
+  telegram_photo_url: string | null;
+  telegram_linked_at: string | null;
+  preferred_otp_channel: OtpChannel;
+  // Email channel (added in migration 009)
+  email: string | null;
+  email_verified_at: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -4,6 +4,8 @@ import { NotFoundError, ForbiddenError, ValidationError } from '../../lib/errors
 import { decrypt } from '../../lib/encryption.js';
 import type { RequestWithdrawalDto } from '../../types/api.js';
 import type { WithdrawalAccountRow } from './withdrawal-accounts.types.js';
+import { dispatchSafe } from '../../services/notifications/dispatcher.js';
+import { notifyWithdrawalSubmitted } from '../../services/notifications/admin-feed.js';
 
 // ============================================================
 // HELPERS
@@ -178,6 +180,26 @@ export async function requestWithdrawal(
       reviewed_at: string | null;
       completed_at: string | null;
     };
+
+    // Fire-and-forget admin alert for the new request.
+    void (async () => {
+      try {
+        const orgRow = await query(
+          `SELECT display_name FROM users WHERE id = $1`,
+          [organizerId],
+        );
+        const organizerName =
+          (orgRow.rows[0] as { display_name: string | null } | undefined)
+            ?.display_name ?? null;
+        await notifyWithdrawalSubmitted({
+          withdrawalId: withdrawal.id,
+          amount: Number(withdrawal.amount),
+          organizerName,
+        });
+      } catch (notifyErr) {
+        console.error('[Sahovat] [notify] withdrawal admin alert failed:', notifyErr);
+      }
+    })();
 
     return {
       ...withdrawal,
@@ -544,7 +566,7 @@ export async function reviewWithdrawal(
   const { logAdminAction } = await import('../admin/admin.service.js');
 
   const existing = await query(
-    `SELECT id, status FROM withdrawals WHERE id = $1::uuid`,
+    `SELECT id, status, organizer_id, amount FROM withdrawals WHERE id = $1::uuid`,
     [withdrawalId],
   );
 
@@ -552,7 +574,11 @@ export async function reviewWithdrawal(
     throw new NotFoundError('Withdrawal', withdrawalId);
   }
 
-  const current = existing.rows[0] as { status: string };
+  const current = existing.rows[0] as {
+    status: string;
+    organizer_id: string;
+    amount: string | number;
+  };
 
   if (current.status !== 'pending') {
     throw new ValidationError(
@@ -573,6 +599,19 @@ export async function reviewWithdrawal(
     new_status: newStatus,
     admin_notes: dto.admin_notes,
   });
+
+  // Notify organizer of approve/reject status change.
+  void dispatchSafe({
+    user_id: current.organizer_id,
+    event_type: 'withdrawal_status_changed',
+    payload: {
+      withdrawalId,
+      status: newStatus as 'approved' | 'rejected',
+      amount: Number(current.amount),
+      transactionReference: null,
+      adminNotes: dto.admin_notes ?? null,
+    },
+  });
 }
 
 // ============================================================
@@ -587,7 +626,7 @@ export async function completeWithdrawal(
   const { logAdminAction } = await import('../admin/admin.service.js');
 
   const existing = await query(
-    `SELECT id, status, campaign_id, platform_fee FROM withdrawals WHERE id = $1::uuid`,
+    `SELECT id, status, campaign_id, platform_fee, organizer_id, amount FROM withdrawals WHERE id = $1::uuid`,
     [withdrawalId],
   );
 
@@ -599,6 +638,8 @@ export async function completeWithdrawal(
     status: string;
     campaign_id: string;
     platform_fee: string;
+    organizer_id: string;
+    amount: string | number;
   };
 
   if (current.status !== 'approved') {
@@ -640,5 +681,18 @@ export async function completeWithdrawal(
   await logAdminAction(adminId, 'complete_withdrawal', 'withdrawal', withdrawalId, {
     transaction_reference: dto.transaction_reference,
     admin_notes: dto.admin_notes,
+  });
+
+  // Notify organizer that withdrawal is complete.
+  void dispatchSafe({
+    user_id: current.organizer_id,
+    event_type: 'withdrawal_status_changed',
+    payload: {
+      withdrawalId,
+      status: 'completed',
+      amount: Number(current.amount),
+      transactionReference: dto.transaction_reference,
+      adminNotes: dto.admin_notes ?? null,
+    },
   });
 }

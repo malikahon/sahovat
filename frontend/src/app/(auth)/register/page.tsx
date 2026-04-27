@@ -39,6 +39,11 @@ const registerSchema = z.object({
     .array(z.nativeEnum(CampaignCategory))
     .max(7, 'Cannot select more than 7 categories')
     .optional(),
+  email: z
+    .string()
+    .email('emailInvalid')
+    .or(z.literal(''))
+    .optional(),
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -55,6 +60,7 @@ const CATEGORY_TRANSLATION_KEY: Record<string, string> = {
 
 export default function RegisterPage() {
   const t = useTranslations('auth');
+  const tEmail = useTranslations('auth.registerEmail');
   const tCommon = useTranslations('common');
   const tc = useTranslations('campaigns.categories');
   const router = useRouter();
@@ -91,6 +97,7 @@ export default function RegisterPage() {
       date_of_birth: '',
       gender: undefined,
       preferred_categories: [],
+      email: '',
     },
   });
 
@@ -102,6 +109,7 @@ export default function RegisterPage() {
         date_of_birth: data.date_of_birth || undefined,
         gender: data.gender,
         preferred_categories: data.preferred_categories,
+        email: data.email && data.email.length > 0 ? data.email : undefined,
       });
       router.push('/dashboard');
     } catch (err) {
@@ -252,6 +260,22 @@ export default function RegisterPage() {
             />
             {errors.preferred_categories && (
               <p className="text-sm text-destructive">{errors.preferred_categories.message}</p>
+            )}
+          </div>
+
+          {/* Email (optional) */}
+          <div className="space-y-2">
+            <Label htmlFor="email">{tEmail('label')}</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder={tEmail('placeholder')}
+              {...register('email')}
+            />
+            <p className="text-xs text-muted-foreground">{tEmail('hint')}</p>
+            {errors.email && (
+              <p className="text-sm text-destructive">{tEmail('invalid')}</p>
             )}
           </div>
 
