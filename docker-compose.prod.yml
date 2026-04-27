@@ -65,6 +65,10 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        # Bot username is read by the frontend at BUILD time (inlined into
+        # the Telegram Login Widget script tag in the client bundle).
+        # Setting it only at runtime via `environment:` is too late.
+        NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
     container_name: sahovat_frontend
     restart: always
     depends_on:
@@ -72,6 +76,7 @@ services:
         condition: service_healthy
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
       BACKEND_URL: http://backend:3001/api
     networks:
       - internal

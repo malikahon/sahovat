@@ -33,6 +33,17 @@ const envSchema = z.object({
   SMS_API_URL: z.string().default('https://notify.eskiz.uz'),
   SMS_API_EMAIL: z.string().optional().default(''),
   SMS_API_PASSWORD: z.string().optional().default(''),
+  // When 'true', EskizSmsService sends the literal pre-approved test
+  // template ("This is test from Eskiz") for ALL messages. Required while
+  // the account is unverified (no PINFL / business registration); custom
+  // templates are rejected by Eskiz. OTP codes are still generated and
+  // logged server-side — read them from `docker logs sahovat_backend`
+  // or the API response in DevTools during demo. Flip to 'false' once
+  // Eskiz template moderation is approved.
+  SMS_ESKIZ_TEST_MODE: z
+    .enum(['true', 'false', '1', '0'])
+    .default('false')
+    .transform((v) => v === 'true' || v === '1'),
 
   PAYME_MERCHANT_ID: z.string().optional().default(''),
   PAYME_KEY: z.string().optional().default(''),

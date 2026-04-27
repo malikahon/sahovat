@@ -118,3 +118,76 @@ jobs:
 
       - name: build frontend image
         run: docker build --build-arg NEXT_PUBLIC_API_URL=http://localhost:3001 ./frontend
+
+  config-checks:
+    name: config sanity (nginx + env)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # nginx config syntax check. Upstream resolution will fail in CI
+      # because there's no docker network — that's expected. Anything
+      # OTHER than the upstream-resolution error is a real syntax bug
+      # we want to catch before merge.
+      - name: nginx config syntax
+        run: |
+          set -o pipefail
+          OUTPUT=$(docker run --rm \
+            -v "$PWD/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
+            nginx:alpine nginx -t 2>&1 || true)
+          echo "$OUTPUT"
+          # Acceptable: only the upstream-resolution emerg. Anything else fails.
+          if echo "$OUTPUT" | grep -q "host not found in upstream"; then
+            # Make sure that's the ONLY emerg/error line.
+            REAL_ERRORS=$(echo "$OUTPUT" \
+              | grep -E '\[(emerg|alert|crit|error)\]' \
+              | grep -v "host not found in upstream" || true)
+            if [ -n "$REAL_ERRORS" ]; then
+              echo "::error::nginx.conf has unexpected errors:"
+              echo "$REAL_ERRORS"
+              exit 1
+            fi
+            echo "nginx.conf: syntax OK (only expected upstream-resolution warning)"
+          else
+            # No upstream warning, look for "syntax is ok"
+            if echo "$OUTPUT" | grep -q "syntax is ok"; then
+              echo "nginx.conf: syntax OK"
+            else
+              echo "::error::nginx.conf failed: unexpected output"
+              exit 1
+            fi
+          fi
+
+      # Anything in .env.example must also have a counterpart in
+      # .env.production.example — otherwise we forgot a prod template
+      # for a new feature env var. Comments and blank lines ignored.
+      #
+      # Exception list: keys that are CONSTRUCTED by docker-compose.prod.yml
+      # at runtime (DATABASE_URL/REDIS_URL via interpolation in the env
+      # block of the backend service) and therefore intentionally absent
+      # from .env.production.example.
+      - name: env superset check
+        run: |
+          extract_keys() {
+            grep -E '^[A-Z][A-Z0-9_]*=' "$1" | cut -d= -f1 | sort -u
+          }
+          # Keys produced by docker-compose runtime interpolation; do
+          # not need to be in .env.production.example.
+          COMPOSE_DERIVED='^(DATABASE_URL|REDIS_URL)$'
+          DEV_KEYS=$(extract_keys .env.example | grep -vE "$COMPOSE_DERIVED")
+          PROD_KEYS=$(extract_keys .env.production.example)
+          MISSING=$(comm -23 <(echo "$DEV_KEYS") <(echo "$PROD_KEYS") || true)
+          if [ -n "$MISSING" ]; then
+            echo "::error::keys present in .env.example but missing from .env.production.example:"
+            echo "$MISSING"
+            exit 1
+          fi
+          echo ".env.production.example is a superset of .env.example: OK"
+
+      # Scripts must be syntactically valid bash and executable.
+      - name: scripts bash syntax
+        run: |
+          for f in scripts/*.sh; do
+            bash -n "$f" && echo "bash -n $f: OK"
+            test -x "$f" || { echo "::error::$f is not executable (chmod +x)"; exit 1; }
+          done

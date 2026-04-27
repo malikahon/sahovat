@@ -207,6 +207,73 @@ docker compose -f docker-compose.prod.yml exec backend npm run migrate
 docker compose -f docker-compose.prod.yml exec backend npm run seed
 ```
 
+## Deploying & Rolling Back (production pipeline)
+
+The production deploy pipeline is **manual-dispatch only** (no auto-deploy on push to main). Every deploy takes a database snapshot and tags previous container images so any failure can be reverted in one command.
+
+### How to deploy
+
+1. Push or merge to `main` (CI runs automatically, but no deploy fires).
+2. Go to **GitHub → Actions → deploy → Run workflow**.
+3. Set `confirm_deploy=yes`. Optionally set `target_sha` to a specific commit (default: current `main`).
+4. Watch the workflow log:
+   - **Pre-deploy** records rollback target SHA, takes a `pre-deploy-*.sql.gz` snapshot, tags running images as `:previous`.
+   - **Deploy** pulls the target SHA, rebuilds, brings containers up, runs migrations.
+   - **Verify** polls `https://sahovat.tech/api/health` for up to 60s, expecting HTTP 200 + `status:ok`.
+   - **On failure** (deploy or health) the workflow auto-runs `scripts/rollback.sh --yes`.
+
+### How to roll back manually
+
+If the workflow reported success but you've decided functionality is broken (e.g. login works in CI but fails in prod):
+
+```bash
+ssh sahovat@<host>
+cd ~/sahovat
+bash scripts/rollback.sh
+# Type ROLLBACK at the prompt to confirm.
+```
+
+This:
+1. Resets the working tree to the last known-good commit (`ROLLBACK_SHA` from `.last-deploy-state`).
+2. Re-tags `sahovat-{backend,frontend}:previous` → `:latest` and brings containers up (no rebuild).
+3. Restores the database from `pre-deploy-*.sql.gz` (the snapshot captured before the bad deploy).
+4. Polls `/api/health` for 60s and reports outcome.
+
+If both auto and manual rollback fail (rare — implies the rollback target itself was already broken), the database is still recoverable from the daily backup at `backups/sahovat_*.sql.gz`.
+
+### How to take a manual snapshot
+
+```bash
+ssh sahovat@<host>
+cd ~/sahovat
+bash scripts/pre-deploy-snapshot.sh
+# prints the path of the new snapshot on the last line
+```
+
+Retains the 3 most recent pre-deploy snapshots. Daily 7-day backups (`scripts/backup.sh`) are retained separately.
+
+### Where state lives
+
+| Path | Purpose |
+|------|---------|
+| `~/sahovat/.last-deploy-state` | KV file written by the deploy workflow with `ROLLBACK_SHA`, `SNAPSHOT_FILE`, `DEPLOY_TIMESTAMP`, `DEPLOY_TARGET_SHA`. Read by `scripts/rollback.sh`. Gitignored. |
+| `~/sahovat/backups/pre-deploy-*.sql.gz` | Last 3 pre-deploy DB snapshots. |
+| `~/sahovat/backups/sahovat_*.sql.gz` | Last 7 daily cron snapshots. |
+| `sahovat-{backend,frontend}:previous` | Image tags pointing at the version that was running before the most recent deploy. |
+| `sahovat-{backend,frontend}:rollback-YYYYMMDD-HHMM` | Last 3 dated rollback points. |
+
+### Trip-wires that trigger rollback
+
+The auto-rollback fires on:
+- Backend container fails to become healthy in 90s (zod env validation crash, migration failure).
+- Public health check (`https://sahovat.tech/api/health`) doesn't return HTTP 200 + JSON `status:ok` within 60s (6 attempts × 10s).
+
+The following are NOT auto-rollback trip-wires (require manual rollback):
+- Login functionality regression where `/api/health` still returns 200.
+- Donation flow breakage.
+- Telegram or email delivery failure.
+- Frontend 500 on a specific route.
+
 ## License
 
 MIT

@@ -5,6 +5,11 @@ import type { SmsService } from '../types/services.js';
 // LOCALIZED OTP MESSAGES
 // ============================================================
 
+// Eskiz pre-approved test template. The free / unverified Eskiz tier
+// rejects any message body other than this exact string. Used when
+// SMS_ESKIZ_TEST_MODE=true (no PINFL / template moderation yet).
+export const ESKIZ_TEST_MESSAGE = 'This is test from Eskiz';
+
 const OTP_MESSAGES: Record<string, (otp: string) => string> = {
   uz: (otp) => `Sahovat: Sizning tasdiqlash kodingiz: ${otp}. 5 daqiqa ichida amal qiladi.`,
   ru: (otp) => `Sahovat: Ваш код подтверждения: ${otp}. Действителен 5 минут.`,
@@ -123,11 +128,30 @@ class EskizSmsService implements SmsService {
   }
 
   async sendOtp(phone: string, otp: string, locale: string = 'uz'): Promise<void> {
-    const message = getOtpMessage(otp, locale);
-    await this.sendSms(phone, message);
+    const realMessage = getOtpMessage(otp, locale);
+    if (env.SMS_ESKIZ_TEST_MODE) {
+      // Eskiz unverified-tier limitation: only the pre-approved test
+      // template is accepted. Log the real OTP code so it remains
+      // recoverable from server logs during demo / dev.
+      console.log(
+        `[Sahovat] [Eskiz TEST_MODE] OTP for ${phone}: ${otp} ` +
+        `(would have sent: "${realMessage}"; sending: "${ESKIZ_TEST_MESSAGE}")`,
+      );
+      await this.sendSms(phone, ESKIZ_TEST_MESSAGE);
+      return;
+    }
+    await this.sendSms(phone, realMessage);
   }
 
   async sendNotification(phone: string, message: string): Promise<void> {
+    if (env.SMS_ESKIZ_TEST_MODE) {
+      console.log(
+        `[Sahovat] [Eskiz TEST_MODE] Notification to ${phone} ` +
+        `(would have sent: "${message}"; sending: "${ESKIZ_TEST_MESSAGE}")`,
+      );
+      await this.sendSms(phone, ESKIZ_TEST_MESSAGE);
+      return;
+    }
     await this.sendSms(phone, message);
   }
 }

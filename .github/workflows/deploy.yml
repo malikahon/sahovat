@@ -1,40 +1,255 @@
 name: deploy
 
+# Manual-dispatch only. The previous `workflow_run` trigger auto-deployed
+# every successful CI run on main, which makes large refactors and feature
+# merges high-risk. Now you click "Run workflow" with confirm_deploy=yes
+# and target_sha defaulting to the latest main HEAD.
 on:
-  workflow_run:
-    workflows: [ci]
-    types: [completed]
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: 'Type "yes" to confirm. Anything else aborts.'
+        required: true
+        default: 'no'
+        type: string
+      target_sha:
+        description: 'Commit SHA to deploy. Default = current main HEAD.'
+        required: false
+        default: ''
+        type: string
+
+# Prevent two deploys racing each other.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  HEALTH_URL: https://sahovat.tech/api/health
 
 jobs:
+  guard:
+    name: confirmation guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: verify confirm_deploy input
+        run: |
+          if [ "${{ inputs.confirm_deploy }}" != "yes" ]; then
+            echo "::error::confirm_deploy must be 'yes' (got '${{ inputs.confirm_deploy }}')"
+            exit 1
+          fi
+          echo "confirm_deploy=yes — proceeding"
+
   deploy:
     name: deploy to production
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
+    needs: guard
     steps:
-      - name: deploy via ssh
+      # ----------------------------------------------------------------
+      # 1. Pre-deploy: snapshot DB, tag current images, record state.
+      # ----------------------------------------------------------------
+      - name: pre-deploy — snapshot, tag, record state
         uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+            cd ${{ secrets.VPS_DEPLOY_PATH }}
+
+            # Disk-space gate. The build allocates a fresh image set;
+            # below 2 GB free we abort up-front rather than fail mid-build.
+            FREE_KB=$(df --output=avail -k / | tail -1)
+            FREE_GB=$((FREE_KB / 1024 / 1024))
+            echo "free disk: ${FREE_GB} GB"
+            if [ "$FREE_GB" -lt 2 ]; then
+              echo "::error::insufficient disk space (${FREE_GB} GB < 2 GB required)"
+              exit 1
+            fi
+
+            # Capture the currently-deployed SHA — this is the rollback target.
+            ROLLBACK_SHA=$(git rev-parse HEAD)
+            echo "rollback target SHA: $ROLLBACK_SHA"
+
+            # Take a pre-deploy snapshot. Script prints the path on stdout.
+            SNAPSHOT_FILE=$(bash scripts/pre-deploy-snapshot.sh)
+            echo "snapshot: $SNAPSHOT_FILE"
+
+            # Tag currently-running images as :previous so rollback can re-tag
+            # them back to :latest without rebuilding. If the :latest tag is
+            # missing for any reason (first deploy on the new pipeline), fall
+            # back to whatever image is currently in use by the running container.
+            for svc in backend frontend; do
+              if docker image inspect sahovat-${svc}:latest >/dev/null 2>&1; then
+                docker tag sahovat-${svc}:latest sahovat-${svc}:previous
+              else
+                # Fallback: get image id from running container, retag it.
+                CID=$(docker ps -q --filter "name=sahovat_${svc}")
+                if [ -n "$CID" ]; then
+                  IMG_ID=$(docker inspect --format '{{.Image}}' "$CID")
+                  docker tag "$IMG_ID" sahovat-${svc}:previous
+                else
+                  echo "::warning::no running sahovat_${svc} container; rollback will be limited"
+                fi
+              fi
+            done
+
+            # Persist state so the rollback step (separate SSH session) can read it.
+            cat > .last-deploy-state <<EOF
+            ROLLBACK_SHA=$ROLLBACK_SHA
+            SNAPSHOT_FILE=$SNAPSHOT_FILE
+            DEPLOY_TIMESTAMP=$(date -Iseconds)
+            DEPLOY_TARGET_SHA=${{ inputs.target_sha || github.sha }}
+            EOF
+            echo "state file written:"
+            cat .last-deploy-state
+
+      # ----------------------------------------------------------------
+      # 2. Deploy: pull, build, up, migrate. Any failure → rollback.
+      # ----------------------------------------------------------------
+      - name: deploy — pull, build, up, migrate
+        id: deploy
+        uses: appleboy/ssh-action@v1
+        continue-on-error: true
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           command_timeout: 30m
           script: |
-            set -e
+            set -euo pipefail
             cd ${{ secrets.VPS_DEPLOY_PATH }}
-            git pull origin main
-            docker compose --env-file .env.production -f docker-compose.prod.yml build --no-cache
-            docker compose --env-file .env.production -f docker-compose.prod.yml up -d
-            docker compose --env-file .env.production -f docker-compose.prod.yml exec backend node dist/database/migrate.js
-            docker image prune -f
 
-      - name: health check
+            # Resolve target SHA. Empty input means "whatever the workflow ref points to".
+            TARGET_SHA="${{ inputs.target_sha }}"
+            if [ -z "$TARGET_SHA" ]; then
+              TARGET_SHA="${{ github.sha }}"
+            fi
+            echo "deploying SHA: $TARGET_SHA"
+
+            git fetch origin
+            git reset --hard "$TARGET_SHA"
+
+            # Build with build args read from .env.production for the frontend
+            # NEXT_PUBLIC_* values that need to be inlined at build time.
+            docker compose --env-file .env.production -f docker-compose.prod.yml build --no-cache
+
+            # Bring everything up. Backend healthcheck is defined in compose.
+            docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+
+            # Wait for backend to become healthy in-container before migrating.
+            # 90s budget — covers cold start + zod validation + DB connection.
+            echo "waiting for backend container health..."
+            for i in $(seq 1 18); do
+              STATUS=$(docker inspect --format '{{.State.Health.Status}}' sahovat_backend 2>/dev/null || echo "missing")
+              echo "  attempt $i/18: $STATUS"
+              if [ "$STATUS" = "healthy" ]; then
+                break
+              fi
+              if [ "$STATUS" = "missing" ] || [ "$STATUS" = "unhealthy" ]; then
+                # Don't waste budget if container has crashed outright.
+                if ! docker ps --format '{{.Names}}' | grep -qx sahovat_backend; then
+                  echo "::error::sahovat_backend container is not running"
+                  docker compose -f docker-compose.prod.yml logs --tail 100 backend
+                  exit 1
+                fi
+              fi
+              sleep 5
+            done
+            FINAL_STATUS=$(docker inspect --format '{{.State.Health.Status}}' sahovat_backend)
+            if [ "$FINAL_STATUS" != "healthy" ]; then
+              echo "::error::backend not healthy after 90s (status=$FINAL_STATUS)"
+              docker compose -f docker-compose.prod.yml logs --tail 100 backend
+              exit 1
+            fi
+
+            # Migrations. Run inside the running backend container.
+            echo "running migrations..."
+            docker compose --env-file .env.production -f docker-compose.prod.yml exec -T backend node dist/database/migrate.js
+
+            docker image prune -f
+            echo "deploy step finished cleanly"
+
+      # ----------------------------------------------------------------
+      # 3. Public health check via the trip-wire URL.
+      # ----------------------------------------------------------------
+      - name: verify — public health check
+        id: health
+        if: steps.deploy.outcome == 'success'
+        continue-on-error: true
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 5m
+          script: |
+            set -euo pipefail
+            cd ${{ secrets.VPS_DEPLOY_PATH }}
+            HEALTH_URL=${{ env.HEALTH_URL }} bash scripts/health-check.sh \
+              --max-attempts 6 --interval-seconds 10
+
+      # ----------------------------------------------------------------
+      # 4. Rollback if either deploy or health-check failed.
+      # ----------------------------------------------------------------
+      - name: rollback — on deploy or health failure
+        if: steps.deploy.outcome != 'success' || steps.health.outcome != 'success'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -euo pipefail
+            cd ${{ secrets.VPS_DEPLOY_PATH }}
+            echo "::warning::deploy or health check failed — invoking rollback"
+            bash scripts/rollback.sh --yes
+
+      - name: fail workflow if rollback occurred
+        if: steps.deploy.outcome != 'success' || steps.health.outcome != 'success'
+        run: |
+          echo "::error::deploy was rolled back. See preceding log for details."
+          exit 1
+
+      # ----------------------------------------------------------------
+      # 5. Success bookkeeping: dated rollback tag + retention trim.
+      # ----------------------------------------------------------------
+      - name: post-deploy — tag dated rollback point + prune
+        if: steps.deploy.outcome == 'success' && steps.health.outcome == 'success'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            sleep 20
-            curl -sf http://localhost/api/health || (echo "health check failed" && exit 1)
+            set -euo pipefail
+            cd ${{ secrets.VPS_DEPLOY_PATH }}
+
+            DATED_TAG="rollback-$(date +%Y%m%d-%H%M)"
+            docker tag sahovat-backend:latest  sahovat-backend:${DATED_TAG}
+            docker tag sahovat-frontend:latest sahovat-frontend:${DATED_TAG}
+            echo "tagged: sahovat-{backend,frontend}:${DATED_TAG}"
+
+            # Retain the 3 most recent dated rollback tags per service.
+            for svc in backend frontend; do
+              # List dated tags newest-first, skip first 3, delete rest.
+              docker images "sahovat-${svc}" --format '{{.Tag}}' \
+                | grep -E '^rollback-[0-9]{8}-[0-9]{4}$' \
+                | sort -r \
+                | tail -n +4 \
+                | while read -r OLD_TAG; do
+                    echo "pruning sahovat-${svc}:${OLD_TAG}"
+                    docker rmi "sahovat-${svc}:${OLD_TAG}" || true
+                  done
+            done
+
+            # Echo deploy summary for the workflow log.
+            if [ -f .last-deploy-state ]; then
+              echo "----- deploy summary -----"
+              cat .last-deploy-state
+              echo "--------------------------"
+            fi
+
+            echo "deploy successful — rollback target preserved as :previous and ${DATED_TAG}"
