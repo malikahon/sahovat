@@ -22,6 +22,10 @@ export default defineConfig({
       OTP_TTL_SECONDS: '300',
       OTP_MAX_ATTEMPTS: '5',
       OTP_LOCKOUT_SECONDS: '900',
+      SMS_API_URL: 'https://notify.eskiz.uz',
+      SMS_API_EMAIL: 'test@eskiz.test',
+      SMS_API_PASSWORD: 'test-password',
+      SMS_ESKIZ_TEST_MODE: 'true',
     },
     // Longer timeout for integration tests that hit DB/Redis
     testTimeout: 15000,

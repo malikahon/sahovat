@@ -31,8 +31,8 @@ const envSchema = z.object({
     : z.string().regex(/^[0-9a-fA-F]{64}$/, 'Must be exactly 64 hex characters'),
 
   SMS_API_URL: z.string().default('https://notify.eskiz.uz'),
-  SMS_API_EMAIL: z.string().optional().default(''),
-  SMS_API_PASSWORD: z.string().optional().default(''),
+  SMS_API_EMAIL: z.string().min(1, 'SMS_API_EMAIL is required'),
+  SMS_API_PASSWORD: z.string().min(1, 'SMS_API_PASSWORD is required'),
   // When 'true', EskizSmsService sends the literal pre-approved test
   // template ("This is test from Eskiz") for ALL messages. Required while
   // the account is unverified (no PINFL / business registration); custom

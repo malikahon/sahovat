@@ -157,33 +157,10 @@ class EskizSmsService implements SmsService {
 }
 
 // ============================================================
-// MOCK SMS SERVICE (Development)
-// ============================================================
-
-class MockSmsService implements SmsService {
-  async sendOtp(phone: string, otp: string, locale: string = 'uz'): Promise<void> {
-    console.log(`[Sahovat] [MOCK SMS] OTP for ${phone}: ${otp} (locale: ${locale})`);
-  }
-
-  async sendNotification(phone: string, message: string): Promise<void> {
-    console.log(`[Sahovat] [MOCK SMS] Notification to ${phone}: ${message}`);
-  }
-}
-
-// ============================================================
 // FACTORY
 // ============================================================
 
-/**
- * Creates the appropriate SMS service based on environment.
- * Uses MockSmsService when SMS_API_EMAIL is not configured (development).
- */
 export function createSmsService(): SmsService {
-  if (!env.SMS_API_EMAIL || env.NODE_ENV === 'test') {
-    console.log('[Sahovat] Using mock SMS service');
-    return new MockSmsService();
-  }
-
   console.log('[Sahovat] Using Eskiz.uz SMS service');
   return new EskizSmsService();
 }
