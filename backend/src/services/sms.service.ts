@@ -1,10 +1,5 @@
 import { env } from '../config/env.js';
 import type { SmsService } from '../types/services.js';
-import {
-  mask,
-  publishMockNotification,
-  truncatePreview,
-} from './notifications/demo-stream.js';
 
 // ============================================================
 // LOCALIZED OTP MESSAGES
@@ -168,20 +163,10 @@ class EskizSmsService implements SmsService {
 class MockSmsService implements SmsService {
   async sendOtp(phone: string, otp: string, locale: string = 'uz'): Promise<void> {
     console.log(`[Sahovat] [MOCK SMS] OTP for ${phone}: ${otp} (locale: ${locale})`);
-    await publishMockNotification({
-      channel: 'sms',
-      recipient: mask.phone(phone),
-      preview: truncatePreview(getOtpMessage(otp, locale)),
-    });
   }
 
   async sendNotification(phone: string, message: string): Promise<void> {
     console.log(`[Sahovat] [MOCK SMS] Notification to ${phone}: ${message}`);
-    await publishMockNotification({
-      channel: 'sms',
-      recipient: mask.phone(phone),
-      preview: truncatePreview(message),
-    });
   }
 }
 
