@@ -18,6 +18,7 @@ backups/
 
 # Deploy pipeline state (written by .github/workflows/deploy.yml on the VPS)
 .last-deploy-state
+.last-deploy-state.in-progress
 
 # Logs
 *.log

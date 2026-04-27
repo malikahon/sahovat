@@ -33,13 +33,31 @@ die() { log "FATAL: $*"; exit 2; }
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-STATE_FILE="$PROJECT_DIR/.last-deploy-state"
+
+# State file lookup order:
+#   1. .last-deploy-state.in-progress  (set by deploy.yml's pre-deploy step;
+#                                       present when a deploy failed mid-flight
+#                                       and we need to roll back to the prior
+#                                       known-good state)
+#   2. .last-deploy-state              (set by deploy.yml's post-deploy step
+#                                       after a successful deploy; used by
+#                                       manual `scripts/rollback.sh` invocations
+#                                       to revert a deploy that went green but
+#                                       has functional regressions)
+IN_PROGRESS_FILE="$PROJECT_DIR/.last-deploy-state.in-progress"
+FINAL_FILE="$PROJECT_DIR/.last-deploy-state"
+
+if [ -f "$IN_PROGRESS_FILE" ]; then
+  STATE_FILE="$IN_PROGRESS_FILE"
+  log "using in-progress state file: $STATE_FILE"
+elif [ -f "$FINAL_FILE" ]; then
+  STATE_FILE="$FINAL_FILE"
+  log "using final state file: $STATE_FILE"
+else
+  die "no state file (.last-deploy-state.in-progress or .last-deploy-state) — has a deploy ever run with the new pipeline?"
+fi
 
 ASSUME_YES="${1:-}"
-
-if [ ! -f "$STATE_FILE" ]; then
-  die "no state file at $STATE_FILE — has a deploy ever run with the new pipeline?"
-fi
 
 # Source state file. It's a simple key=value format.
 # shellcheck disable=SC1090
