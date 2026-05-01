@@ -7,6 +7,8 @@ import { redis } from '../../config/redis.js';
 import {
   requestOtpSchema,
   verifyOtpSchema,
+  requestEmailOtpSchema,
+  verifyEmailOtpSchema,
   registerSchema,
   adminLoginSchema,
   adminVerifyPasswordSchema,
@@ -31,6 +33,22 @@ authRouter.post(
   authLimiter,
   validate(verifyOtpSchema),
   authController.verifyOtp,
+);
+
+// POST /api/auth/request-email-otp — Send OTP to email via Resend
+authRouter.post(
+  '/request-email-otp',
+  otpLimiter,
+  validate(requestEmailOtpSchema),
+  authController.requestEmailOtp,
+);
+
+// POST /api/auth/verify-email-otp — Verify email OTP, get tokens
+authRouter.post(
+  '/verify-email-otp',
+  authLimiter,
+  validate(verifyEmailOtpSchema),
+  authController.verifyEmailOtp,
 );
 
 // POST /api/auth/register — Complete profile (authenticated OR with registration_token)
@@ -96,6 +114,20 @@ if (env.NODE_ENV === 'test') {
       const otp = await redis.get(`otp:${phone}`);
       if (!otp) {
         res.status(404).json({ success: false, error: 'No OTP found for this phone' });
+        return;
+      }
+      res.json({ success: true, otp });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  authRouter.get('/test-otp/email/:email', async (req, res, next) => {
+    try {
+      const email = decodeURIComponent(req.params['email'] ?? '').toLowerCase();
+      const otp = await redis.get(`otp:email:${email}`);
+      if (!otp) {
+        res.status(404).json({ success: false, error: 'No OTP found for this email' });
         return;
       }
       res.json({ success: true, otp });

@@ -30,6 +30,41 @@ export const verifyOtpSchema = {
 };
 
 // ============================================================
+// REQUEST EMAIL OTP
+// ============================================================
+
+export const requestEmailOtpSchema = {
+  body: z.object({
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email('Invalid email address')
+      .max(255, 'Email is too long'),
+    locale: z.enum(['uz', 'ru', 'en']).optional(),
+  }),
+};
+
+// ============================================================
+// VERIFY EMAIL OTP
+// ============================================================
+
+export const verifyEmailOtpSchema = {
+  body: z.object({
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email('Invalid email address')
+      .max(255, 'Email is too long'),
+    otp: z
+      .string()
+      .length(6, 'OTP must be exactly 6 digits')
+      .regex(/^\d{6}$/, 'OTP must contain only digits'),
+  }),
+};
+
+// ============================================================
 // REGISTER (complete profile — authenticated endpoint)
 // ============================================================
 

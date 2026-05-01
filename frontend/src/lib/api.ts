@@ -111,6 +111,40 @@ export const authApi = {
   },
 
   /**
+   * Send OTP to the given email address (via Resend).
+   */
+  async requestEmailOtp(
+    email: string,
+    locale?: string,
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    const res = await fetch('/api/auth/request-email-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, locale }),
+    });
+    return res.json();
+  },
+
+  /**
+   * Verify email OTP. On success, tokens are stored in httpOnly cookies by the BFF.
+   */
+  async verifyEmailOtp(
+    email: string,
+    otp: string,
+  ): Promise<{
+    success: boolean;
+    data?: { user: import('./types').User | null; is_new_user: boolean; registration_token?: string };
+    error?: string;
+  }> {
+    const res = await fetch('/api/auth/verify-email-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp }),
+    });
+    return res.json();
+  },
+
+  /**
    * Complete registration (authenticated — cookie sent automatically).
    */
   async register(

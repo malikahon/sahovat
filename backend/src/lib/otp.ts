@@ -2,8 +2,22 @@ import { randomInt, timingSafeEqual } from 'node:crypto';
 import { redis } from '../config/redis.js';
 import { env } from '../config/env.js';
 
-const OTP_PREFIX = 'otp:';
-const OTP_ATTEMPTS_PREFIX = 'otp_attempts:';
+const DEFAULT_PREFIX = 'otp';
+const ATTEMPTS_SUFFIX = '_attempts';
+
+/**
+ * Builds the Redis key for a stored OTP code.
+ * Examples:
+ *   otpKey('+998901234567')                  -> 'otp:+998901234567'
+ *   otpKey('user@example.com', 'otp:email')  -> 'otp:email:user@example.com'
+ */
+function otpKey(identifier: string, prefix: string = DEFAULT_PREFIX): string {
+  return `${prefix}:${identifier}`;
+}
+
+function attemptsKey(identifier: string, prefix: string = DEFAULT_PREFIX): string {
+  return `${prefix}${ATTEMPTS_SUFFIX}:${identifier}`;
+}
 
 /**
  * Generates a cryptographically random 6-digit OTP string.
@@ -14,10 +28,17 @@ export function generateOtp(): string {
 
 /**
  * Stores an OTP in Redis with the configured TTL.
+ *
+ * @param identifier  Phone number, email, or other user-scoped identifier.
+ * @param otp         The 6-digit code to store.
+ * @param prefix      Redis key prefix (default 'otp' for phone; pass 'otp:email' for email).
  */
-export async function storeOtp(phone: string, otp: string): Promise<void> {
-  const key = `${OTP_PREFIX}${phone}`;
-  await redis.set(key, otp, 'EX', env.OTP_TTL_SECONDS);
+export async function storeOtp(
+  identifier: string,
+  otp: string,
+  prefix: string = DEFAULT_PREFIX,
+): Promise<void> {
+  await redis.set(otpKey(identifier, prefix), otp, 'EX', env.OTP_TTL_SECONDS);
 }
 
 /**
@@ -25,18 +46,22 @@ export async function storeOtp(phone: string, otp: string): Promise<void> {
  * On success: deletes the OTP and attempts counter, returns true.
  * On failure: increments the attempts counter, returns false.
  */
-export async function verifyOtp(phone: string, otp: string): Promise<boolean> {
+export async function verifyOtp(
+  identifier: string,
+  otp: string,
+  prefix: string = DEFAULT_PREFIX,
+): Promise<boolean> {
   // Check lockout inside verify to reduce race window
-  const locked = await isOtpLocked(phone);
+  const locked = await isOtpLocked(identifier, prefix);
   if (locked) {
     return false;
   }
 
-  const key = `${OTP_PREFIX}${phone}`;
+  const key = otpKey(identifier, prefix);
   const storedOtp = await redis.get(key);
 
   if (!storedOtp) {
-    await incrementOtpAttempts(phone);
+    await incrementOtpAttempts(identifier, prefix);
     return false;
   }
 
@@ -44,23 +69,24 @@ export async function verifyOtp(phone: string, otp: string): Promise<boolean> {
   const storedBuf = Buffer.from(storedOtp);
   const otpBuf = Buffer.from(otp);
   if (storedBuf.length !== otpBuf.length || !timingSafeEqual(storedBuf, otpBuf)) {
-    await incrementOtpAttempts(phone);
+    await incrementOtpAttempts(identifier, prefix);
     return false;
   }
 
   // OTP is valid — clean up
-  const attemptsKey = `${OTP_ATTEMPTS_PREFIX}${phone}`;
-  await redis.del(key, attemptsKey);
+  await redis.del(key, attemptsKey(identifier, prefix));
 
   return true;
 }
 
 /**
- * Checks whether the phone number has been locked out due to too many failed attempts.
+ * Checks whether the identifier has been locked out due to too many failed attempts.
  */
-export async function isOtpLocked(phone: string): Promise<boolean> {
-  const attemptsKey = `${OTP_ATTEMPTS_PREFIX}${phone}`;
-  const attempts = await redis.get(attemptsKey);
+export async function isOtpLocked(
+  identifier: string,
+  prefix: string = DEFAULT_PREFIX,
+): Promise<boolean> {
+  const attempts = await redis.get(attemptsKey(identifier, prefix));
 
   if (attempts === null) {
     return false;
@@ -72,10 +98,13 @@ export async function isOtpLocked(phone: string): Promise<boolean> {
 /**
  * Increments the failed OTP attempt counter and sets the lockout TTL.
  */
-export async function incrementOtpAttempts(phone: string): Promise<void> {
-  const attemptsKey = `${OTP_ATTEMPTS_PREFIX}${phone}`;
-  const current = await redis.incr(attemptsKey);
+export async function incrementOtpAttempts(
+  identifier: string,
+  prefix: string = DEFAULT_PREFIX,
+): Promise<void> {
+  const key = attemptsKey(identifier, prefix);
+  await redis.incr(key);
 
   // Set/refresh TTL on every failed attempt to prevent TTL drain attacks
-  await redis.expire(attemptsKey, env.OTP_LOCKOUT_SECONDS);
+  await redis.expire(key, env.OTP_LOCKOUT_SECONDS);
 }

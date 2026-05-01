@@ -6,7 +6,9 @@ import type { CampaignCategory, VerificationStatus } from '../../types/entities.
  */
 export interface UserRow {
   id: string;
-  phone_number: string;
+  phone_number: string | null;
+  email: string | null;
+  email_verified_at: string | null;
   display_name: string | null;
   password_hash: string | null;
   date_of_birth: string | null;

@@ -90,7 +90,7 @@ export function Navbar() {
               >
                 <User className="size-4" />
                 <span className="max-w-[100px] truncate">
-                  {user?.display_name || user?.phone_number?.slice(-9) || 'Profile'}
+                  {user?.display_name || user?.phone_number?.slice(-9) || user?.email || 'Profile'}
                 </span>
               </Button>
               

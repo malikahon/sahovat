@@ -71,6 +71,22 @@ const envSchema = z.object({
     .enum(['true', 'false', '1', '0'])
     .default('false')
     .transform((v) => v === 'true' || v === '1'),
+
+  // ============================================================
+  // EMAIL (Resend) — used for email OTP login
+  // ============================================================
+  EMAIL_PROVIDER: z.enum(['resend']).default('resend'),
+  // Required in production; optional in dev so the backend can boot
+  // without email creds when email login isn't being exercised.
+  RESEND_API_KEY: isDev
+    ? z.string().default('')
+    : z.string().min(1, 'RESEND_API_KEY is required'),
+  EMAIL_FROM_ADDRESS: isDev
+    ? z.string().default('notifications@sahovat.tech')
+    : z.string().email(),
+  EMAIL_FROM_NAME: z.string().default('Sahovat'),
+  EMAIL_REPLY_TO: z.string().email().optional(),
+  APP_BASE_URL: z.string().default('http://localhost:3000'),
 }).refine(
   (data) => {
     // In production, if OneID is enabled, ONEID_CLIENT_SECRET must be explicitly set

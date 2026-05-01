@@ -106,7 +106,9 @@ export enum RecurringStatus {
 
 export interface User {
   id: string;
-  phone_number: string;
+  phone_number: string | null;
+  email: string | null;
+  email_verified_at: string | null;
   display_name: string | null;
   has_password: boolean;
   date_of_birth: string | null;
@@ -816,6 +818,8 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   login(phone: string): Promise<void>;
   verifyOtp(phone: string, otp: string): Promise<AuthResponse>;
+  loginWithEmail(email: string, locale?: string): Promise<void>;
+  verifyEmailOtp(email: string, otp: string): Promise<AuthResponse>;
   register(data: RegisterDto): Promise<void>;
   logout(): Promise<void>;
   refreshUser(): Promise<void>;

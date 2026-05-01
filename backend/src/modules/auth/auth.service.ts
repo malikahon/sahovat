@@ -25,6 +25,7 @@ import {
 } from '../../lib/errors.js';
 import { validateUzbekPhone, formatPhone } from '../../lib/phone.js';
 import { smsService } from '../../services/sms.service.js';
+import { emailService } from '../../services/email.service.js';
 import type { CampaignCategory } from '../../types/entities.js';
 import type { AuthResponse, AuthTokens } from '../../types/api.js';
 import type { UserRow, SafeUser } from './auth.types.js';
@@ -32,6 +33,39 @@ import type { UserRow, SafeUser } from './auth.types.js';
 const BCRYPT_SALT_ROUNDS = 12;
 const REG_TOKEN_PREFIX = 'reg_token:';
 const REG_TOKEN_TTL_SECONDS = 30 * 60; // 30 minutes
+const OTP_EMAIL_PREFIX = 'otp:email';
+
+/**
+ * Identifier resolved from a registration_token.
+ * Exactly one of phone/email is non-null.
+ */
+interface RegistrationIdentifier {
+  phone: string | null;
+  email: string | null;
+}
+
+/**
+ * Encodes an identifier into a string for storage in Redis under the
+ * registration_token key. Format: `phone:+998...` or `email:user@x.com`.
+ * Plain phone strings (legacy format from before email support) are
+ * decoded as phone identifiers for backward compatibility.
+ */
+function encodeRegistrationIdentifier(id: RegistrationIdentifier): string {
+  if (id.phone) return `phone:${id.phone}`;
+  if (id.email) return `email:${id.email}`;
+  throw new Error('Registration identifier must have either phone or email');
+}
+
+function decodeRegistrationIdentifier(raw: string): RegistrationIdentifier {
+  if (raw.startsWith('phone:')) {
+    return { phone: raw.slice('phone:'.length), email: null };
+  }
+  if (raw.startsWith('email:')) {
+    return { phone: null, email: raw.slice('email:'.length) };
+  }
+  // Legacy: bare phone string (pre-email support)
+  return { phone: raw, email: null };
+}
 
 // ============================================================
 // HELPERS
@@ -130,7 +164,7 @@ export async function verifyOtpAndLogin(
 
   // Fetch user
   const result = await query(
-    `SELECT id, phone_number, display_name, password_hash,
+    `SELECT id, phone_number, email, email_verified_at, display_name, password_hash,
             date_of_birth, gender, preferred_categories,
             is_verified, is_admin, is_banned, verification_status,
             oneid_id, oneid_verified_at, language_preference,
@@ -153,7 +187,7 @@ export async function verifyOtpAndLogin(
     const registrationToken = randomBytes(32).toString('hex');
     await redis.set(
       `${REG_TOKEN_PREFIX}${registrationToken}`,
-      phone,
+      encodeRegistrationIdentifier({ phone, email: null }),
       'EX',
       REG_TOKEN_TTL_SECONDS,
     );
@@ -193,17 +227,183 @@ export async function verifyOtpAndLogin(
   };
 }
 
+// ============================================================
+// EMAIL OTP — REQUEST
+// ============================================================
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Initiates the OTP flow for an email address.
+ * Generates and sends OTP via Resend.
+ * Does NOT create a user record — that happens on verify (for new users)
+ * or never (for existing users; we just issue tokens).
+ */
+export async function requestEmailOtp(
+  rawEmail: string,
+  locale: string = 'uz',
+): Promise<string> {
+  const email = rawEmail.trim().toLowerCase();
+
+  if (!EMAIL_REGEX.test(email) || email.length > 255) {
+    throw new ValidationError('Invalid email address', 'INVALID_EMAIL');
+  }
+
+  // Check if email is locked out from too many OTP attempts
+  const locked = await isOtpLocked(email, OTP_EMAIL_PREFIX);
+  if (locked) {
+    throw new RateLimitError('Too many OTP attempts. Please try again later.', 'OTP_RATE_LIMIT');
+  }
+
+  // Check if user is banned (if they exist)
+  const existingResult = await query(
+    'SELECT is_banned FROM users WHERE email = $1',
+    [email],
+  );
+  if (
+    existingResult.rows.length > 0 &&
+    (existingResult.rows[0] as { is_banned: boolean }).is_banned
+  ) {
+    throw new ForbiddenError('Account is banned');
+  }
+
+  // Generate and store OTP
+  const otp = generateOtp();
+  await storeOtp(email, otp, OTP_EMAIL_PREFIX);
+
+  // Send OTP via Resend (non-fatal — OTP is already stored in Redis)
+  try {
+    await emailService.sendOtp(email, otp, locale);
+  } catch (err) {
+    console.error('[Sahovat] Email send failed (non-fatal):', (err as Error).message);
+  }
+
+  return otp;
+}
+
+// ============================================================
+// EMAIL OTP — VERIFY & LOGIN
+// ============================================================
+
+/**
+ * Verifies an OTP for an email address.
+ * If user exists and has completed registration: returns user + JWT tokens.
+ * If user doesn't exist or hasn't completed registration: returns is_new_user
+ * + registration_token (truly new users) or tokens + is_new_user (incomplete users).
+ */
+export async function verifyEmailOtpAndLogin(
+  rawEmail: string,
+  otp: string,
+): Promise<AuthResponse & { registration_token?: string }> {
+  const email = rawEmail.trim().toLowerCase();
+
+  if (!EMAIL_REGEX.test(email)) {
+    throw new ValidationError('Invalid email address', 'INVALID_EMAIL');
+  }
+
+  // Check lockout
+  const locked = await isOtpLocked(email, OTP_EMAIL_PREFIX);
+  if (locked) {
+    throw new RateLimitError('Too many OTP attempts. Please try again later.', 'OTP_RATE_LIMIT');
+  }
+
+  // Verify OTP
+  const isValid = await verifyStoredOtp(email, otp, OTP_EMAIL_PREFIX);
+  if (!isValid) {
+    throw new UnauthorizedError('Invalid or expired OTP', 'INVALID_OTP');
+  }
+
+  // Fetch user by email
+  const result = await query(
+    `SELECT id, phone_number, email, email_verified_at, display_name, password_hash,
+            date_of_birth, gender, preferred_categories,
+            is_verified, is_admin, is_banned, verification_status,
+            oneid_id, oneid_verified_at, language_preference,
+            created_at, updated_at
+     FROM users WHERE email = $1`,
+    [email],
+  );
+
+  const userRow = result.rows.length > 0 ? (result.rows[0] as UserRow) : null;
+  const isNewUser = !userRow || userRow.display_name === null;
+
+  if (isNewUser) {
+    if (userRow?.is_banned) {
+      throw new ForbiddenError('Account is banned');
+    }
+
+    // Generate a registration token tied to this email
+    const registrationToken = randomBytes(32).toString('hex');
+    await redis.set(
+      `${REG_TOKEN_PREFIX}${registrationToken}`,
+      encodeRegistrationIdentifier({ phone: null, email }),
+      'EX',
+      REG_TOKEN_TTL_SECONDS,
+    );
+
+    if (userRow) {
+      // Existing but incomplete user — also issue tokens for the registration page
+      // Mark email as verified now (first successful OTP)
+      if (!userRow.email_verified_at) {
+        await query(
+          'UPDATE users SET email_verified_at = NOW(), updated_at = NOW() WHERE id = $1',
+          [userRow.id],
+        );
+      }
+      const tokens = await generateTokenPair(userRow.id, userRow.is_admin);
+      return {
+        user: toSafeUser(userRow),
+        tokens,
+        is_new_user: true,
+        registration_token: registrationToken,
+      };
+    }
+
+    // Truly new user — no DB record yet, no tokens
+    return {
+      user: null as unknown as ReturnType<typeof toSafeUser>,
+      tokens: { access_token: '', refresh_token: '' },
+      is_new_user: true,
+      registration_token: registrationToken,
+    };
+  }
+
+  // Existing registered user
+  if (userRow.is_banned) {
+    throw new ForbiddenError('Account is banned');
+  }
+
+  // Mark email as verified if this is the first verified OTP
+  if (!userRow.email_verified_at) {
+    await query(
+      'UPDATE users SET email_verified_at = NOW(), updated_at = NOW() WHERE id = $1',
+      [userRow.id],
+    );
+    userRow.email_verified_at = new Date().toISOString();
+  }
+
+  const tokens = await generateTokenPair(userRow.id, userRow.is_admin);
+
+  return {
+    user: toSafeUser(userRow),
+    tokens,
+    is_new_user: false,
+  };
+}
+
 /**
  * Validates a registration token from Redis.
- * Returns the phone number if valid, null otherwise.
+ * Returns the resolved identifier (phone OR email) if valid, null otherwise.
  * Consumes (deletes) the token on successful validation.
  */
-export async function validateRegistrationToken(token: string): Promise<string | null> {
+export async function validateRegistrationToken(
+  token: string,
+): Promise<RegistrationIdentifier | null> {
   const key = `${REG_TOKEN_PREFIX}${token}`;
-  const phone = await redis.get(key);
-  if (!phone) return null;
+  const raw = await redis.get(key);
+  if (!raw) return null;
   await redis.del(key);
-  return phone;
+  return decodeRegistrationIdentifier(raw);
 }
 
 // ============================================================
@@ -231,12 +431,12 @@ export async function register(
   userId: string | null,
   data: RegisterData,
 ): Promise<{ user: SafeUser; tokens: AuthTokens }> {
-  let phone: string | null = null;
+  let identifier: RegistrationIdentifier | null = null;
 
-  // If a registration token is provided, validate it to get the phone
+  // If a registration token is provided, validate it to get the identifier
   if (data.registration_token) {
-    phone = await validateRegistrationToken(data.registration_token);
-    if (!phone) {
+    identifier = await validateRegistrationToken(data.registration_token);
+    if (!identifier) {
       throw new UnauthorizedError('Invalid or expired registration token', 'INVALID_REG_TOKEN');
     }
   }
@@ -245,7 +445,7 @@ export async function register(
   if (userId) {
     // Authenticated user completing registration
     const existingResult = await query(
-      'SELECT id, display_name, phone_number FROM users WHERE id = $1',
+      'SELECT id, display_name, phone_number, email FROM users WHERE id = $1',
       [userId],
     );
 
@@ -253,7 +453,7 @@ export async function register(
       throw new NotFoundError('User not found');
     }
 
-    const existing = existingResult.rows[0] as { id: string; display_name: string | null; phone_number: string };
+    const existing = existingResult.rows[0] as { id: string; display_name: string | null; phone_number: string | null; email: string | null };
     if (existing.display_name !== null) {
       throw new ValidationError('User already registered');
     }
@@ -262,11 +462,14 @@ export async function register(
     const user = await updateUserProfile(existing.id, data);
     const tokens = await generateTokenPair(user.id, user.is_admin);
     return { user, tokens };
-  } else if (phone) {
+  } else if (identifier) {
+    const lookupColumn = identifier.phone ? 'phone_number' : 'email';
+    const lookupValue = identifier.phone ?? identifier.email;
+
     // New user via registration token — check if a partial record exists
     const existingResult = await query(
-      'SELECT id, display_name FROM users WHERE phone_number = $1',
-      [phone],
+      `SELECT id, display_name FROM users WHERE ${lookupColumn} = $1`,
+      [lookupValue],
     );
 
     if (existingResult.rows.length > 0) {
@@ -282,15 +485,17 @@ export async function register(
 
     // Create a brand new user with profile data in one step
     const insertResult = await query(
-      `INSERT INTO users (phone_number, display_name, date_of_birth, gender, preferred_categories, language_preference)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, phone_number, display_name, password_hash,
+      `INSERT INTO users (phone_number, email, email_verified_at, display_name, date_of_birth, gender, preferred_categories, language_preference)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, phone_number, email, email_verified_at, display_name, password_hash,
                  date_of_birth, gender, preferred_categories,
                  is_verified, is_admin, is_banned, verification_status,
                  oneid_id, oneid_verified_at, language_preference,
                  created_at, updated_at`,
       [
-        phone,
+        identifier.phone,
+        identifier.email,
+        identifier.email ? new Date() : null,
         data.display_name,
         data.date_of_birth || null,
         data.gender || null,
@@ -346,7 +551,7 @@ async function updateUserProfile(userId: string, data: RegisterData): Promise<Sa
     `UPDATE users
      SET ${setClauses.join(', ')}
      WHERE id = $${paramIndex}
-     RETURNING id, phone_number, display_name, password_hash,
+     RETURNING id, phone_number, email, email_verified_at, display_name, password_hash,
                date_of_birth, gender, preferred_categories,
                is_verified, is_admin, is_banned, verification_status,
                oneid_id, oneid_verified_at, language_preference,
@@ -376,7 +581,7 @@ export async function adminLogin(
   const phone = formatPhone(phoneNumber);
 
   const result = await query(
-    `SELECT id, phone_number, display_name, password_hash,
+    `SELECT id, phone_number, email, email_verified_at, display_name, password_hash,
             date_of_birth, gender, preferred_categories,
             is_verified, is_admin, is_banned, verification_status,
             oneid_id, oneid_verified_at, language_preference,
@@ -437,7 +642,7 @@ export async function verifyAdminPassword(
   password: string,
 ): Promise<SafeUser> {
   const result = await query(
-    `SELECT id, phone_number, display_name, password_hash,
+    `SELECT id, phone_number, email, email_verified_at, display_name, password_hash,
             date_of_birth, gender, preferred_categories,
             is_verified, is_admin, is_banned, verification_status,
             oneid_id, oneid_verified_at, language_preference,
@@ -532,7 +737,7 @@ export async function logout(userId: string): Promise<void> {
  */
 export async function getUserById(userId: string): Promise<SafeUser | null> {
   const result = await query(
-    `SELECT id, phone_number, display_name, password_hash,
+    `SELECT id, phone_number, email, email_verified_at, display_name, password_hash,
             date_of_birth, gender, preferred_categories,
             is_verified, is_admin, is_banned, verification_status,
             oneid_id, oneid_verified_at, language_preference,
@@ -577,7 +782,7 @@ export async function setPassword(userId: string, password: string): Promise<Saf
     `UPDATE users
      SET password_hash = $1, updated_at = NOW()
      WHERE id = $2
-     RETURNING id, phone_number, display_name, password_hash,
+     RETURNING id, phone_number, email, email_verified_at, display_name, password_hash,
                date_of_birth, gender, preferred_categories,
                is_verified, is_admin, is_banned, verification_status,
                oneid_id, oneid_verified_at, language_preference,

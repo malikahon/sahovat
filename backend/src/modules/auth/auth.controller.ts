@@ -38,6 +38,39 @@ export async function verifyOtp(req: Request, res: Response): Promise<void> {
 }
 
 /**
+ * POST /api/auth/request-email-otp
+ * Sends an OTP to the provided email address via Resend.
+ */
+export async function requestEmailOtp(req: Request, res: Response): Promise<void> {
+  const { email, locale } = req.body as { email: string; locale?: string };
+
+  const otp = await authService.requestEmailOtp(email, locale ?? 'uz');
+
+  res.status(200).json({
+    success: true,
+    message: 'OTP sent successfully',
+    // Only expose dev_otp outside production for local development.
+    ...(env.NODE_ENV !== 'production' ? { dev_otp: otp } : {}),
+  });
+}
+
+/**
+ * POST /api/auth/verify-email-otp
+ * Verifies the email OTP and returns auth tokens.
+ * If the user is new (no display_name), is_new_user will be true.
+ */
+export async function verifyEmailOtp(req: Request, res: Response): Promise<void> {
+  const { email, otp } = req.body as { email: string; otp: string };
+
+  const authResponse = await authService.verifyEmailOtpAndLogin(email, otp);
+
+  res.status(200).json({
+    success: true,
+    data: authResponse,
+  });
+}
+
+/**
  * POST /api/auth/register
  * Completes user registration (profile setup).
  * Accepts either an authenticated user OR a registration_token in the body.

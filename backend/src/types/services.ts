@@ -10,6 +10,14 @@ export interface SmsService {
 }
 
 // ============================================================
+// EMAIL SERVICE
+// ============================================================
+
+export interface EmailService {
+  sendOtp(email: string, otp: string, locale?: string): Promise<void>;
+}
+
+// ============================================================
 // PAYMENT SERVICE
 // ============================================================
 

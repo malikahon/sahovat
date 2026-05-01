@@ -54,6 +54,7 @@ export async function requireAuth(
   const authenticatedUser: AuthenticatedUser = {
     id: user.id,
     phone_number: user.phone_number,
+    email: user.email,
     display_name: user.display_name,
     is_verified: user.is_verified,
     is_admin: user.is_admin,
@@ -87,6 +88,7 @@ export async function optionalAuth(
         const authenticatedUser: AuthenticatedUser = {
           id: user.id,
           phone_number: user.phone_number,
+          email: user.email,
           display_name: user.display_name,
           is_verified: user.is_verified,
           is_admin: user.is_admin,

@@ -35,6 +35,14 @@ export async function getFeeInfo(_req: Request, res: Response): Promise<void> {
 export async function requestOtp(req: Request, res: Response): Promise<void> {
   const authReq = req as AuthenticatedRequest;
   const phone = authReq.user.phone_number;
+  if (!phone) {
+    res.status(400).json({
+      success: false,
+      error: 'PHONE_REQUIRED',
+      message: 'A phone number is required for high-value donation verification. Please add a phone to your account.',
+    });
+    return;
+  }
   const { campaign_id, amount } = req.body as { campaign_id: string; amount: number };
 
   const otp = await donationsService.requestDonationOtp(authReq.user.id, phone, campaign_id, amount);
@@ -52,6 +60,15 @@ export async function requestOtp(req: Request, res: Response): Promise<void> {
 export async function verifyOtp(req: Request, res: Response): Promise<void> {
   const authReq = req as AuthenticatedRequest;
   const { otp } = req.body as { donation_id: string; otp: string };
+
+  if (!authReq.user.phone_number) {
+    res.status(400).json({
+      success: false,
+      error: 'PHONE_REQUIRED',
+      message: 'A phone number is required for high-value donation verification.',
+    });
+    return;
+  }
 
   const verified = await donationsService.verifyDonationOtp(
     authReq.user.id,

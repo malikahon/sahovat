@@ -103,6 +103,43 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 
   /**
+   * Step 1 of email auth: request OTP for an email address.
+   */
+  const loginWithEmail = useCallback(async (email: string, locale?: string): Promise<void> => {
+    const result = await authApi.requestEmailOtp(email, locale);
+    if (!result.success) {
+      throw new Error(result.message || result.error || 'Failed to send OTP');
+    }
+  }, []);
+
+  /**
+   * Step 2 of email auth: verify email OTP.
+   */
+  const verifyEmailOtp = useCallback(
+    async (email: string, otp: string) => {
+      const result = await authApi.verifyEmailOtp(email, otp);
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'Failed to verify OTP');
+      }
+
+      if (result.data.is_new_user && result.data.registration_token) {
+        sessionStorage.setItem('registration_token', result.data.registration_token);
+      }
+
+      if (result.data.user) {
+        setUser(result.data.user);
+      }
+
+      return {
+        user: result.data.user,
+        tokens: { access_token: '', refresh_token: '' },
+        is_new_user: result.data.is_new_user,
+      };
+    },
+    [],
+  );
+
+  /**
    * Step 3 (if new user): complete registration.
    * Includes registration_token from sessionStorage if available.
    */
@@ -147,11 +184,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isAuthenticated,
       login,
       verifyOtp,
+      loginWithEmail,
+      verifyEmailOtp,
       register,
       logout,
       refreshUser,
     }),
-    [user, isLoading, isAuthenticated, login, verifyOtp, register, logout, refreshUser],
+    [user, isLoading, isAuthenticated, login, verifyOtp, loginWithEmail, verifyEmailOtp, register, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
