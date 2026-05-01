@@ -172,6 +172,21 @@ jobs:
             # Bring everything up. Backend healthcheck is defined in compose.
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 
+            # Reload nginx so it picks up any changes to nginx/nginx.conf.
+            # The bind-mount updates the file in-container immediately, but
+            # nginx only re-reads its config on SIGHUP / restart. Without
+            # this step a route added to nginx.conf (e.g. the `/api/health`
+            # exact-match block) silently never takes effect on a deploy
+            # that doesn't otherwise recreate the nginx container.
+            #
+            # Validate first — a bad config would `nginx -s reload` non-zero
+            # and we'd rather fail the deploy than silently keep serving the
+            # old config.
+            echo "reloading nginx config..."
+            docker compose -f docker-compose.prod.yml exec -T nginx nginx -t
+            docker compose -f docker-compose.prod.yml exec -T nginx nginx -s reload
+            echo "nginx reloaded"
+
             # Wait for backend to become healthy in-container before migrating.
             # 90s budget — covers cold start + zod validation + DB connection.
             echo "waiting for backend container health..."

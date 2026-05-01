@@ -101,6 +101,18 @@ fi
 
 cd "$PROJECT_DIR"
 
+# 0. Stash the helper scripts we need *before* git reset, in case the
+# rollback target SHA predates them on disk. Without this guard, a
+# rollback to a commit older than b7e92da would `git reset --hard`
+# and then fail at step 4/5 with `restore.sh: No such file or directory`
+# because the on-disk script is gone.
+TOOLS_DIR="$(mktemp -d -t sahovat-rollback-tools.XXXXXX)"
+trap 'rm -rf "$TOOLS_DIR"' EXIT
+cp "$SCRIPT_DIR/restore.sh"      "$TOOLS_DIR/restore.sh"
+cp "$SCRIPT_DIR/health-check.sh" "$TOOLS_DIR/health-check.sh"
+chmod +x "$TOOLS_DIR/restore.sh" "$TOOLS_DIR/health-check.sh"
+log "stashed helper scripts to $TOOLS_DIR (survive git reset)"
+
 # 1. Source code rollback
 log "step 1/5 — git reset to $ROLLBACK_SHA"
 git fetch origin
@@ -122,13 +134,14 @@ docker tag sahovat-frontend:previous sahovat-frontend:latest
 log "step 3/5 — docker compose up -d (no rebuild)"
 docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 
-# 4. Database restore
+# 4. Database restore — invoke the *stashed* script, not the one on
+# disk, since the git reset above may have removed it.
 log "step 4/5 — restoring database from $SNAPSHOT_FILE"
-bash "$SCRIPT_DIR/restore.sh" "$SNAPSHOT_FILE" --yes
+bash "$TOOLS_DIR/restore.sh" "$SNAPSHOT_FILE" --yes
 
 # 5. Health verification
 log "step 5/5 — polling health for 60s"
-if bash "$SCRIPT_DIR/health-check.sh" --max-attempts 6 --interval-seconds 10; then
+if bash "$TOOLS_DIR/health-check.sh" --max-attempts 6 --interval-seconds 10; then
   log "rollback OK — production is healthy at $ROLLBACK_SHA"
   exit 0
 else
